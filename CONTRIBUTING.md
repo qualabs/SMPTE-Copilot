@@ -50,13 +50,9 @@ If you find a bug, open an Issue and include:
 
 ## 💬 Join the Community on Discord
 
-👉 **Discord Invite:** https://discord.gg/XXXXXXXX
-
-------------------------------------------------------------------------
-
-## 📡 Discord Channels
-
--   **#TBD** --- General discussion
+-   **SMPTE Text Channel:** https://discord.gg/ZcrUp2grg3
+-   **SMPTE Voice Channel:** https://discord.gg/VKgFprBQ38
+-   **SummerCamp General Channel:** https://discord.gg/cEQN4a2Pjg
 
 ------------------------------------------------------------------------
 
