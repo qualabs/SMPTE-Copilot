@@ -27,10 +27,14 @@ flowchart LR
 
     subgraph Embedding_and_Indexing["Embedding & Indexing"]
         EM[Embedding Encoder Model]
-        VDB[VDB Structuring & Insertion]
+        VDBS[VDB Structuring & Insertion]
 
-        CH --> EM --> VDB
+        CH --> EM --> VDBS
     end
+
+    VDB[(Vector Database)]
+
+    VDBS --> VDB
 
     %% QUERY SIDE
     subgraph Query_and_Retrieval["Query & Retrieval"]
@@ -42,6 +46,10 @@ flowchart LR
 
         QA --> QP --> RT --> RR --> AG
     end
+
+    %% AUTH SERVICE
+    AUTH[Auth & Role Service]
+    AUTH <--> QA
 
     subgraph Clients["Clients"]
         C1[Internal UI / Copilot]
