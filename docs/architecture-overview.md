@@ -59,7 +59,7 @@ flowchart LR
     C1 --> QA
     C2 --> QA
 
-    VDB --> RT
+    RT --> VDB
 ```
 
 
