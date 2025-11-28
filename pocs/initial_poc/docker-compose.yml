@@ -26,7 +26,7 @@ services:
     container_name: rag-query
     volumes:
       # Mount database directory (read-only for queries)
-      - ./chroma_db:/app/chroma_db:ro
+      - ./chroma_db:/app/chroma_db
     environment:
       - PYTHONUNBUFFERED=1
       - CHROMA_DB_PATH=/app/chroma_db
