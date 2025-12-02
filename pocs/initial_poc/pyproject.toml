@@ -1,0 +1,38 @@
+[project]
+name = "rag-ingestion"
+version = "0.1.0"
+description = "Utilities for ingesting PDFs into a RAG pipeline."
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "langchain>=0.3.0",
+  "langchain-community>=0.3.0",
+  "pymupdf>=1.24.9",
+  "pymupdf4llm>=0.0.17",
+]
+
+[project.optional-dependencies]
+dev = [
+  "ipykernel>=6.29.0",
+  "jupyter>=1.0.0",
+]
+embeddings = [
+  "openai>=1.0.0",  # For OpenAI embeddings
+  "tiktoken>=0.5.0",  # Required by OpenAIEmbeddings for token counting
+  "langchain-openai>=0.1.0",  # Recommended OpenAI embeddings package
+  "sentence-transformers>=2.2.0",  # For HuggingFace/sentence-transformers
+  "numpy>=1.24.0,<2.0",  # Required by sentence-transformers (PyTorch compatibility)
+  "langchain-huggingface>=0.0.1",  # Recommended HuggingFace embeddings package
+]
+vectorstore = [
+  "chromadb>=0.4.0",  # For ChromaDB vector store
+]
+
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
