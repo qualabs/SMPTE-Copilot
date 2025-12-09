@@ -1,8 +1,5 @@
 version: '3.8'
 
-volumes:
-  vector_db:
-
 services:
   # Service for ingesting documents
   ingest:
