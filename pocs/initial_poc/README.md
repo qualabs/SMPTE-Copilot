@@ -82,7 +82,7 @@ docker-compose build
 
 ```bash
 # Option 1: Ingest a specific PDF
-docker-compose run --rm ingest python ingest.py /app/data/Sample-pdf.pdf
+docker-compose run --rm ingest python ingest.py /app/data/h264_small.pdf
 
 # Option 2: Ingest all PDFs in the data folder
 docker-compose run --rm ingest python ingest.py /app/data/
