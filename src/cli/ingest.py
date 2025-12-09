@@ -16,7 +16,7 @@ from rag_ingestion import (
 # Default locations (can be overridden via env vars or CLI)
 DEFAULT_PDF_LOCATION = Path(os.environ.get("PDF_PATH", "/app/data"))
 MARKDOWN_OUTPUT_DIR = Path(os.environ.get("MARKDOWN_DIR", "/app/data/markdown"))
-CHROMA_DB_PATH = Path(os.environ.get("CHROMA_DB_PATH", "/app/chroma_db"))
+VECTOR_DB_PATH = Path(os.environ.get("VECTOR_DB_PATH", "/app/vector_db"))
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "rag_collection")
 
 # Chunking configuration
@@ -79,7 +79,7 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
 
     # Step 4: Embeddings → Vector Database
     print(f"\nStep 4: Storing in vector database...")
-    print(f"  Database location: {CHROMA_DB_PATH}")
+    print(f"  Database location: {VECTOR_DB_PATH}")
     print(f"  Collection: {COLLECTION_NAME}")
 
     vector_store.ingest_chunks(embedded_chunks)
@@ -93,7 +93,7 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
     print(f"✓ PDF processed: {pdf_path.name}")
     print(f"✓ Markdown file: {markdown_path}")
     print(f"✓ Chunks created: {len(chunks)}")
-    print(f"✓ Database location: {CHROMA_DB_PATH}")
+    print(f"✓ Database location: {VECTOR_DB_PATH}")
     print(f"✓ Collection: {COLLECTION_NAME}")
     print("=" * 60 + "\n")
 
@@ -113,14 +113,14 @@ def main():
         print("\nUsage:")
         print("  python ingest.py /app/data/file.pdf")
         print("  python ingest.py /app/data  # Ingest all PDFs in directory")
-        print("\nConfigure defaults with env vars: PDF_PATH, MARKDOWN_DIR, CHROMA_DB_PATH, COLLECTION_NAME")
+        print("\nConfigure defaults with env vars: PDF_PATH, MARKDOWN_DIR, VECTOR_DB_PATH, COLLECTION_NAME")
         sys.exit(1)
 
     print("=" * 60)
     print("RAG Document Ingestion Pipeline")
     print("=" * 60)
     print(f"Inputs: {len(pdf_files)} PDF(s)")
-    print(f"Database: {CHROMA_DB_PATH}")
+    print(f"Database: {VECTOR_DB_PATH}")
     print(f"Collection: {COLLECTION_NAME}")
     print()
 
@@ -129,7 +129,7 @@ def main():
         vector_store = VectorStoreIngester(
             store_name="chromadb",
             store_config={
-                "persist_directory": str(CHROMA_DB_PATH),
+                "persist_directory": str(VECTOR_DB_PATH),
                 "collection_name": COLLECTION_NAME,
             },
             embedding_function=embedder.embedding_model,

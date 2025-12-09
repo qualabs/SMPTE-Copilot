@@ -8,7 +8,7 @@ from rag_ingestion import ChunkEmbedder, VectorStoreIngester, RetrievalPipeline
 
 # Configuration - Uses environment variables (can be overridden)
 # IMPORTANT: collection_name must match COLLECTION_NAME in ingest.py
-chroma_db_path = Path(os.environ.get("CHROMA_DB_PATH", "/app/chroma_db"))
+vector_db_path = Path(os.environ.get("VECTOR_DB_PATH", "/app/vector_db"))
 collection_name = os.environ.get("COLLECTION_NAME", "rag_collection")
 
 def main():
@@ -28,9 +28,9 @@ def main():
     
     try:
         # Step 1: Check if database exists
-        chroma_db_path_obj = Path(chroma_db_path)
-        if not chroma_db_path_obj.exists():
-            print(f"✗ Error: Vector database not found: {chroma_db_path_obj}")
+        vector_db_path_obj = Path(vector_db_path)
+        if not vector_db_path_obj.exists():
+            print(f"✗ Error: Vector database not found: {vector_db_path_obj}")
             print("\nPlease ingest documents first:")
             print("  python ingest.py /path/to/document.pdf")
             print("\nOr edit ingest.py to set PDF_PATH, then run:")
@@ -44,7 +44,7 @@ def main():
         vector_store = VectorStoreIngester(
             store_name="chromadb",
             store_config={
-                "persist_directory": str(chroma_db_path_obj),
+                "persist_directory": str(vector_db_path_obj),
                 "collection_name": collection_name,
             },
             embedding_function=embedder.embedding_model,

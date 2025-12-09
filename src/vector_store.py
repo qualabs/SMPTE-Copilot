@@ -70,7 +70,7 @@ def _create_chromadb(config: Dict[str, Any]) -> Any:
         )
     
     # Get configuration
-    persist_directory = config.get("persist_directory", "./chroma_db")
+    persist_directory = config.get("persist_directory", "./vector_db")
     collection_name = config.get("collection_name", "rag_documents")
     embedding_function = config.get("embedding_function")
     
@@ -111,7 +111,7 @@ class VectorStoreIngester:
             Default: "chromadb"
         store_config
             Optional configuration dictionary passed to the store factory.
-            For ChromaDB: {"persist_directory": "./chroma_db", "collection_name": "docs"}
+            For ChromaDB: {"persist_directory": "./vector_db", "collection_name": "docs"}
         embedding_function
             Embedding function/model to use for the vector store.
             Required if creating a new store.

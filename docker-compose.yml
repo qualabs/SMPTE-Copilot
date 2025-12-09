@@ -1,5 +1,8 @@
 version: '3.8'
 
+volumes:
+  vector_db:
+
 services:
   # Service for ingesting documents
   ingest:
@@ -7,13 +10,11 @@ services:
     image: rag-poc-v1
     container_name: rag-ingest
     volumes:
-      # Mount database directory to persist data
-      - ./chroma_db:/app/chroma_db #TODO: resolver internally to a volume
-      # Mount data directory for PDFs
+      - vector_db:/app/vector_db
       - ./data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
-      - CHROMA_DB_PATH=/app/chroma_db
+      - VECTOR_DB_PATH=/app/vector_db
       - COLLECTION_NAME=rag_collection
     # Default command: show usage
     command: python ingest.py --help
@@ -25,11 +26,10 @@ services:
     image: rag-poc-v1
     container_name: rag-query
     volumes:
-      # Mount database directory (read-only for queries)
-      - ./chroma_db:/app/chroma_db
+      - vector_db:/app/vector_db
     environment:
       - PYTHONUNBUFFERED=1
-      - CHROMA_DB_PATH=/app/chroma_db
+      - VECTOR_DB_PATH=/app/vector_db
       - COLLECTION_NAME=rag_collection
     # Default command: show usage
     command: python query.py --help
