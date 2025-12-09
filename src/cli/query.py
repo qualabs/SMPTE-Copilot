@@ -4,7 +4,7 @@
 import sys
 import os
 from pathlib import Path
-from rag_ingestion import ChunkEmbedder, VectorStoreIngester, RetrievalPipeline
+from src import ChunkEmbedder, VectorStoreIngester, RetrievalPipeline
 
 # Configuration - Uses environment variables (can be overridden)
 # IMPORTANT: collection_name must match COLLECTION_NAME in ingest.py
