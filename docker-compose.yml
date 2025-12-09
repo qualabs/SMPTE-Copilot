@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Service for ingesting documents
   ingest:
@@ -13,9 +11,7 @@ services:
       - PYTHONUNBUFFERED=1
       - VECTOR_DB_PATH=/app/vector_db
       - COLLECTION_NAME=rag_collection
-    # Default command: show usage
-    command: python ingest.py --help
-    # Override when running: docker-compose run ingest python ingest.py /app/data/file.pdf
+    command: python src/cli/ingest.py --help
 
   # Service for querying documents
   query:
@@ -28,7 +24,7 @@ services:
       - PYTHONUNBUFFERED=1
       - VECTOR_DB_PATH=/app/vector_db
       - COLLECTION_NAME=rag_collection
-    # Default command: show usage
-    command: python query.py --help
-    # Override when running: docker-compose run query python query.py "your question"
+    command: python src/cli/query.py --help
 
+volumes:
+  vector_db:

@@ -19,7 +19,6 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # Copy project files
 COPY pyproject.toml .
 COPY src/ ./src/
-COPY ingest.py query.py ./
 
 # Install the package in editable mode
 RUN pip install --no-cache-dir -e .
