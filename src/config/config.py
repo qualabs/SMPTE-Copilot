@@ -11,9 +11,6 @@ from .vector_store import VectorStoreConfig
 from .retrieval import RetrievalConfig
 from .paths import PathsConfig
 
-# Global configuration instance (singleton pattern)
-_config: Optional[Config] = None
-
 class Config(BaseSettings):
     """Main configuration class combining all sub-configurations."""
     
@@ -43,6 +40,9 @@ class Config(BaseSettings):
         # Create config from nested dict
         return cls(**data)
 
+# Global configuration instance (singleton pattern)
+_config: Optional[Config] = None
+
 def get_config() -> Config:
     """Get the global configuration instance (singleton pattern).
     
@@ -71,4 +71,3 @@ def get_config() -> Config:
             _config = Config()
     
     return _config
-

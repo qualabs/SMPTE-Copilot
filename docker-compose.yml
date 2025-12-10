@@ -7,10 +7,9 @@ services:
     volumes:
       - vector_db:/app/vector_db
       - ./data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
     environment:
       - PYTHONUNBUFFERED=1
-      - VECTOR_DB_PATH=/app/vector_db
-      - COLLECTION_NAME=rag_collection
     command: python src/cli/ingest.py --help
 
   # Service for querying documents
@@ -20,10 +19,9 @@ services:
     container_name: rag-query
     volumes:
       - vector_db:/app/vector_db
+      - ./config.yaml:/app/config.yaml:ro
     environment:
       - PYTHONUNBUFFERED=1
-      - VECTOR_DB_PATH=/app/vector_db
-      - COLLECTION_NAME=rag_collection
     command: python src/cli/query.py --help
 
 volumes:
