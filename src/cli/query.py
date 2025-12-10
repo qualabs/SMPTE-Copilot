@@ -3,7 +3,7 @@
 
 import sys
 from pathlib import Path
-from src import ChunkEmbedder, VectorStoreIngester, VectorStoreFactory, RetrievalPipeline, get_config
+from src import ChunkEmbedder, VectorStoreFactory, RetrievalPipeline, get_config
 
 def main():
     config = get_config()
@@ -40,7 +40,7 @@ def main():
         embedder = ChunkEmbedder(model_name=config.embedding.model_name)
         
         # Step 3: Create vector store using factory
-        store = VectorStoreFactory.create(
+        vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,
             persist_directory=str(vector_db_path),
             collection_name=config.vector_store.collection_name,
@@ -48,26 +48,23 @@ def main():
             **(config.vector_store.store_config or {}),
         )
         
-        # Step 4: Create ingester with the store
-        vector_store = VectorStoreIngester(vector_store=store)
-        
-        # Step 5: Create retrieval pipeline
+        # Step 4: Create retrieval pipeline
         searcher_config = {"k": config.retrieval.k}
         if config.retrieval.searcher_config:
             searcher_config.update(config.retrieval.searcher_config)
         
         pipeline = RetrievalPipeline(
-            vector_store=vector_store.vector_store,
+            vector_store=vector_store,
             embedder=embedder,
             searcher_strategy=config.retrieval.searcher_strategy,
             searcher_config=searcher_config,
         )
         
-        # Step 6: Query the database using pipeline (with scores)
+        # Step 5: Query the database using pipeline (with scores)
         print("Searching...")
         results_with_scores = pipeline.retrieve_with_scores(query)
         
-        # Step 7: Display results with similarity scores
+        # Step 6: Display results with similarity scores
         print(f"\nFound {len(results_with_scores)} relevant documents:\n")
         print("-" * 60)
         print("Similarity Score Guide:")

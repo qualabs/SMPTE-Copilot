@@ -8,10 +8,11 @@ from src import (
     PyMuPDFLoader,
     LangChainChunker,
     ChunkEmbedder,
-    VectorStoreIngester,
+    VectorStore,
     VectorStoreFactory,
     get_config,
 )
+from src.vector_stores.helpers import ingest_chunks_with_embeddings
 
 def _resolve_pdf_inputs(input_path: Path) -> List[Path]:
     """Resolve input path to a list of PDF files."""
@@ -35,7 +36,7 @@ def _prepare_output_dir(output_dir: Path) -> Path:
 
 def ingest_pdf(
     pdf_path: Path,
-    vector_store: VectorStoreIngester,
+    vector_store: VectorStore,
     embedder: ChunkEmbedder,
     config,
 ) -> None:
@@ -76,8 +77,9 @@ def ingest_pdf(
     print(f"  Database location: {config.vector_store.persist_directory}")
     print(f"  Collection: {config.vector_store.collection_name}")
 
-    vector_store.ingest_chunks(embedded_chunks)
-    vector_store.persist()
+    ingest_chunks_with_embeddings(vector_store, embedded_chunks)
+    if hasattr(vector_store, "persist"):
+        vector_store.persist()
     print(f"✓ Ingested {len(embedded_chunks)} chunks")
 
     # Summary
@@ -129,16 +131,13 @@ def main():
         embedder = ChunkEmbedder(model_name=config.embedding.model_name)
         
         # Create vector store using factory
-        store = VectorStoreFactory.create(
+        vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,
             persist_directory=str(config.vector_store.persist_directory),
             collection_name=config.vector_store.collection_name,
             embedding_function=embedder.embedding_model,
             **(config.vector_store.store_config or {}),
         )
-        
-        # Create ingester with the store
-        vector_store = VectorStoreIngester(vector_store=store)
 
         for pdf_file in pdf_files:
             ingest_pdf(pdf_file, vector_store, embedder, config)

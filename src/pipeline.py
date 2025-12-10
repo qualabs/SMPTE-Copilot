@@ -33,7 +33,7 @@ class RetrievalPipeline:
         Parameters
         ----------
         vector_store
-            Vector store instance (from VectorStoreIngester.vector_store).
+            Vector store instance (created via VectorStoreFactory).
         embedder
             Pre-initialized ChunkEmbedder instance.
             If provided, model_name and model_config are ignored.

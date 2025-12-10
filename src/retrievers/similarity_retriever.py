@@ -26,7 +26,7 @@ class DocumentRetriever:
         Parameters
         ----------
         vector_store
-            Vector store instance (from VectorStoreIngester.vector_store).
+            Vector store instance (created via VectorStoreFactory).
         k
             Number of documents to retrieve. Default: 4
         """

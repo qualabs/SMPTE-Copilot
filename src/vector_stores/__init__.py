@@ -2,7 +2,7 @@
 
 from .protocol import VectorStore
 from .factory import VectorStoreFactory
-from .ingester import VectorStoreIngester
+from .helpers import ingest_chunks_with_embeddings
 
-__all__ = ["VectorStore", "VectorStoreFactory", "VectorStoreIngester"]
+__all__ = ["VectorStore", "VectorStoreFactory", "ingest_chunks_with_embeddings"]
 
