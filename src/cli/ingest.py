@@ -10,7 +10,7 @@ from src import (
     EmbeddingModelFactory,
     VectorStore,
     VectorStoreFactory,
-    get_config,
+    Config,
 )
 from src.vector_stores.helpers import VectorStoreHelper
 from src.embeddings.helpers import EmbeddingHelper
@@ -105,7 +105,7 @@ def ingest_pdf(
 def main():
     """Run the ingestion pipeline for one or more PDFs."""
     # Load configuration
-    config = get_config()
+    config = Config.get_config()
     
     # Determine input (CLI arg > config > default path)
     input_path = config.paths.pdf_path

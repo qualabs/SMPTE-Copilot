@@ -41,35 +41,36 @@ class Config(BaseSettings):
         
         # Create config from nested dict
         return cls(**data)
+    
+    @staticmethod
+    def get_config() -> "Config":
+        """Get the global configuration instance (singleton pattern).
+        
+        The configuration is loaded once from config.yaml (or config.yml) 
+        and cached for subsequent calls. If the config file doesn't exist,
+        uses default values.
+        
+        Returns
+        -------
+        Config
+            The global configuration instance (same instance on subsequent calls).
+        """
+        global _config
+        
+        if _config is None:
+            file_path = None
+            for path_str in ["config.yaml", "config.yml"]:
+                path = Path(path_str)
+                if path.exists():
+                    file_path = path
+                    break
+            
+            if file_path:
+                _config = Config.from_file(file_path)
+            else:
+                _config = Config()
+        
+        return _config
 
 # Global configuration instance (singleton pattern)
 _config: Optional[Config] = None
-
-def get_config() -> Config:
-    """Get the global configuration instance (singleton pattern).
-    
-    The configuration is loaded once from config.yaml (or config.yml) 
-    and cached for subsequent calls. If the config file doesn't exist,
-    uses default values.
-    
-    Returns
-    -------
-    Config
-        The global configuration instance (same instance on subsequent calls).
-    """
-    global _config
-    
-    if _config is None:
-        file_path = None
-        for path_str in ["config.yaml", "config.yml"]:
-            path = Path(path_str)
-            if path.exists():
-                file_path = path
-                break
-        
-        if file_path:
-            _config = Config.from_file(file_path)
-        else:
-            _config = Config()
-    
-    return _config

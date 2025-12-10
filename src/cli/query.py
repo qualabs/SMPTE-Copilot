@@ -3,10 +3,10 @@
 
 import sys
 from pathlib import Path
-from src import EmbeddingModelFactory, VectorStoreFactory, RetrieverFactory, get_config
+from src import EmbeddingModelFactory, VectorStoreFactory, RetrieverFactory, Config
 
 def main():
-    config = get_config()
+    config = Config.get_config()
     
     # Get query from command line argument
     if len(sys.argv) < 2:

@@ -10,7 +10,7 @@ from .chunkers import Chunker, LangChainChunker, ChunkerFactory
 from .embeddings import Embeddings, EmbeddingModelFactory, EmbeddingHelper
 from .vector_stores import VectorStore, VectorStoreFactory, VectorStoreHelper
 from .retrievers import Retriever, DocumentRetriever, RetrieverFactory
-from .config import Config, get_config
+from .config import Config
 
 __all__ = [
     # Protocols
@@ -34,6 +34,5 @@ __all__ = [
     "EmbeddingHelper",
     # Config
     "Config",
-    "get_config",
 ]
 
