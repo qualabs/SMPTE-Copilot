@@ -150,26 +150,33 @@ class VectorStoreIngester:
         # Check if chunks have pre-computed embeddings
         has_embeddings = any("embedding" in chunk.metadata for chunk in chunks)
         
-        if has_embeddings and self.store_name == "chromadb":
-            # For ChromaDB, extract embeddings and texts separately
-            texts = [chunk.page_content for chunk in chunks]
-            embeddings = [chunk.metadata.get("embedding") for chunk in chunks]
-            metadatas = [
-                {k: v for k, v in chunk.metadata.items() if k != "embedding"}
-                for chunk in chunks
-            ]
-            ids = [f"chunk_{i}" for i in range(len(chunks))]
-            
-            # Use add_texts with embeddings for ChromaDB
-            self.vector_store.add_texts(
-                texts=texts,
-                embeddings=embeddings,
-                metadatas=metadatas,
-                ids=ids,
-            )
-        else:
-            # Let the vector store compute embeddings automatically
-            self.vector_store.add_documents(chunks)
+        # Try to use add_texts with pre-computed embeddings if available
+        # This is more efficient than letting the store recompute embeddings
+        if has_embeddings and hasattr(self.vector_store, "add_texts"):
+            try:
+                # Extract embeddings and texts separately
+                texts = [chunk.page_content for chunk in chunks]
+                embeddings = [chunk.metadata.get("embedding") for chunk in chunks]
+                metadatas = [
+                    {k: v for k, v in chunk.metadata.items() if k != "embedding"}
+                    for chunk in chunks
+                ]
+                ids = [f"chunk_{i}" for i in range(len(chunks))]
+                
+                # Use add_texts with embeddings (if supported by the store)
+                self.vector_store.add_texts(
+                    texts=texts,
+                    embeddings=embeddings,
+                    metadatas=metadatas,
+                    ids=ids,
+                )
+                return
+            except (TypeError, AttributeError):
+                # Store doesn't support add_texts with embeddings, fall back
+                pass
+        
+        # Fallback: Let the vector store compute embeddings automatically
+        self.vector_store.add_documents(chunks)
 
     def search(self, query: str, k: int = 4) -> List[Document]:
         """Search the vector store for similar documents.

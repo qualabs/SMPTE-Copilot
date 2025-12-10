@@ -7,6 +7,8 @@ the required methods without requiring explicit inheritance.
 
 from .vector_store import VectorStore
 from .embeddings import Embeddings
+from .document_loader import DocumentLoader
+from .chunker import Chunker
 
-__all__ = ["VectorStore", "Embeddings"]
+__all__ = ["VectorStore", "Embeddings", "DocumentLoader", "Chunker"]
 
