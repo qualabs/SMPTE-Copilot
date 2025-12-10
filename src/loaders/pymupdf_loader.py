@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence, Union, List
+from typing import Sequence, Union, List, Dict, Any
 
 from langchain_community.document_loaders import PyMuPDFLoader as LangChainPyMuPDFLoader
 from langchain.schema import Document
@@ -67,4 +67,27 @@ class PyMuPDFLoader:
 
         target_dir = self.output_dir or self.pdf_path.parent
         return target_dir / f"{self.pdf_path.stem}.md"
+
+
+def create_pymupdf_loader(config: Dict[str, Any]) -> DocumentLoader:
+    """Create a PyMuPDF loader from configuration.
+    
+    Parameters
+    ----------
+    config
+        Configuration dictionary with keys:
+        - pdf_path: Path or str (required) - Path to the PDF file
+        - output_dir: Path or str (optional) - Directory for output markdown files
+    
+    Returns
+    -------
+    DocumentLoader instance.
+    """
+    if "pdf_path" not in config:
+        raise ValueError("pdf_path is required in config for PyMuPDF loader")
+    
+    pdf_path = Path(config["pdf_path"])
+    output_dir = Path(config["output_dir"]) if config.get("output_dir") else None
+    
+    return PyMuPDFLoader(pdf_path=pdf_path, output_dir=output_dir)
 
