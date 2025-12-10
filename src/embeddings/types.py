@@ -7,5 +7,4 @@ class EmbeddingModelType(str, Enum):
     
     HUGGINGFACE = "huggingface"
     OPENAI = "openai"
-    SENTENCE_TRANSFORMERS = "sentence-transformers"
 
