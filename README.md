@@ -235,6 +235,76 @@ This same process applies to:
 - **`retrievers/`**: Add new retrieval strategies
 - **`vector_stores/`**: Add new vector stores (Pinecone, Weaviate, etc.)
 
+## Command-Line Interface (CLI)
+
+The project provides two main CLI commands for ingesting documents and querying the vector database.
+
+### `ingest.py` - Document Ingestion
+
+The `ingest.py` command processes media files and adds them to the vector database. It is designed to support multiple file types including PDFs, images, videos, and audio files (currently supports PDFs, with multimodal support planned).
+
+The ingestion pipeline performs a 4-step process:
+
+1. **Media → Text/Markdown**: Converts input files (PDF, images, videos, audio) to text/Markdown format using the configured loader
+2. **Text → Chunks**: Splits the text into smaller chunks using the configured chunker
+3. **Chunks → Embeddings**: Generates embeddings for each chunk using the configured embedding model
+4. **Embeddings → Vector Database**: Stores the embedded chunks in the vector database
+
+**Usage:**
+```bash
+# Ingest a single file (currently supports PDF)
+python src/cli/ingest.py /path/to/document.pdf
+
+# Ingest all supported files in a directory
+python src/cli/ingest.py /path/to/directory/
+
+# Using default path from config.yaml
+python src/cli/ingest.py
+```
+
+**What it does:**
+- Accepts media files or directories containing supported file types
+- Currently supports PDF files; future versions will support images, videos, and audio
+- Uses components configured in `config.yaml` (loader, chunker, embedding model, vector store)
+- Saves processed content (e.g., Markdown files) to the configured output directory
+- Stores chunks and embeddings in the vector database at the configured `persist_directory`
+- Provides detailed logging of each step in the pipeline
+
+**Output:**
+- Processed content files saved to the configured output directory
+- Vector database populated with embedded document chunks
+- Summary of processed files, chunk counts, and database location
+
+### `query.py` - Document Querying
+
+The `query.py` command searches the vector database for documents similar to a given query using semantic search.
+
+**Usage:**
+```bash
+# Query with a question
+python src/cli/query.py "What is the main topic of the document?"
+
+# Query with multiple words (all arguments are combined)
+python src/cli/query.py your question here
+```
+
+**What it does:**
+1. Validates that the vector database exists (must run `ingest.py` first)
+2. Creates the embedding model, vector store, and retriever using `config.yaml` settings
+3. Embeds the query using the same embedding model used during ingestion
+4. Searches for the top-k most similar documents (k configured in `retrieval.k`)
+5. Displays results with similarity scores and document content
+
+**Output:**
+- List of relevant documents ranked by similarity score
+- Each result includes:
+  - Similarity score (higher = more similar)
+  - Document content (chunk text)
+  - Metadata (source file, page numbers, etc.)
+- Score interpretation guide
+
+**Important**: The embedding model used for querying must match the one used during ingestion to ensure accurate similarity search.
+
 ## Execution
 
 ```bash
