@@ -12,8 +12,8 @@ from src import (
     VectorStoreFactory,
     get_config,
 )
-from src.vector_stores.helpers import ingest_chunks_with_embeddings
-from src.embeddings.helpers import embed_chunks
+from src.vector_stores.helpers import VectorStoreHelper
+from src.embeddings.helpers import EmbeddingHelper
 
 def _resolve_pdf_inputs(input_path: Path) -> List[Path]:
     """Resolve input path to a list of PDF files."""
@@ -69,7 +69,7 @@ def ingest_pdf(
 
     # Step 3: Chunks → Embeddings
     print(f"\nStep 3: Embedding chunks (model={config.embedding.model_name})...")
-    embedded_chunks = embed_chunks(embedding_model, chunks, model_name=config.embedding.model_name)
+    embedded_chunks = EmbeddingHelper.embed_chunks(embedding_model, chunks, model_name=config.embedding.model_name)
     print(f"✓ Embedded {len(embedded_chunks)} chunks")
 
     # Step 4: Embeddings → Vector Database
@@ -77,7 +77,7 @@ def ingest_pdf(
     print(f"  Database location: {config.vector_store.persist_directory}")
     print(f"  Collection: {config.vector_store.collection_name}")
 
-    ingest_chunks_with_embeddings(vector_store, embedded_chunks)
+    VectorStoreHelper.ingest_chunks_with_embeddings(vector_store, embedded_chunks)
     if hasattr(vector_store, "persist"):
         vector_store.persist()
     print(f"✓ Ingested {len(embedded_chunks)} chunks")
