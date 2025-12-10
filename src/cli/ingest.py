@@ -9,6 +9,7 @@ from src import (
     LangChainChunker,
     ChunkEmbedder,
     VectorStoreIngester,
+    VectorStoreFactory,
     get_config,
 )
 
@@ -126,15 +127,18 @@ def main():
 
     try:
         embedder = ChunkEmbedder(model_name=config.embedding.model_name)
-        vector_store = VectorStoreIngester(
-            store_name=config.vector_store.store_name,
-            store_config={
-                "persist_directory": str(config.vector_store.persist_directory),
-                "collection_name": config.vector_store.collection_name,
-                **(config.vector_store.store_config or {}),
-            },
+        
+        # Create vector store using factory
+        store = VectorStoreFactory.create(
+            config.vector_store.store_name,
+            persist_directory=str(config.vector_store.persist_directory),
+            collection_name=config.vector_store.collection_name,
             embedding_function=embedder.embedding_model,
+            **(config.vector_store.store_config or {}),
         )
+        
+        # Create ingester with the store
+        vector_store = VectorStoreIngester(vector_store=store)
 
         for pdf_file in pdf_files:
             ingest_pdf(pdf_file, vector_store, embedder, config)

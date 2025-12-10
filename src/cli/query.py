@@ -3,7 +3,7 @@
 
 import sys
 from pathlib import Path
-from src import ChunkEmbedder, VectorStoreIngester, RetrievalPipeline, get_config
+from src import ChunkEmbedder, VectorStoreIngester, VectorStoreFactory, RetrievalPipeline, get_config
 
 def main():
     config = get_config()
@@ -39,18 +39,19 @@ def main():
         # Step 2: Initialize embedder
         embedder = ChunkEmbedder(model_name=config.embedding.model_name)
         
-        # Step 3: Load vector store
-        vector_store = VectorStoreIngester(
-            store_name=config.vector_store.store_name,
-            store_config={
-                "persist_directory": str(vector_db_path),
-                "collection_name": config.vector_store.collection_name,
-                **(config.vector_store.store_config or {}),
-            },
+        # Step 3: Create vector store using factory
+        store = VectorStoreFactory.create(
+            config.vector_store.store_name,
+            persist_directory=str(vector_db_path),
+            collection_name=config.vector_store.collection_name,
             embedding_function=embedder.embedding_model,
+            **(config.vector_store.store_config or {}),
         )
         
-        # Step 4: Create retrieval pipeline
+        # Step 4: Create ingester with the store
+        vector_store = VectorStoreIngester(vector_store=store)
+        
+        # Step 5: Create retrieval pipeline
         searcher_config = {"k": config.retrieval.k}
         if config.retrieval.searcher_config:
             searcher_config.update(config.retrieval.searcher_config)
@@ -62,11 +63,11 @@ def main():
             searcher_config=searcher_config,
         )
         
-        # Step 5: Query the database using pipeline (with scores)
+        # Step 6: Query the database using pipeline (with scores)
         print("Searching...")
         results_with_scores = pipeline.retrieve_with_scores(query)
         
-        # Step 6: Display results with similarity scores
+        # Step 7: Display results with similarity scores
         print(f"\nFound {len(results_with_scores)} relevant documents:\n")
         print("-" * 60)
         print("Similarity Score Guide:")

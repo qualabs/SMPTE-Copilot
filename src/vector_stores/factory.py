@@ -1,4 +1,24 @@
-"""Factory for creating vector store implementations."""
+"""Factory for creating vector store implementations.
+
+This module provides VectorStoreFactory, which creates instances of different
+vector store implementations (ChromaDB, Pinecone, etc.) based on a name.
+
+Relationship with VectorStoreIngester:
+    - VectorStoreFactory: Creates vector store instances (use this first)
+    - VectorStoreIngester: Wrapper that provides convenient methods for working with stores
+    
+    Usage pattern:
+        >>> # Step 1: Create store using factory
+        >>> store = VectorStoreFactory.create(
+        ...     "chromadb",
+        ...     persist_directory="./db",
+        ...     collection_name="docs",
+        ...     embedding_function=embedder.embedding_model
+        ... )
+        >>> # Step 2: Pass store to ingester
+        >>> ingester = VectorStoreIngester(vector_store=store)
+        >>> ingester.ingest_chunks(chunks)
+"""
 from __future__ import annotations
 
 from typing import List, Dict, Any, Callable
@@ -9,8 +29,7 @@ from .chromadb import create_chromadb_store
 
 
 class VectorStoreFactory:
-    """Factory for creating vector stores. Easily extensible."""
-    
+    """Factory for creating vector store implementations. Easily extensible."""
     _registry: Dict[str, Callable[[Dict[str, Any]], Any]] = {}
     
     @classmethod

@@ -1,58 +1,63 @@
-"""Vector store ingester implementation."""
+"""Vector store ingester implementation.
+
+This module provides VectorStoreIngester, a high-level wrapper around vector stores
+that simplifies document ingestion, searching, and persistence operations.
+
+Relationship with VectorStoreFactory:
+    - VectorStoreFactory: Creates vector store instances (use this first)
+    - VectorStoreIngester: Wrapper that provides convenient methods for working with stores
+    
+    Example usage:
+        # Create store using factory, then pass to ingester
+        store = VectorStoreFactory.create(
+            "chromadb",
+            persist_directory="./db",
+            collection_name="docs",
+            embedding_function=embedder.embedding_model
+        )
+        ingester = VectorStoreIngester(vector_store=store)
+        ingester.ingest_chunks(chunks)
+"""
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any
+from typing import List
 
 from langchain.schema import Document
 
 from .protocol import VectorStore
-from ..embeddings.protocol import Embeddings
-from .factory import VectorStoreFactory
 
 
 class VectorStoreIngester:
-    """Ingest documents with embeddings into vector stores. Store-agnostic interface."""
+    """High-level wrapper for ingesting documents into vector stores.
+    
+    This class provides a convenient interface for working with vector stores.
+    It wraps a VectorStore instance (created via VectorStoreFactory) and provides
+    methods for ingestion, searching, and persistence.
+    
+    Examples
+    --------
+    >>> # Create store using factory first
+    >>> store = VectorStoreFactory.create(
+    ...     "chromadb",
+    ...     persist_directory="./db",
+    ...     collection_name="docs",
+    ...     embedding_function=embedder.embedding_model
+    ... )
+    >>> # Then create ingester with the store
+    >>> ingester = VectorStoreIngester(vector_store=store)
+    >>> ingester.ingest_chunks(chunks)
+    """
 
-    def __init__(
-        self,
-        vector_store: Optional[VectorStore] = None,
-        store_name: str = "chromadb",
-        store_config: Optional[Dict[str, Any]] = None,
-        embedding_function: Optional[Embeddings] = None,
-    ):
+    def __init__(self, vector_store: VectorStore):
         """Initialize the vector store ingester.
 
         Parameters
         ----------
         vector_store
-            Pre-initialized vector store object.
-            If provided, store_name and store_config are ignored.
-        store_name
-            Name of the vector store to use.
-            Use VectorStoreFactory.list_stores() to see available stores.
-            Default: "chromadb"
-        store_config
-            Optional configuration dictionary passed to the store factory.
-            For ChromaDB: {"persist_directory": "./vector_db", "collection_name": "docs"}
-        embedding_function
-            Embedding function/model to use for the vector store.
-            Required if creating a new store.
+            Vector store instance created via VectorStoreFactory.create().
+            This must be a pre-initialized vector store object.
         """
-        if vector_store is not None:
-            # Use provided store directly - completely independent
-            self.vector_store = vector_store
-            self.store_name = "custom"
-        else:
-            # Create store using factory - easy to swap
-            config = store_config or {}
-            if embedding_function is None:
-                raise ValueError(
-                    "embedding_function is required when creating a new vector store. "
-                    "Pass the embedding model from ChunkEmbedder.embedding_model"
-                )
-            config["embedding_function"] = embedding_function
-            self.vector_store = VectorStoreFactory.create(store_name, **config)
-            self.store_name = store_name
+        self.vector_store = vector_store
 
     def ingest_chunks(self, chunks: List[Document]) -> None:
         """Ingest document chunks with embeddings into the vector store.
