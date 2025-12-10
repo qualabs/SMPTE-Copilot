@@ -4,13 +4,15 @@ from typing import Literal
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
+from src.chunkers.types import ChunkerType
+
 
 class ChunkingConfig(BaseSettings):
     """Chunking configuration."""
     
-    chunker_name: str = Field(
-        default="langchain",
-        description="Chunker name (langchain)",
+    chunker_name: ChunkerType = Field(
+        default=ChunkerType.LANGCHAIN,
+        description="Chunker type",
     )
     chunk_size: int = Field(
         default=1000,

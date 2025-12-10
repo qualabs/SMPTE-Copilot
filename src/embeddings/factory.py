@@ -1,9 +1,10 @@
 """Factory for creating embedding models."""
 from __future__ import annotations
 
-from typing import List, Dict, Any, Callable
+from typing import Dict, Any, Callable
 
 from .protocol import Embeddings
+from .types import EmbeddingModelType
 
 from .huggingface import create_huggingface_embedding, create_sentence_transformers_embedding
 from .openai import create_openai_embedding
@@ -11,30 +12,30 @@ from .openai import create_openai_embedding
 class EmbeddingModelFactory:
     """Factory for creating embedding models. Easily extensible."""
     
-    _registry: Dict[str, Callable[[Dict[str, Any]], Embeddings]] = {}
+    _registry: Dict[EmbeddingModelType, Callable[[Dict[str, Any]], Embeddings]] = {}
     
     @classmethod
-    def register(cls, name: str):
+    def register(cls, model_type: EmbeddingModelType):
         """Register a new embedding model factory.
         
         Parameters
         ----------
-        name
-            Name to register the model under.
+        model_type
+            Type to register the model under.
         """
         def decorator(factory_func: Callable[[Dict[str, Any]], Embeddings]):
-            cls._registry[name] = factory_func
+            cls._registry[model_type] = factory_func
             return factory_func
         return decorator
     
     @classmethod
-    def create(cls, model_name: str, **kwargs) -> Embeddings:
-        """Create an embedding model by name.
+    def create(cls, model_type: EmbeddingModelType, **kwargs) -> Embeddings:
+        """Create an embedding model by type.
         
         Parameters
         ----------
-        model_name
-            Name of the model to create.
+        model_type
+            Type of the model to create.
         **kwargs
             Additional arguments passed to the model factory.
             
@@ -42,15 +43,15 @@ class EmbeddingModelFactory:
         -------
         Embeddings instance.
         """
-        if model_name not in cls._registry:
-            available = ", ".join(cls._registry.keys())
+        if model_type not in cls._registry:
+            available = ", ".join(t.value for t in cls._registry.keys())
             raise ValueError(
-                f"Unknown model: {model_name}. "
+                f"Unknown model: {model_type}. "
                 f"Available models: {available}"
             )
-        return cls._registry[model_name](kwargs)
+        return cls._registry[model_type](kwargs)
 
-EmbeddingModelFactory.register("sentence-transformers")(create_sentence_transformers_embedding)
-EmbeddingModelFactory.register("huggingface")(create_huggingface_embedding)
-EmbeddingModelFactory.register("openai")(create_openai_embedding)
+EmbeddingModelFactory.register(EmbeddingModelType.SENTENCE_TRANSFORMERS)(create_sentence_transformers_embedding)
+EmbeddingModelFactory.register(EmbeddingModelType.HUGGINGFACE)(create_huggingface_embedding)
+EmbeddingModelFactory.register(EmbeddingModelType.OPENAI)(create_openai_embedding)
 

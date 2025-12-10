@@ -4,13 +4,15 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from src.embeddings.types import EmbeddingModelType
+
 
 class EmbeddingConfig(BaseSettings):
     """Embedding model configuration."""
     
-    model_name: str = Field(
-        default="huggingface",
-        description="Embedding model name (huggingface, openai, sentence-transformers)",
+    model_name: EmbeddingModelType = Field(
+        default=EmbeddingModelType.HUGGINGFACE,
+        description="Embedding model type",
     )
     model_kwargs: Optional[dict] = Field(
         default=None,

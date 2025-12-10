@@ -4,13 +4,15 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from src.retrievers.types import RetrieverType
+
 
 class RetrievalConfig(BaseSettings):
     """Retrieval pipeline configuration."""
     
-    searcher_strategy: str = Field(
-        default="similarity",
-        description="Retrieval strategy (similarity, etc.)",
+    searcher_strategy: RetrieverType = Field(
+        default=RetrieverType.SIMILARITY,
+        description="Retrieval strategy type",
     )
     k: int = Field(
         default=5,

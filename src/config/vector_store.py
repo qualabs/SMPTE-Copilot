@@ -5,13 +5,15 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from src.vector_stores.types import VectorStoreType
+
 
 class VectorStoreConfig(BaseSettings):
     """Vector store configuration."""
     
-    store_name: str = Field(
-        default="chromadb",
-        description="Vector store name (chromadb, etc.)",
+    store_name: VectorStoreType = Field(
+        default=VectorStoreType.CHROMADB,
+        description="Vector store type",
     )
     persist_directory: Path = Field(
         default=Path("/app/vector_db"),

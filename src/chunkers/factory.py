@@ -4,36 +4,37 @@ from __future__ import annotations
 from typing import Dict, Any, Callable
 
 from .protocol import Chunker
+from .types import ChunkerType
 from .langchain_chunker import create_langchain_chunker
 
 
 class ChunkerFactory:
     """Factory for creating chunker implementations. Easily extensible."""
     
-    _registry: Dict[str, Callable[[Dict[str, Any]], Chunker]] = {}
+    _registry: Dict[ChunkerType, Callable[[Dict[str, Any]], Chunker]] = {}
     
     @classmethod
-    def register(cls, name: str):
+    def register(cls, chunker_type: ChunkerType):
         """Register a new chunker factory.
         
         Parameters
         ----------
-        name
-            Name to register the chunker under.
+        chunker_type
+            Type to register the chunker under.
         """
         def decorator(factory_func: Callable[[Dict[str, Any]], Chunker]):
-            cls._registry[name] = factory_func
+            cls._registry[chunker_type] = factory_func
             return factory_func
         return decorator
     
     @classmethod
-    def create(cls, chunker_name: str, **kwargs) -> Chunker:
-        """Create a chunker by name.
+    def create(cls, chunker_type: ChunkerType, **kwargs) -> Chunker:
+        """Create a chunker by type.
         
         Parameters
         ----------
-        chunker_name
-            Name of the chunker to create.
+        chunker_type
+            Type of the chunker to create.
         **kwargs
             Additional arguments passed to the chunker factory.
             
@@ -41,13 +42,13 @@ class ChunkerFactory:
         -------
         Chunker instance.
         """
-        if chunker_name not in cls._registry:
-            available = ", ".join(cls._registry.keys())
+        if chunker_type not in cls._registry:
+            available = ", ".join(t.value for t in cls._registry.keys())
             raise ValueError(
-                f"Unknown chunker: {chunker_name}. "
+                f"Unknown chunker: {chunker_type}. "
                 f"Available chunkers: {available}"
             )
-        return cls._registry[chunker_name](kwargs)
+        return cls._registry[chunker_type](kwargs)
 
 # Register default chunkers
-ChunkerFactory.register("langchain")(create_langchain_chunker)
+ChunkerFactory.register(ChunkerType.LANGCHAIN)(create_langchain_chunker)

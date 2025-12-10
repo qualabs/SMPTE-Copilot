@@ -6,6 +6,7 @@ from typing import List
 from langchain.schema import Document
 
 from .protocol import Embeddings
+from .types import EmbeddingModelType
 
 
 class EmbeddingHelper:
@@ -15,7 +16,7 @@ class EmbeddingHelper:
     def embed_chunks(
         embedding_model: Embeddings,
         chunks: List[Document],
-        model_name: str = "unknown",
+        model_name: EmbeddingModelType,
     ) -> List[Document]:
         """Embed a list of document chunks and add embeddings to metadata.
         
@@ -26,7 +27,7 @@ class EmbeddingHelper:
         chunks
             List of LangChain Document objects to embed.
         model_name
-            Optional name of the model used (for tracking in metadata).
+            Type of the model used (for tracking in metadata).
         
         Returns
         -------
@@ -50,7 +51,7 @@ class EmbeddingHelper:
                 metadata={
                     **chunk.metadata,
                     "embedding": embedding,
-                    "embedding_model": model_name,  # Track which model was used
+                    "embedding_model": model_name.value,  # Track which model was used
                 }
             )
             embedded_chunks.append(embedded_chunk)
