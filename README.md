@@ -52,6 +52,95 @@ embeddings/
 
 6. **`__init__.py`**: Exports the main classes, types, and functions of the module to facilitate imports.
 
+## Configuration (`config.yaml`)
+
+The `config.yaml` file is the central configuration file that controls which components are used and how they are configured. Each module has a corresponding section in the configuration file.
+
+### Configuration Structure
+
+The `config.yaml` file is organized into sections that map to each module:
+
+```yaml
+loader:
+  loader_name: pymupdf          # Maps to LoaderType.PYMUPDF
+  loader_config: null           # Additional loader-specific config
+
+chunking:
+  chunker_name: langchain       # Maps to ChunkerType.LANGCHAIN
+  chunk_size: 1000              # Chunk size in characters
+  chunk_overlap: 200            # Overlap between chunks
+  method: recursive             # Chunking method
+
+embedding:
+  embed_name: huggingface       # Maps to EmbeddingModelType.HUGGINGFACE
+  embed_config:                 # Additional model-specific config
+    model_name: "sentence-transformers/all-MiniLM-L6-v2"
+
+vector_store:
+  store_name: chromadb          # Maps to VectorStoreType.CHROMADB
+  persist_directory: ./vector_db
+  collection_name: rag_collection
+  store_config: null
+
+retrieval:
+  searcher_strategy: similarity # Maps to RetrieverType.SIMILARITY
+  k: 5                          # Number of results to retrieve
+  searcher_config: null
+
+paths:
+  pdf_path: ./data
+  markdown_dir: ./data/markdown
+
+logging:
+  level: INFO
+```
+
+### How Configuration Maps to Components
+
+The configuration values directly map to the Enum types defined in each module:
+
+- **`loader_name`** → `LoaderType` enum (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`)
+- **`chunker_name`** → `ChunkerType` enum (e.g., `"langchain"` → `ChunkerType.LANGCHAIN`)
+- **`embed_name`** → `EmbeddingModelType` enum (e.g., `"huggingface"` → `EmbeddingModelType.HUGGINGFACE`)
+- **`store_name`** → `VectorStoreType` enum (e.g., `"chromadb"` → `VectorStoreType.CHROMADB`)
+- **`searcher_strategy`** → `RetrieverType` enum (e.g., `"similarity"` → `RetrieverType.SIMILARITY`)
+
+The system uses these values to:
+1. Load the configuration from `config.yaml`
+2. Map the string values to the corresponding Enum types
+3. Use the Factory pattern to create instances of the selected components
+4. Pass additional configuration parameters to the component constructors
+
+### Configuration Examples
+
+**Using HuggingFace embeddings:**
+```yaml
+embedding:
+  embed_name: huggingface
+  embed_config:
+    model_name: "sentence-transformers/all-MiniLM-L6-v2"
+```
+
+**Using OpenAI embeddings:**
+```yaml
+embedding:
+  embed_name: openai
+  embed_config:
+    model: "text-embedding-3-small"
+    openai_api_key: "${OPENAI_API_KEY}"  # Can use environment variables
+```
+
+**Using a different chunking strategy:**
+```yaml
+chunking:
+  chunker_name: langchain
+  chunk_size: 1500
+  chunk_overlap: 300
+  method: character  # Options: recursive, character, token
+```
+
+**Note**: When adding a new component, the value you use in `config.yaml` must match the Enum value (the string value, not the Enum name). For example, if you add `COHERE = "cohere"` to the Enum, use `embed_name: cohere` in the config file.
+
 ## How to Add New Components
 
 To add a new component to any module, follow these steps (we'll use the `embeddings` module as an example, but the process is identical for all modules):
@@ -127,9 +216,10 @@ Add the configuration for the new component in `config.yaml`:
 
 ```yaml
 embedding:
-  model_type: cohere  # Use the Enum value
-  model: "embed-english-v3.0"
-  cohere_api_key: "${COHERE_API_KEY}"
+  embed_name: cohere  # Use the Enum value (must match the string value in types.py)
+  embed_config:
+    model: "embed-english-v3.0"
+    cohere_api_key: "${COHERE_API_KEY}"  # Can use environment variables
 ```
 
 ### Process Summary
