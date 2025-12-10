@@ -5,6 +5,7 @@ from typing import Protocol, List, Optional, Dict, Any
 
 from langchain.schema import Document
 
+
 class VectorStore(Protocol):
     """Protocol for vector store implementations.
     

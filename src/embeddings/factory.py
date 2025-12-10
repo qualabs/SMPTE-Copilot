@@ -1,17 +1,18 @@
-"""Embedding utilities for RAG ingestion."""
+"""Embedding factory and chunk embedder implementations."""
 from __future__ import annotations
 
 from typing import List, Optional, Dict, Any, Callable
-from abc import ABC, abstractmethod
 
 from langchain.schema import Document
-from langchain.embeddings.base import Embeddings
+from langchain.embeddings.base import Embeddings as LangChainEmbeddings
+
+from .protocol import Embeddings
 
 
 class EmbeddingModelFactory:
     """Factory for creating embedding models. Easily extensible."""
     
-    _registry: Dict[str, Callable[[Dict[str, Any]], Embeddings]] = {}
+    _registry: Dict[str, Callable[[Dict[str, Any]], LangChainEmbeddings]] = {}
     
     @classmethod
     def register(cls, name: str):
@@ -22,7 +23,7 @@ class EmbeddingModelFactory:
         name
             Name to register the model under.
         """
-        def decorator(factory_func: Callable[[Dict[str, Any]], Embeddings]):
+        def decorator(factory_func: Callable[[Dict[str, Any]], LangChainEmbeddings]):
             cls._registry[name] = factory_func
             return factory_func
         return decorator
@@ -256,5 +257,3 @@ class ChunkEmbedder:
         self.embedding_model = EmbeddingModelFactory.create(model_name, **config)
         self.model_name = model_name
 
-
-__all__ = ["ChunkEmbedder", "EmbeddingModelFactory"]

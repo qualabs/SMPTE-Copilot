@@ -1,12 +1,12 @@
-"""Vector store utilities for RAG ingestion."""
+"""Vector store factory and ingester implementations."""
 from __future__ import annotations
 
 from typing import List, Optional, Dict, Any, Callable
-from pathlib import Path
 
 from langchain.schema import Document
 
-from .protocols import VectorStore, Embeddings
+from .protocol import VectorStore
+from ..embeddings.protocol import Embeddings
 
 
 class VectorStoreFactory:
@@ -229,5 +229,3 @@ class VectorStoreIngester:
             except Exception:
                 pass
 
-
-__all__ = ["VectorStoreIngester"]

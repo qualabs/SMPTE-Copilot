@@ -1,19 +1,26 @@
-"""Utilities for converting PDFs into Markdown for RAG ingestion."""
+"""PyMuPDF-based PDF loader implementation."""
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Sequence, Union, List
 
-from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_community.document_loaders import PyMuPDFLoader as LangChainPyMuPDFLoader
+from langchain.schema import Document
 import pymupdf4llm
+
+from .protocol import DocumentLoader
 
 PageSpecifier = Union[Sequence[int], range, None]
 
 
 @dataclass
-class PDFMarkdownLoader:
-    """Load PDFs via LangChain and export Markdown representations."""
+class PyMuPDFLoader:
+    """Load PDFs using PyMuPDF and export Markdown representations.
+    
+    This is a concrete implementation of the DocumentLoader protocol
+    using PyMuPDF and pymupdf4llm libraries.
+    """
 
     pdf_path: Path
     output_dir: Union[Path, None] = None
@@ -26,13 +33,11 @@ class PDFMarkdownLoader:
         if self.output_dir is not None:
             self.output_dir = self.output_dir.expanduser().resolve()
 
-    # LangChain integration -------------------------------------------------
-    def load_documents(self) -> list:
+    def load_documents(self) -> List[Document]:
         """Load the PDF into LangChain Document objects."""
-        loader = PyMuPDFLoader(str(self.pdf_path))
+        loader = LangChainPyMuPDFLoader(str(self.pdf_path))
         return loader.load()
 
-    # Markdown export -------------------------------------------------------
     def to_markdown_text(self, pages: PageSpecifier = None) -> str:
         """Return the PDF rendered as Markdown text."""
         return pymupdf4llm.to_markdown(str(self.pdf_path), pages=pages)
@@ -55,14 +60,11 @@ class PDFMarkdownLoader:
         destination.write_text(md_text, encoding="utf-8")
         return destination
 
-    # Internal helpers ------------------------------------------------------
     def _resolve_output_path(self, output_path: Union[Path, None]) -> Path:
+        """Resolve the output path for the markdown file."""
         if output_path is not None:
             return output_path.expanduser().resolve()
 
         target_dir = self.output_dir or self.pdf_path.parent
         return target_dir / f"{self.pdf_path.stem}.md"
-
-
-__all__ = ["PDFMarkdownLoader"]
 

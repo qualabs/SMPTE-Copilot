@@ -1,11 +1,12 @@
-"""Retrieval utilities for RAG queries."""
+"""Retriever factory and document retriever implementations."""
 from __future__ import annotations
 
 from typing import List, Optional, Dict, Any, Callable
 
 from langchain.schema import Document
 
-from .protocols import VectorStore
+from .protocol import Retriever
+from ..vector_stores.protocol import VectorStore
 
 
 class RetrievalStrategyFactory:
@@ -66,8 +67,6 @@ def _create_similarity_strategy(config: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-
-
 class DocumentRetriever:
     """Retrieve relevant documents from vector store. Strategy-agnostic interface."""
 
@@ -125,8 +124,4 @@ class DocumentRetriever:
         """
         k = self.strategy["k"]
         return self.vector_store.similarity_search_with_score(query, k=k)
-
-
-
-__all__ = ["DocumentRetriever"]
 

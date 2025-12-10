@@ -1,7 +1,8 @@
-"""Text chunking utilities for RAG ingestion."""
+"""LangChain-based chunker implementation."""
 from __future__ import annotations
 
 from typing import List, Optional
+from pathlib import Path
 
 from langchain.text_splitter import (
     CharacterTextSplitter,
@@ -10,9 +11,15 @@ from langchain.text_splitter import (
 )
 from langchain.schema import Document
 
+from .protocol import Chunker
 
-class MarkdownChunker:
-    """Chunk markdown text or LangChain documents for RAG processing."""
+
+class LangChainChunker:
+    """Chunk markdown text or LangChain documents using LangChain splitters.
+    
+    This is a concrete implementation of the Chunker protocol using
+    LangChain's text splitter implementations.
+    """
 
     def __init__(
         self,
@@ -131,8 +138,6 @@ class MarkdownChunker:
         -------
         List of chunked LangChain Document objects.
         """
-        from pathlib import Path
-
         path = Path(file_path)
         if not path.exists():
             raise FileNotFoundError(f"Markdown file not found: {file_path}")
@@ -144,7 +149,4 @@ class MarkdownChunker:
         }
 
         return self.chunk_text(text, metadata=metadata)
-
-
-__all__ = ["MarkdownChunker"]
 

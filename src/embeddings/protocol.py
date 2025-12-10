@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Protocol, List
 
+
 class Embeddings(Protocol):
     """Protocol for embedding model implementations.
     

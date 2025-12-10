@@ -5,9 +5,9 @@ from typing import List, Optional
 
 from langchain.schema import Document
 
-from .embeddings import ChunkEmbedder
-from .retrieval import DocumentRetriever
-from .protocols import VectorStore, Embeddings
+from .embeddings import ChunkEmbedder, Embeddings
+from .retrievers import DocumentRetriever
+from .vector_stores import VectorStore
 
 
 class RetrievalPipeline:
