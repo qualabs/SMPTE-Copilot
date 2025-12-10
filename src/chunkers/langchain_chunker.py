@@ -1,7 +1,7 @@
 """LangChain-based chunker implementation."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pathlib import Path
 
 from langchain.text_splitter import (
@@ -143,3 +143,10 @@ class LangChainChunker:
 
         return self.chunk_text(text, metadata=metadata)
 
+
+def create_langchain_chunker(config: dict) -> Chunker:
+    return LangChainChunker(
+        chunk_size=config.get("chunk_size"),
+        chunk_overlap=config.get("chunk_overlap"),
+        method=config.get("method"),
+    )
