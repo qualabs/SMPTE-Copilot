@@ -127,11 +127,12 @@ def main():
     except (FileNotFoundError, ValueError) as exc:
         logger.error(f"✗ {exc}")
         logger.error("\nUsage:")
-        logger.error("  python ingest.py /app/data/file.pdf")
-        logger.error("  python ingest.py /app/data  # Ingest all PDFs in directory")
+        logger.error("  python ingest.py ./data/file.pdf")
+        logger.error("  python ingest.py ./data  # Ingest all PDFs in directory")
         logger.error("\nConfiguration:")
         logger.error("  - Config file: config.yaml or config.yml")
         logger.error("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
+        logger.error("  - Default paths are relative to current working directory")
         sys.exit(EXIT_CODE_ERROR)
 
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)

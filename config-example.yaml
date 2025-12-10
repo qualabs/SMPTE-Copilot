@@ -21,7 +21,7 @@ embedding:
 
 vector_store:
   store_name: chromadb        # Vector store name
-  persist_directory: /app/vector_db  # Directory to persist vector store data
+  persist_directory: ./vector_db  # Directory to persist vector store data (relative to current working directory)
   collection_name: rag_collection    # Collection name in the vector store
   store_config: null         # Additional store-specific configuration (dict)
 
@@ -31,8 +31,8 @@ retrieval:
   searcher_config: null         # Additional searcher-specific configuration (dict)
 
 paths:
-  pdf_path: /app/data           # Default path for PDF files
-  markdown_dir: /app/data/markdown  # Directory for markdown output
+  pdf_path: ./data           # Default path for PDF files (relative to current working directory)
+  markdown_dir: ./data/markdown  # Directory for markdown output (relative to current working directory)
 
 logging:
   level: INFO                    # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)

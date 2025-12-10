@@ -17,8 +17,8 @@ class VectorStoreConfig(BaseSettings):
         description="Vector store type",
     )
     persist_directory: Path = Field(
-        default=Path("/app/vector_db"),
-        description="Directory to persist vector store data",
+        default=Path("./vector_db"),
+        description="Directory to persist vector store data (relative to current working directory)",
     )
     collection_name: str = Field(
         default=DEFAULT_COLLECTION_NAME,

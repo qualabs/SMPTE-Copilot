@@ -9,11 +9,11 @@ class PathsConfig(BaseSettings):
     """File paths configuration."""
     
     pdf_path: Path = Field(
-        default=Path("/app/data"),
-        description="Default path for PDF files",
+        default=Path("./data"),
+        description="Default path for PDF files (relative to current working directory)",
     )
     markdown_dir: Path = Field(
-        default=Path("/app/data/markdown"),
-        description="Directory for markdown output",
+        default=Path("./data/markdown"),
+        description="Directory for markdown output (relative to current working directory)",
     )
 
