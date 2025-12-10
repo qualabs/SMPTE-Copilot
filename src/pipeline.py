@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from langchain.schema import Document
 
-from .embeddings import ChunkEmbedder, Embeddings
+from .embeddings import ChunkEmbedder
 from .retrievers import DocumentRetriever
 from .vector_stores import VectorStore
 
@@ -22,8 +22,9 @@ class RetrievalPipeline:
     def __init__(
         self,
         vector_store: VectorStore,
-        embedding_model: Optional[Embeddings] = None,
         embedder: Optional[ChunkEmbedder] = None,
+        model_name: str = "huggingface",
+        model_config: Optional[dict] = None,
         searcher_strategy: str = "similarity",
         searcher_config: Optional[dict] = None,
     ):
@@ -33,12 +34,14 @@ class RetrievalPipeline:
         ----------
         vector_store
             Vector store instance (from VectorStoreIngester.vector_store).
-        embedding_model
-            Embedding model to use for query embedding.
-            If None, will create a default ChunkEmbedder.
         embedder
             Pre-initialized ChunkEmbedder instance.
-            If provided, embedding_model is ignored.
+            If provided, model_name and model_config are ignored.
+        model_name
+            Name of the embedding model to use.
+            Default: "huggingface"
+        model_config
+            Optional configuration for the embedding model.
         searcher_strategy
             Retrieval strategy for DocumentRetriever.
             Default: "similarity"
@@ -51,11 +54,9 @@ class RetrievalPipeline:
         # Initialize embedder
         if embedder is not None:
             self.embedder = embedder
-        elif embedding_model is not None:
-            self.embedder = ChunkEmbedder(embedding_model=embedding_model)
         else:
-            # Default to HuggingFace (free)
-            self.embedder = ChunkEmbedder(model_name="huggingface")
+            config = model_config or {}
+            self.embedder = ChunkEmbedder(model_name=model_name, model_config=config)
         
         # Initialize searcher
         config = searcher_config or {}
