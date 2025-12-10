@@ -1,7 +1,7 @@
 """Protocol for vector store implementations."""
 from __future__ import annotations
 
-from typing import Protocol, List, Optional, Dict, Any
+from typing import Any, Protocol
 
 from langchain.schema import Document
 
@@ -10,84 +10,84 @@ from ..constants import DEFAULT_RETRIEVAL_K
 
 class VectorStore(Protocol):
     """Protocol for vector store implementations.
-    
+
     Any class implementing these methods is compatible with VectorStore,
     regardless of inheritance hierarchy. This allows LangChain's vector
     stores (Chroma, Pinecone, etc.) to work seamlessly without modification.
-    
+
     """
-    
+
     def similarity_search(
-        self, 
-        query: str, 
+        self,
+        query: str,
         k: int = DEFAULT_RETRIEVAL_K
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Search for similar documents.
-        
+
         Parameters
         ----------
         query
             Search query text.
         k
             Number of results to return.
-            
+
         Returns
         -------
         List of Document objects, most similar first.
         """
         ...
-    
+
     def similarity_search_with_score(
-        self, 
-        query: str, 
+        self,
+        query: str,
         k: int = DEFAULT_RETRIEVAL_K
-    ) -> List[tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores.
-        
+
         Parameters
         ----------
         query
             Search query text.
         k
             Number of results to return.
-            
+
         Returns
         -------
         List of tuples: (Document, score), most similar first.
         Higher scores indicate better matches.
         """
         ...
-    
+
     def add_documents(
-        self, 
-        documents: List[Document]
-    ) -> List[str]:
+        self,
+        documents: list[Document]
+    ) -> list[str]:
         """Add documents to the vector store.
-        
+
         Parameters
         ----------
         documents
             List of Document objects to add.
-            
+
         Returns
         -------
         List of document IDs (if supported).
         """
         ...
-    
+
     def add_texts(
         self,
-        texts: List[str],
-        metadatas: Optional[List[Dict[str, Any]]] = None,
-        ids: Optional[List[str]] = None,
-        embeddings: Optional[List[List[float]]] = None,
-    ) -> List[str]:
+        texts: list[str],
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[str] | None = None,
+        embeddings: list[list[float]] | None = None,
+    ) -> list[str]:
         """Add texts to the vector store.
-        
+
         Add texts directly with optional embeddings and metadata.
         This method is recommended for better performance when embeddings
         are pre-computed.
-        
+
         Parameters
         ----------
         texts
@@ -98,24 +98,24 @@ class VectorStore(Protocol):
             Optional list of document IDs.
         embeddings
             Optional list of pre-computed embedding vectors.
-            
+
         Returns
         -------
         List of document IDs (if supported).
         """
         ...
-    
+
     def persist(self) -> None:
         """Persist the vector store to disk.
-        
+
         Save the vector store state to disk. This method should
         be called to ensure data is persisted.
         """
         ...
-    
-    def delete(self, ids: Optional[List[str]] = None) -> None:
+
+    def delete(self, ids: list[str] | None = None) -> None:
         """Delete documents or the entire collection.
-        
+
         Parameters
         ----------
         ids

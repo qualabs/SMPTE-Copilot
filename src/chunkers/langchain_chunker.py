@@ -1,25 +1,25 @@
 """LangChain-based chunker implementation."""
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any
 from pathlib import Path
+from typing import Any
 
+from langchain.schema import Document
 from langchain.text_splitter import (
     CharacterTextSplitter,
     RecursiveCharacterTextSplitter,
     TokenTextSplitter,
 )
-from langchain.schema import Document
 
 from ..constants import DEFAULT_ENCODING
 from .constants import (
-    DEFAULT_CHUNK_SIZE,
-    DEFAULT_CHUNK_OVERLAP,
-    CHUNKING_METHOD_RECURSIVE,
-    CHUNKING_METHOD_CHARACTER,
-    CHUNKING_METHOD_TOKEN,
-    RECURSIVE_SEPARATORS,
     CHUNK_INDEX_METADATA_KEY,
+    CHUNKING_METHOD_CHARACTER,
+    CHUNKING_METHOD_RECURSIVE,
+    CHUNKING_METHOD_TOKEN,
+    DEFAULT_CHUNK_OVERLAP,
+    DEFAULT_CHUNK_SIZE,
+    RECURSIVE_SEPARATORS,
     TOTAL_CHUNKS_METADATA_KEY,
 )
 from .protocol import Chunker
@@ -27,7 +27,7 @@ from .protocol import Chunker
 
 class LangChainChunker:
     """Chunk markdown text or LangChain documents using LangChain splitters.
-    
+
     This is a concrete implementation of the Chunker protocol using
     LangChain's text splitter implementations.
     """
@@ -75,7 +75,7 @@ class LangChainChunker:
             **extra_kwargs
         )
 
-    def chunk_text(self, text: str, metadata: Optional[dict] = None) -> List[Document]:
+    def chunk_text(self, text: str, metadata: dict | None = None) -> list[Document]:
         """Chunk a markdown text string into LangChain Documents.
 
         Parameters
@@ -103,7 +103,7 @@ class LangChainChunker:
 
         return chunks
 
-    def chunk_documents(self, documents: List[Document]) -> List[Document]:
+    def chunk_documents(self, documents: list[Document]) -> list[Document]:
         """Chunk a list of LangChain Documents into smaller chunks.
 
         Parameters
@@ -128,7 +128,7 @@ class LangChainChunker:
 
         return all_chunks
 
-    def chunk_markdown_file(self, file_path: str, encoding: str = DEFAULT_ENCODING) -> List[Document]:
+    def chunk_markdown_file(self, file_path: str, encoding: str = DEFAULT_ENCODING) -> list[Document]:
         """Load a markdown file and chunk it.
 
         Parameters
@@ -155,9 +155,9 @@ class LangChainChunker:
         return self.chunk_text(text, metadata=metadata)
 
 
-def create_langchain_chunker(config: Dict[str, Any]) -> Chunker:
+def create_langchain_chunker(config: dict[str, Any]) -> Chunker:
     """Create a LangChain chunker from configuration.
-    
+
     Parameters
     ----------
     config
@@ -165,7 +165,7 @@ def create_langchain_chunker(config: Dict[str, Any]) -> Chunker:
         - chunk_size: int (optional) - Size of text chunks in characters
         - chunk_overlap: int (optional) - Overlap between chunks in characters
         - method: str (optional) - Chunking method (recursive, character, token)
-    
+
     Returns
     -------
     Chunker instance.
@@ -174,7 +174,7 @@ def create_langchain_chunker(config: Dict[str, Any]) -> Chunker:
     chunk_size = config.get("chunk_size", DEFAULT_CHUNK_SIZE)
     chunk_overlap = config.get("chunk_overlap", DEFAULT_CHUNK_OVERLAP)
     method = config.get("method", CHUNKING_METHOD_RECURSIVE)
-    
+
     # Validate types
     if not isinstance(chunk_size, int) or chunk_size <= 0:
         raise ValueError(f"chunk_size must be a positive integer, got: {chunk_size}")
@@ -187,7 +187,7 @@ def create_langchain_chunker(config: Dict[str, Any]) -> Chunker:
             f"method must be one of: {CHUNKING_METHOD_RECURSIVE}, {CHUNKING_METHOD_CHARACTER}, "
             f"{CHUNKING_METHOD_TOKEN}, got: {method}"
         )
-    
+
     return LangChainChunker(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,

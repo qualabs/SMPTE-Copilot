@@ -1,7 +1,7 @@
 """HuggingFace embedding model implementation."""
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Any
 
 from langchain_huggingface import HuggingFaceEmbeddings
 
@@ -9,9 +9,9 @@ from .constants import DEFAULT_HUGGINGFACE_MODEL
 from .protocol import Embeddings
 
 
-def create_huggingface_embedding(config: Dict[str, Any]) -> Embeddings:
+def create_huggingface_embedding(config: dict[str, Any]) -> Embeddings:
     """Create HuggingFace embedding model.
-    
+
     Parameters
     ----------
     config
@@ -21,21 +21,21 @@ def create_huggingface_embedding(config: Dict[str, Any]) -> Embeddings:
         - encode_kwargs: dict (optional) - Additional encoding arguments
         - Other parameters supported by HuggingFaceEmbeddings constructor.
         Invalid parameters will be caught by HuggingFaceEmbeddings and raise clear errors.
-    
+
     Returns
     -------
     Embeddings instance.
-    
+
     Raises
     ------
     ValueError
         If model creation fails or invalid parameters are provided.
     """
-    
+
     # Use default model_name if not provided
     if "model_name" not in config:
         config = {**config, "model_name": DEFAULT_HUGGINGFACE_MODEL}
-    
+
     try:
         return HuggingFaceEmbeddings(**config)
     except TypeError as e:

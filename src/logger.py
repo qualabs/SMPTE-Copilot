@@ -2,11 +2,11 @@
 
 import logging
 import sys
-from typing import Optional
+
 
 class Logger:
     """Static logger utility class for configuring and accessing loggers."""
-    
+
     @staticmethod
     def setup(config) -> None:
         logging.basicConfig(

@@ -1,21 +1,22 @@
 """Logging configuration."""
 
 import logging
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
 class LoggingConfig(BaseSettings):
     """Logging configuration."""
-    
+
     level: str = Field(
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
-    
+
     def get_level(self) -> int:
         """Convert string level to logging constant.
-        
+
         Returns
         -------
         int

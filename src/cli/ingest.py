@@ -1,29 +1,31 @@
 #!/usr/bin/env python3
 """Main script to ingest media files into the vector database."""
 
+import logging
 import sys
 from pathlib import Path
-from typing import List, Dict, Tuple
+
 from src import (
-    LoaderFactory,
     ChunkerFactory,
+    Config,
     EmbeddingModelFactory,
+    Embeddings,
+    LoaderFactory,
     VectorStore,
     VectorStoreFactory,
-    Config,
-    Embeddings,
 )
-from src.loaders.types import LoaderType
-from src.loaders.helpers import LoaderHelper
-from src.vector_stores.helpers import VectorStoreHelper
-from src.embeddings.helpers import EmbeddingHelper
 from src.cli.constants import (
-    SEPARATOR_LENGTH,
-    SEPARATOR_CHAR,
     EXIT_CODE_ERROR,
+    SEPARATOR_CHAR,
+    SEPARATOR_LENGTH,
 )
+from src.embeddings.helpers import EmbeddingHelper
+from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
+from src.loaders.helpers import LoaderHelper
+from src.loaders.types import LoaderType
 from src.logger import Logger
-import logging
+from src.vector_stores.helpers import VectorStoreHelper
+
 
 def ingest_file(
     file_path: Path,
@@ -32,7 +34,7 @@ def ingest_file(
     config: Config,
 ) -> None:
     """Ingest a media file into the vector database.
-    
+
     Parameters
     ----------
     file_path
@@ -52,17 +54,17 @@ def ingest_file(
     # Determine loader based on file extension and configuration
     loader_name_str, loader_config_from_mapping = LoaderHelper.get_loader_config_for_file(file_path, config)
     file_extension = file_path.suffix.lower()
-    
+
     # Convert string to LoaderType enum
     try:
         loader_type = LoaderType(loader_name_str)
-    except ValueError:
+    except ValueError as exc:
         available = ", ".join(t.value for t in LoaderType)
         raise ValueError(
             f"Unknown loader type '{loader_name_str}' for file {file_path}. "
             f"Available loaders: {available}"
-        )
-    
+        ) from exc
+
     # Step 1: Media → Text/Markdown
     logger.info(f"Step 1: Converting {file_extension} file to Markdown (loader: {loader_name_str})...")
     loader_config = LoaderHelper.create_loader_config(
@@ -98,7 +100,7 @@ def ingest_file(
     logger.info(f"✓ Embedded {len(embedded_chunks)} chunks")
 
     # Step 4: Embeddings → Vector Database
-    logger.info(f"\nStep 4: Storing in vector database...")
+    logger.info("\nStep 4: Storing in vector database...")
     logger.info(f"  Database location: {config.vector_store.persist_directory}")
     logger.info(f"  Collection: {config.vector_store.collection_name}")
 
@@ -122,27 +124,26 @@ def main():
     """Run the ingestion pipeline for one or more media files."""
     # Load configuration
     config = Config.get_config()
-    
+
     # Setup logging from config
     Logger.setup(config)
     logger = logging.getLogger()
-    
+
     # Determine input (CLI arg > config > default path)
     input_path = config.paths.input_path
 
     try:
         media_files = LoaderHelper.resolve_media_inputs(input_path)
-    except (FileNotFoundError, ValueError) as exc:
-        logger.error(f"✗ {exc}")
-        logger.error("\nUsage:")
-        logger.error("  python ingest.py ./data  # Ingest all supported files in directory")
-        from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
+    except (FileNotFoundError, ValueError):
+        logger.exception("✗ Error resolving media inputs")
+        logger.exception("\nUsage:")
+        logger.exception("  python ingest.py ./data  # Ingest all supported files in directory")
         supported_types = ", ".join(SUPPORTED_FILE_EXTENSIONS)
-        logger.error(f"\nSupported file types: {supported_types}")
-        logger.error("\nConfiguration:")
-        logger.error("  - Config file: config.yaml or config.yml")
-        logger.error("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
-        logger.error("  - Default paths are relative to current working directory")
+        logger.exception(f"\nSupported file types: {supported_types}")
+        logger.exception("\nConfiguration:")
+        logger.exception("  - Config file: config.yaml or config.yml")
+        logger.exception("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
+        logger.exception("  - Default paths are relative to current working directory")
         sys.exit(EXIT_CODE_ERROR)
 
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
@@ -161,7 +162,7 @@ def main():
             config.embedding.embed_name,
             **(config.embedding.embed_config or {}),
         )
-        
+
         # Create vector store using factory
         vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,

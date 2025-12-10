@@ -2,16 +2,17 @@
 
 from pathlib import Path
 from typing import Optional
+
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from src.vector_stores.types import VectorStoreType
 from src.vector_stores.constants import DEFAULT_COLLECTION_NAME
+from src.vector_stores.types import VectorStoreType
 
 
 class VectorStoreConfig(BaseSettings):
     """Vector store configuration."""
-    
+
     store_name: VectorStoreType = Field(
         default=VectorStoreType.CHROMADB,
         description="Vector store type",

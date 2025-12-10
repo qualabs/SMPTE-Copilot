@@ -1,16 +1,16 @@
 """OpenAI embedding model implementation."""
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Any
 
 from langchain_openai import OpenAIEmbeddings
 
 from .protocol import Embeddings
 
 
-def create_openai_embedding(config: Dict[str, Any]) -> Embeddings:
+def create_openai_embedding(config: dict[str, Any]) -> Embeddings:
     """Create OpenAI embedding model.
-    
+
     Parameters
     ----------
     config
@@ -19,11 +19,11 @@ def create_openai_embedding(config: Dict[str, Any]) -> Embeddings:
         - openai_api_key: str (optional) - API key (can also use OPENAI_API_KEY env var)
         - Other parameters supported by OpenAIEmbeddings constructor.
         Invalid parameters will be caught by OpenAIEmbeddings and raise clear errors.
-    
+
     Returns
     -------
     Embeddings instance.
-    
+
     Raises
     ------
     ValueError

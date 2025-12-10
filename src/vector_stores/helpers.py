@@ -1,8 +1,6 @@
 """Helper class for working with vector stores."""
 from __future__ import annotations
 
-from typing import List
-
 from langchain.schema import Document
 
 from ..embeddings.constants import EMBEDDING_METADATA_KEY
@@ -12,18 +10,18 @@ from .protocol import VectorStore
 
 class VectorStoreHelper:
     """Static helper class for vector store operations."""
-    
+
     @staticmethod
     def ingest_chunks_with_embeddings(
         vector_store: VectorStore,
-        chunks: List[Document],
+        chunks: list[Document],
     ) -> None:
         """Ingest document chunks with embeddings into the vector store.
-        
+
         This helper method intelligently handles pre-computed embeddings.
         If embeddings are present in chunk metadata, it uses them directly
         (more efficient). Otherwise, it lets the vector store compute them.
-        
+
         Parameters
         ----------
         vector_store
@@ -39,7 +37,7 @@ class VectorStoreHelper:
 
         # Check if chunks have pre-computed embeddings
         has_embeddings = any(EMBEDDING_METADATA_KEY in chunk.metadata for chunk in chunks)
-        
+
         # Use add_texts with pre-computed embeddings if available
         # This is more efficient than letting the store recompute embeddings
         if has_embeddings:
@@ -51,7 +49,7 @@ class VectorStoreHelper:
                 for chunk in chunks
             ]
             ids = [f"{CHUNK_ID_PREFIX}{i}" for i in range(len(chunks))]
-            
+
             # Use add_texts with embeddings (defined in VectorStore protocol)
             vector_store.add_texts(
                 texts=texts,
@@ -60,7 +58,7 @@ class VectorStoreHelper:
                 ids=ids,
             )
             return
-        
+
         # Fallback: Let the vector store compute embeddings automatically
         vector_store.add_documents(chunks)
 

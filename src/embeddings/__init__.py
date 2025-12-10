@@ -1,9 +1,9 @@
 """Embedding implementations."""
 
-from .protocol import Embeddings
 from .factory import EmbeddingModelFactory
 from .helpers import EmbeddingHelper
+from .protocol import Embeddings
 from .types import EmbeddingModelType
 
-__all__ = ["Embeddings", "EmbeddingModelFactory", "EmbeddingHelper", "EmbeddingModelType"]
+__all__ = ["EmbeddingHelper", "EmbeddingModelFactory", "EmbeddingModelType", "Embeddings"]
 

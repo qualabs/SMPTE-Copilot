@@ -1,8 +1,6 @@
 """Helper class for working with embeddings."""
 from __future__ import annotations
 
-from typing import List
-
 from langchain.schema import Document
 
 from .constants import EMBEDDING_METADATA_KEY, EMBEDDING_MODEL_METADATA_KEY
@@ -12,15 +10,15 @@ from .types import EmbeddingModelType
 
 class EmbeddingHelper:
     """Static helper class for embedding operations."""
-    
+
     @staticmethod
     def embed_chunks(
         embedding_model: Embeddings,
-        chunks: List[Document],
+        chunks: list[Document],
         model_name: EmbeddingModelType,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Embed a list of document chunks and add embeddings to metadata.
-        
+
         Parameters
         ----------
         embedding_model
@@ -29,7 +27,7 @@ class EmbeddingHelper:
             List of LangChain Document objects to embed.
         model_name
             Type of the model used (for tracking in metadata).
-        
+
         Returns
         -------
         List of Document objects with embeddings stored in metadata.
