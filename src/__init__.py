@@ -11,6 +11,7 @@ from .embeddings import ChunkEmbedder
 from .vector_store import VectorStoreIngester
 from .retrieval import DocumentRetriever
 from .pipeline import RetrievalPipeline
+from .config import Config, get_config
 
 __all__ = [
     "PDFMarkdownLoader",
@@ -19,5 +20,7 @@ __all__ = [
     "VectorStoreIngester",
     "DocumentRetriever",
     "RetrievalPipeline",
+    "Config",
+    "get_config",
 ]
 

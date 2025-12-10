@@ -3,6 +3,9 @@ langchain>=0.3.0
 langchain-community>=0.3.0
 pymupdf>=1.24.9
 pymupdf4llm>=0.0.17
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+pyyaml>=6.0
 
 # Vector store - Required for vector database
 chromadb>=0.4.0

@@ -2,21 +2,20 @@
 """Simple script to query the vector database with a question."""
 
 import sys
-import os
 from pathlib import Path
-from src import ChunkEmbedder, VectorStoreIngester, RetrievalPipeline
-
-# Configuration - Uses environment variables (can be overridden)
-# IMPORTANT: collection_name must match COLLECTION_NAME in ingest.py
-vector_db_path = Path(os.environ.get("VECTOR_DB_PATH", "/app/vector_db"))
-collection_name = os.environ.get("COLLECTION_NAME", "rag_collection")
+from src import ChunkEmbedder, VectorStoreIngester, RetrievalPipeline, get_config
 
 def main():
+    config = get_config()
+    
     # Get query from command line argument
     if len(sys.argv) < 2:
         print("Usage: python query.py 'your question here'")
         print("\nExample:")
         print("  python query.py 'What is the main topic?'")
+        print("\nConfiguration:")
+        print("  - Config file: config.yaml or config.yml")
+        print("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
         sys.exit(1)
     
     query = " ".join(sys.argv[1:])
@@ -28,34 +27,39 @@ def main():
     
     try:
         # Step 1: Check if database exists
-        vector_db_path_obj = Path(vector_db_path)
-        if not vector_db_path_obj.exists():
-            print(f"✗ Error: Vector database not found: {vector_db_path_obj}")
+        vector_db_path = config.vector_store.persist_directory
+        if not vector_db_path.exists():
+            print(f"✗ Error: Vector database not found: {vector_db_path}")
             print("\nPlease ingest documents first:")
             print("  python ingest.py /path/to/document.pdf")
-            print("\nOr edit ingest.py to set PDF_PATH, then run:")
+            print("\nOr set RAG_CONFIG_FILE or environment variables, then run:")
             print("  python ingest.py")
             sys.exit(1)
         
         # Step 2: Initialize embedder
-        embedder = ChunkEmbedder(model_name="huggingface")
+        embedder = ChunkEmbedder(model_name=config.embedding.model_name)
         
         # Step 3: Load vector store
         vector_store = VectorStoreIngester(
-            store_name="chromadb",
+            store_name=config.vector_store.store_name,
             store_config={
-                "persist_directory": str(vector_db_path_obj),
-                "collection_name": collection_name,
+                "persist_directory": str(vector_db_path),
+                "collection_name": config.vector_store.collection_name,
+                **(config.vector_store.store_config or {}),
             },
             embedding_function=embedder.embedding_model,
         )
         
         # Step 4: Create retrieval pipeline
+        searcher_config = {"k": config.retrieval.k}
+        if config.retrieval.searcher_config:
+            searcher_config.update(config.retrieval.searcher_config)
+        
         pipeline = RetrievalPipeline(
             vector_store=vector_store.vector_store,
             embedder=embedder,
-            searcher_strategy="similarity",
-            searcher_config={"k": 5},  # Return top 5 results
+            searcher_strategy=config.retrieval.searcher_strategy,
+            searcher_config=searcher_config,
         )
         
         # Step 5: Query the database using pipeline (with scores)
@@ -89,4 +93,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -1,0 +1,28 @@
+"""Vector store configuration."""
+
+from pathlib import Path
+from typing import Optional
+from pydantic import Field
+from pydantic_settings import BaseSettings
+
+
+class VectorStoreConfig(BaseSettings):
+    """Vector store configuration."""
+    
+    store_name: str = Field(
+        default="chromadb",
+        description="Vector store name (chromadb, etc.)",
+    )
+    persist_directory: Path = Field(
+        default=Path("/app/vector_db"),
+        description="Directory to persist vector store data",
+    )
+    collection_name: str = Field(
+        default="rag_collection",
+        description="Collection name in the vector store",
+    )
+    store_config: Optional[dict] = Field(
+        default=None,
+        description="Additional store-specific configuration",
+    )
+

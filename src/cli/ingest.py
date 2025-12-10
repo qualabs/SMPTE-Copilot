@@ -2,7 +2,6 @@
 """Main script to ingest PDF documents into the vector database."""
 
 import sys
-import os
 from pathlib import Path
 from typing import List
 from src import (
@@ -10,22 +9,8 @@ from src import (
     MarkdownChunker,
     ChunkEmbedder,
     VectorStoreIngester,
+    get_config,
 )
-
-
-# Default locations (can be overridden via env vars or CLI)
-DEFAULT_PDF_LOCATION = Path(os.environ.get("PDF_PATH", "/app/data"))
-MARKDOWN_OUTPUT_DIR = Path(os.environ.get("MARKDOWN_DIR", "/app/data/markdown"))
-VECTOR_DB_PATH = Path(os.environ.get("VECTOR_DB_PATH", "/app/vector_db"))
-COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "rag_collection")
-
-# Chunking configuration
-CHUNK_SIZE = 1000
-CHUNK_OVERLAP = 200
-CHUNKING_METHOD = "recursive"  # "recursive", "character", or "token"
-
-# Embedding configuration
-EMBEDDING_MODEL = "huggingface"  # "huggingface" (free)
 
 def _resolve_pdf_inputs(input_path: Path) -> List[Path]:
     """Resolve input path to a list of PDF files."""
@@ -47,7 +32,12 @@ def _prepare_output_dir(output_dir: Path) -> Path:
     return output_dir
 
 
-def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: ChunkEmbedder) -> None:
+def ingest_pdf(
+    pdf_path: Path,
+    vector_store: VectorStoreIngester,
+    embedder: ChunkEmbedder,
+    config,
+) -> None:
     print("=" * 60)
     print(f"Ingesting: {pdf_path}")
     print("=" * 60)
@@ -56,31 +46,34 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
     print("Step 1: Converting PDF to Markdown...")
     loader = PDFMarkdownLoader(
         pdf_path,
-        output_dir=_prepare_output_dir(MARKDOWN_OUTPUT_DIR),
+        output_dir=_prepare_output_dir(config.paths.markdown_dir),
     )
     markdown_path = loader.to_markdown_file()
     print(f"✓ Markdown saved to: {markdown_path}")
 
     # Step 2: Markdown → Chunks
-    print(f"\nStep 2: Chunking markdown (size={CHUNK_SIZE}, overlap={CHUNK_OVERLAP})...")
+    print(
+        f"\nStep 2: Chunking markdown (size={config.chunking.chunk_size}, "
+        f"overlap={config.chunking.chunk_overlap})..."
+    )
     chunker = MarkdownChunker(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-        method=CHUNKING_METHOD,
+        chunk_size=config.chunking.chunk_size,
+        chunk_overlap=config.chunking.chunk_overlap,
+        method=config.chunking.method,
     )
     chunks = chunker.chunk_markdown_file(str(markdown_path))
     print(f"✓ Created {len(chunks)} chunks")
 
     # Step 3: Chunks → Embeddings
-    print(f"\nStep 3: Embedding chunks (model={EMBEDDING_MODEL})...")
+    print(f"\nStep 3: Embedding chunks (model={config.embedding.model_name})...")
     embedded_chunks = embedder.embed_chunks(chunks)
     print(f"✓ Embedded {len(embedded_chunks)} chunks")
     print(f"  Embedding dimension: {embedder.get_embedding_dimension()}")
 
     # Step 4: Embeddings → Vector Database
     print(f"\nStep 4: Storing in vector database...")
-    print(f"  Database location: {VECTOR_DB_PATH}")
-    print(f"  Collection: {COLLECTION_NAME}")
+    print(f"  Database location: {config.vector_store.persist_directory}")
+    print(f"  Collection: {config.vector_store.collection_name}")
 
     vector_store.ingest_chunks(embedded_chunks)
     vector_store.persist()
@@ -93,18 +86,21 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
     print(f"✓ PDF processed: {pdf_path.name}")
     print(f"✓ Markdown file: {markdown_path}")
     print(f"✓ Chunks created: {len(chunks)}")
-    print(f"✓ Database location: {VECTOR_DB_PATH}")
-    print(f"✓ Collection: {COLLECTION_NAME}")
+    print(f"✓ Database location: {config.vector_store.persist_directory}")
+    print(f"✓ Collection: {config.vector_store.collection_name}")
     print("=" * 60 + "\n")
 
 
 def main():
     """Run the ingestion pipeline for one or more PDFs."""
-    # Determine input (CLI arg > env var > default path)
+    # Load configuration
+    config = get_config()
+    
+    # Determine input (CLI arg > config > default path)
     if len(sys.argv) > 1:
         input_path = Path(sys.argv[1])
     else:
-        input_path = DEFAULT_PDF_LOCATION
+        input_path = config.paths.pdf_path
 
     try:
         pdf_files = _resolve_pdf_inputs(input_path)
@@ -113,30 +109,35 @@ def main():
         print("\nUsage:")
         print("  python ingest.py /app/data/file.pdf")
         print("  python ingest.py /app/data  # Ingest all PDFs in directory")
-        print("\nConfigure defaults with env vars: PDF_PATH, MARKDOWN_DIR, VECTOR_DB_PATH, COLLECTION_NAME")
+        print("\nConfiguration:")
+        print("  - Config file: config.yaml or config.yml")
+        print("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
         sys.exit(1)
 
     print("=" * 60)
     print("RAG Document Ingestion Pipeline")
     print("=" * 60)
     print(f"Inputs: {len(pdf_files)} PDF(s)")
-    print(f"Database: {VECTOR_DB_PATH}")
-    print(f"Collection: {COLLECTION_NAME}")
+    print(f"Database: {config.vector_store.persist_directory}")
+    print(f"Collection: {config.vector_store.collection_name}")
+    print(f"Chunk size: {config.chunking.chunk_size}, overlap: {config.chunking.chunk_overlap}")
+    print(f"Embedding model: {config.embedding.model_name}")
     print()
 
     try:
-        embedder = ChunkEmbedder(model_name=EMBEDDING_MODEL)
+        embedder = ChunkEmbedder(model_name=config.embedding.model_name)
         vector_store = VectorStoreIngester(
-            store_name="chromadb",
+            store_name=config.vector_store.store_name,
             store_config={
-                "persist_directory": str(VECTOR_DB_PATH),
-                "collection_name": COLLECTION_NAME,
+                "persist_directory": str(config.vector_store.persist_directory),
+                "collection_name": config.vector_store.collection_name,
+                **(config.vector_store.store_config or {}),
             },
             embedding_function=embedder.embedding_model,
         )
 
         for pdf_file in pdf_files:
-            ingest_pdf(pdf_file, vector_store, embedder)
+            ingest_pdf(pdf_file, vector_store, embedder, config)
 
         print("✓ All PDFs processed successfully.")
 

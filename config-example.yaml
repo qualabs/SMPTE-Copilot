@@ -1,0 +1,27 @@
+# Example configuration file for SMPTE-Copilot RAG system
+# Copy this file to config.yaml and modify as needed
+
+chunking:
+  chunk_size: 1000          # Size of text chunks in characters
+  chunk_overlap: 200         # Overlap between chunks in characters
+  method: recursive          # Options: recursive, character, token
+
+embedding:
+  model_name: huggingface    # Options: huggingface, openai, sentence-transformers
+  model_kwargs: null         # Additional model-specific arguments (dict)
+
+vector_store:
+  store_name: chromadb        # Vector store name
+  persist_directory: /app/vector_db  # Directory to persist vector store data
+  collection_name: rag_collection    # Collection name in the vector store
+  store_config: null         # Additional store-specific configuration (dict)
+
+retrieval:
+  searcher_strategy: similarity  # Retrieval strategy
+  k: 5                          # Number of results to retrieve
+  searcher_config: null         # Additional searcher-specific configuration (dict)
+
+paths:
+  pdf_path: /app/data           # Default path for PDF files
+  markdown_dir: /app/data/markdown  # Directory for markdown output
+
