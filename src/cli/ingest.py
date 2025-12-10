@@ -51,8 +51,6 @@ def ingest_pdf(
         "pdf_path": str(pdf_path),
         "output_dir": str(_prepare_output_dir(config.paths.markdown_dir)),
     }
-    if config.loader.loader_config:
-        loader_config.update(config.loader.loader_config)
     loader = LoaderFactory.create(
         config.loader.loader_name,
         **loader_config,
@@ -110,10 +108,7 @@ def main():
     config = get_config()
     
     # Determine input (CLI arg > config > default path)
-    if len(sys.argv) > 1:
-        input_path = Path(sys.argv[1])
-    else:
-        input_path = config.paths.pdf_path
+    input_path = config.paths.pdf_path
 
     try:
         pdf_files = _resolve_pdf_inputs(input_path)
