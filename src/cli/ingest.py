@@ -81,8 +81,8 @@ def ingest_pdf(
     print(f"✓ Created {len(chunks)} chunks")
 
     # Step 3: Chunks → Embeddings
-    print(f"\nStep 3: Embedding chunks (model={config.embedding.model_name})...")
-    embedded_chunks = EmbeddingHelper.embed_chunks(embedding_model, chunks, model_name=config.embedding.model_name)
+    print(f"\nStep 3: Embedding chunks (model={config.embedding.embed_name})...")
+    embedded_chunks = EmbeddingHelper.embed_chunks(embedding_model, chunks, model_name=config.embedding.embed_name)
     print(f"✓ Embedded {len(embedded_chunks)} chunks")
 
     # Step 4: Embeddings → Vector Database
@@ -134,14 +134,14 @@ def main():
     print(f"Database: {config.vector_store.persist_directory}")
     print(f"Collection: {config.vector_store.collection_name}")
     print(f"Chunk size: {config.chunking.chunk_size}, overlap: {config.chunking.chunk_overlap}")
-    print(f"Embedding model: {config.embedding.model_name}")
+    print(f"Embedding model: {config.embedding.embed_name}")
     print()
 
     try:
         # Create embedding model using factory
         embedding_model = EmbeddingModelFactory.create(
-            config.embedding.model_name,
-            **(config.embedding.model_config or {}),
+            config.embedding.embed_name,
+            **(config.embedding.embed_config or {}),
         )
         
         # Create vector store using factory

@@ -1,6 +1,7 @@
 """HuggingFace embedding model implementation."""
 from __future__ import annotations
 
+import inspect
 from typing import Dict, Any
 
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -11,24 +12,18 @@ from .protocol import Embeddings
 
 def create_huggingface_embedding(config: Dict[str, Any]) -> Embeddings:
     """Create HuggingFace embedding model."""
-    model_name = config.get(
-        "model_name",
-        DEFAULT_HUGGINGFACE_MODEL
-    )
+    # Get valid parameters from HuggingFaceEmbeddings constructor
+    sig = inspect.signature(HuggingFaceEmbeddings.__init__)
+    valid_params = set(sig.parameters.keys())
     
-    # Filter out model_name from config before passing to constructor
-    filtered_config = {k: v for k, v in config.items() if k != "model_name"}
+    # Filter config to only include valid parameters
+    filtered_config = {
+        k: v for k, v in config.items()
+        if k in valid_params
+    }
     
-    # Explicitly pass model_name to avoid deprecation warning
-    return HuggingFaceEmbeddings(model_name=model_name, **filtered_config)
-
-
-def create_sentence_transformers_embedding(config: Dict[str, Any]) -> Embeddings:
-    """Create sentence-transformers embedding model."""
-    model_name = config.get(
-        "model_name", 
-        DEFAULT_HUGGINGFACE_MODEL
-    )
-    # Explicitly pass model_name to avoid deprecation warning
-    return HuggingFaceEmbeddings(model_name=model_name)
-
+    # Use default model_name if not provided
+    if "model_name" not in filtered_config:
+        filtered_config["model_name"] = DEFAULT_HUGGINGFACE_MODEL
+    
+    return HuggingFaceEmbeddings(**filtered_config)

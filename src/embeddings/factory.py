@@ -6,7 +6,7 @@ from typing import Dict, Any, Callable
 from .protocol import Embeddings
 from .types import EmbeddingModelType
 
-from .huggingface import create_huggingface_embedding, create_sentence_transformers_embedding
+from .huggingface import create_huggingface_embedding
 from .openai import create_openai_embedding
 
 class EmbeddingModelFactory:
@@ -51,7 +51,5 @@ class EmbeddingModelFactory:
             )
         return cls._registry[model_type](kwargs)
 
-EmbeddingModelFactory.register(EmbeddingModelType.SENTENCE_TRANSFORMERS)(create_sentence_transformers_embedding)
 EmbeddingModelFactory.register(EmbeddingModelType.HUGGINGFACE)(create_huggingface_embedding)
 EmbeddingModelFactory.register(EmbeddingModelType.OPENAI)(create_openai_embedding)
-

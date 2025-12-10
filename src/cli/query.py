@@ -40,8 +40,8 @@ def main():
         
         # Step 2: Create embedding model using factory
         embedding_model = EmbeddingModelFactory.create(
-            config.embedding.model_name,
-            **(config.embedding.model_config or {}),
+            config.embedding.embed_name,
+            **(config.embedding.embed_config or {}),
         )
         
         # Step 3: Create vector store using factory

@@ -12,8 +12,12 @@ chunking:
   method: recursive          # Options: recursive, character, token
 
 embedding:
-  model_name: huggingface    # Options: huggingface, openai, sentence-transformers
-  model_kwargs: null         # Additional model-specific arguments (dict)
+  embed_name: huggingface    # Options: huggingface, openai
+  embed_config:              # Additional model-specific arguments (dict)
+    # For HuggingFace models, you can specify the specific model name:
+    model_name: "sentence-transformers/all-MiniLM-L6-v2"  # Default if not specified
+    # For OpenAI, you would specify:
+    # model: "text-embedding-3-small"  # or other OpenAI embedding model
 
 vector_store:
   store_name: chromadb        # Vector store name
