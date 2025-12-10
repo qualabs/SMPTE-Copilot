@@ -5,7 +5,7 @@ Utilities for converting PDF documents into Markdown, chunking, embedding,
 vector storage, and retrieval.
 """
 
-from .loaders import DocumentLoader, PyMuPDFLoader, LoaderFactory
+from .loaders import DocumentLoader, PyMuPDFLoader, LoaderFactory, LoaderHelper
 from .chunkers import Chunker, LangChainChunker, ChunkerFactory
 from .embeddings import Embeddings, EmbeddingModelFactory, EmbeddingHelper
 from .vector_stores import VectorStore, VectorStoreFactory, VectorStoreHelper
@@ -31,6 +31,7 @@ __all__ = [
     "VectorStoreFactory",
     "RetrieverFactory",
     # Helpers
+    "LoaderHelper",
     "VectorStoreHelper",
     "EmbeddingHelper",
     # Config

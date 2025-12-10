@@ -38,10 +38,8 @@ def main():
         vector_db_path = config.vector_store.persist_directory
         if not vector_db_path.exists():
             logger.error(f"✗ Error: Vector database not found: {vector_db_path}")
-            logger.error("\nPlease ingest documents first:")
-            logger.error("  python ingest.py /path/to/document.pdf")
-            logger.error("\nOr set RAG_CONFIG_FILE or environment variables, then run:")
-            logger.error("  python ingest.py")
+            logger.error("\nPlease ingest documents first Or set RAG_CONFIG_FILE or environment variables, then run:")
+            logger.error(" python ingest.py")
             sys.exit(EXIT_CODE_ERROR)
         
         # Step 2: Create embedding model using factory

@@ -1,7 +1,6 @@
 """PyMuPDF-based PDF loader implementation."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence, Union, List, Dict, Any
 
@@ -15,24 +14,38 @@ from .protocol import DocumentLoader
 PageSpecifier = Union[Sequence[int], range, None]
 
 
-@dataclass
 class PyMuPDFLoader:
     """Load PDFs using PyMuPDF and export Markdown representations.
     
     This is a concrete implementation of the DocumentLoader protocol
     using PyMuPDF and pymupdf4llm libraries.
+    
+    The loader receives a configuration dictionary and extracts the necessary
+    parameters from it. Supported config keys:
+    - file_path (required): Path to the PDF file
+    - output_dir (optional): Directory for output markdown files
+    - Any other keys are stored and can be accessed via self.config
     """
 
-    pdf_path: Path
-    output_dir: Union[Path, None] = None
-
-    def __post_init__(self) -> None:
-        self.pdf_path = self.pdf_path.expanduser().resolve()
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """Initialize the loader with a configuration dictionary.
+        
+        Parameters
+        ----------
+        config
+            Configuration dictionary. Must contain 'file_path' key.
+            Optional keys: 'output_dir', and any other loader-specific config.
+        """
+        self.config = config
+        
+        file_path = config.get("file_path")
+        
+        self.pdf_path = Path(file_path).expanduser().resolve()
         if not self.pdf_path.exists():
             raise FileNotFoundError(f"PDF not found: {self.pdf_path}")
 
-        if self.output_dir is not None:
-            self.output_dir = self.output_dir.expanduser().resolve()
+        output_dir = config.get("output_dir")
+        self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
 
     def load_documents(self) -> List[Document]:
         """Load the PDF into LangChain Document objects."""
@@ -64,7 +77,7 @@ class PyMuPDFLoader:
     def _resolve_output_path(self, output_path: Union[Path, None]) -> Path:
         """Resolve the output path for the markdown file."""
         if output_path is not None:
-            return output_path.expanduser().resolve()
+            return Path(output_path).expanduser().resolve()
 
         target_dir = self.output_dir or self.pdf_path.parent
         return target_dir / f"{self.pdf_path.stem}.md"
@@ -76,19 +89,15 @@ def create_pymupdf_loader(config: Dict[str, Any]) -> DocumentLoader:
     Parameters
     ----------
     config
-        Configuration dictionary with keys:
-        - pdf_path: Path or str (required) - Path to the PDF file
-        - output_dir: Path or str (optional) - Directory for output markdown files
+        Configuration dictionary. The loader will extract necessary parameters
+        from this config. Supported keys:
+        - file_path, pdf_path, or path (required): Path to the PDF file
+        - output_dir, output_directory, or markdown_dir (optional): Directory for output
+        - Any other keys are passed through to the loader
     
     Returns
     -------
     DocumentLoader instance.
     """
-    if "pdf_path" not in config:
-        raise ValueError("pdf_path is required in config for PyMuPDF loader")
-    
-    pdf_path = Path(config["pdf_path"])
-    output_dir = Path(config["output_dir"]) if config.get("output_dir") else None
-    
-    return PyMuPDFLoader(pdf_path=pdf_path, output_dir=output_dir)
+    return PyMuPDFLoader(config=config)
 

@@ -2,9 +2,12 @@
 # Copy this file to config.yaml and modify as needed
 
 loader:
-  loader_name: pymupdf       # Document loader name (pymupdf)
-  loader_config: null        # Additional loader-specific configuration (dict)
-
+  file_type_mapping:         # Map file extensions to loader types (required)
+    .pdf: 
+      loader_name: pymupdf            # PDF files use pymupdf loader
+      loader_config: null             # Optional loader-specific configuration
+    # Future examples (uncomment when loaders are added):
+  
 chunking:
   chunker_name: langchain    # Chunker name (langchain)
   chunk_size: 1000          # Size of text chunks in characters
@@ -31,7 +34,7 @@ retrieval:
   searcher_config: null         # Additional searcher-specific configuration (dict)
 
 paths:
-  pdf_path: ./data           # Default path for PDF files (relative to current working directory)
+  input_path: ./data         # Default path for input media files (relative to current working directory)
   markdown_dir: ./data/markdown  # Directory for markdown output (relative to current working directory)
 
 logging:

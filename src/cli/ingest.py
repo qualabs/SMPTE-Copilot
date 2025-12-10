@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Main script to ingest PDF documents into the vector database."""
+"""Main script to ingest media files into the vector database."""
 
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Tuple
 from src import (
     LoaderFactory,
     ChunkerFactory,
@@ -13,6 +13,8 @@ from src import (
     Config,
     Embeddings,
 )
+from src.loaders.types import LoaderType
+from src.loaders.helpers import LoaderHelper
 from src.vector_stores.helpers import VectorStoreHelper
 from src.embeddings.helpers import EmbeddingHelper
 from src.cli.constants import (
@@ -23,47 +25,53 @@ from src.cli.constants import (
 from src.logger import Logger
 import logging
 
-def _resolve_pdf_inputs(input_path: Path) -> List[Path]:
-    """Resolve input path to a list of PDF files."""
-    if not input_path.exists():
-        raise FileNotFoundError(f"Path not found: {input_path}")
-    if input_path.is_file():
-        if input_path.suffix.lower() != ".pdf":
-            raise ValueError(f"Not a PDF file: {input_path}")
-        return [input_path]
-    # Directory: collect all PDFs (non-recursive)
-    pdf_files = sorted(input_path.glob(f"*.pdf"))
-    if not pdf_files:
-        raise FileNotFoundError(f"No PDF files found in directory: {input_path}")
-    return pdf_files
-
-
-def _prepare_output_dir(output_dir: Path) -> Path:
-    output_dir.mkdir(parents=True, exist_ok=True)
-    return output_dir
-
-
-def ingest_pdf(
-    pdf_path: Path,
+def ingest_file(
+    file_path: Path,
     vector_store: VectorStore,
     embedding_model: Embeddings,
     config: Config,
 ) -> None:
+    """Ingest a media file into the vector database.
+    
+    Parameters
+    ----------
+    file_path
+        Path to the media file to ingest.
+    vector_store
+        Vector store instance.
+    embedding_model
+        Embedding model instance.
+    config
+        Configuration object.
+    """
     logger = logging.getLogger()
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"Ingesting: {pdf_path}")
+    logger.info(f"Ingesting: {file_path}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
-    # Step 1: PDF → Markdown
-    logger.info("Step 1: Converting PDF to Markdown...")
-    loader_config = {
-        "pdf_path": str(pdf_path),
-        "output_dir": str(_prepare_output_dir(config.paths.markdown_dir)),
-    }
-    loader = LoaderFactory.create(
-        config.loader.loader_name,
-        **loader_config,
+    # Determine loader based on file extension and configuration
+    loader_name_str, loader_config_from_mapping = LoaderHelper.get_loader_config_for_file(file_path, config)
+    file_extension = file_path.suffix.lower()
+    
+    # Convert string to LoaderType enum
+    try:
+        loader_type = LoaderType(loader_name_str)
+    except ValueError:
+        available = ", ".join(t.value for t in LoaderType)
+        raise ValueError(
+            f"Unknown loader type '{loader_name_str}' for file {file_path}. "
+            f"Available loaders: {available}"
+        )
+    
+    # Step 1: Media → Text/Markdown
+    logger.info(f"Step 1: Converting {file_extension} file to Markdown (loader: {loader_name_str})...")
+    loader_config = LoaderHelper.create_loader_config(
+        file_path,
+        loader_name_str,
+        loader_config_from_mapping,
+        config,
     )
+    loader = LoaderFactory.create(loader_type, **loader_config)
     markdown_path = loader.to_markdown_file()
     logger.info(f"✓ Markdown saved to: {markdown_path}")
 
@@ -102,7 +110,7 @@ def ingest_pdf(
     logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("Ingestion Complete!")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"✓ PDF processed: {pdf_path.name}")
+    logger.info(f"✓ File processed: {file_path.name}")
     logger.info(f"✓ Markdown file: {markdown_path}")
     logger.info(f"✓ Chunks created: {len(chunks)}")
     logger.info(f"✓ Database location: {config.vector_store.persist_directory}")
@@ -111,7 +119,7 @@ def ingest_pdf(
 
 
 def main():
-    """Run the ingestion pipeline for one or more PDFs."""
+    """Run the ingestion pipeline for one or more media files."""
     # Load configuration
     config = Config.get_config()
     
@@ -120,15 +128,17 @@ def main():
     logger = logging.getLogger()
     
     # Determine input (CLI arg > config > default path)
-    input_path = config.paths.pdf_path
+    input_path = config.paths.input_path
 
     try:
-        pdf_files = _resolve_pdf_inputs(input_path)
+        media_files = LoaderHelper.resolve_media_inputs(input_path)
     except (FileNotFoundError, ValueError) as exc:
         logger.error(f"✗ {exc}")
         logger.error("\nUsage:")
-        logger.error("  python ingest.py ./data/file.pdf")
-        logger.error("  python ingest.py ./data  # Ingest all PDFs in directory")
+        logger.error("  python ingest.py ./data  # Ingest all supported files in directory")
+        from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
+        supported_types = ", ".join(SUPPORTED_FILE_EXTENSIONS)
+        logger.error(f"\nSupported file types: {supported_types}")
         logger.error("\nConfiguration:")
         logger.error("  - Config file: config.yaml or config.yml")
         logger.error("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
@@ -136,9 +146,9 @@ def main():
         sys.exit(EXIT_CODE_ERROR)
 
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info("RAG Document Ingestion Pipeline")
+    logger.info("RAG Media Ingestion Pipeline")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"Inputs: {len(pdf_files)} PDF(s)")
+    logger.info(f"Inputs: {len(media_files)} file(s)")
     logger.info(f"Database: {config.vector_store.persist_directory}")
     logger.info(f"Collection: {config.vector_store.collection_name}")
     logger.info(f"Chunk size: {config.chunking.chunk_size}, overlap: {config.chunking.chunk_overlap}")
@@ -161,10 +171,10 @@ def main():
             **(config.vector_store.store_config or {}),
         )
 
-        for pdf_file in pdf_files:
-            ingest_pdf(pdf_file, vector_store, embedding_model, config)
+        for media_file in media_files:
+            ingest_file(media_file, vector_store, embedding_model, config)
 
-        logger.info("✓ All PDFs processed successfully.")
+        logger.info("✓ All files processed successfully.")
 
     except Exception as exc:
         logger.error(f"\n✗ Error during ingestion: {exc}", exc_info=True)

@@ -8,9 +8,9 @@ from pydantic_settings import BaseSettings
 class PathsConfig(BaseSettings):
     """File paths configuration."""
     
-    pdf_path: Path = Field(
+    input_path: Path = Field(
         default=Path("./data"),
-        description="Default path for PDF files (relative to current working directory)",
+        description="Default path for input media files (relative to current working directory)",
     )
     markdown_dir: Path = Field(
         default=Path("./data/markdown"),

@@ -62,8 +62,10 @@ The `config.yaml` file is organized into sections that map to each module:
 
 ```yaml
 loader:
-  loader_name: pymupdf          # Maps to LoaderType.PYMUPDF
-  loader_config: null           # Additional loader-specific config
+  file_type_mapping:            # Map file extensions to loader types (required)
+    .pdf: 
+      loader_name: pymupdf      # PDF files use pymupdf loader
+      loader_config: null       # Optional loader-specific configuration
 
 chunking:
   chunker_name: langchain       # Maps to ChunkerType.LANGCHAIN
@@ -88,8 +90,8 @@ retrieval:
   searcher_config: null
 
 paths:
-  pdf_path: ./data
-  markdown_dir: ./data/markdown
+  input_path: ./data            # Default path for input media files
+  markdown_dir: ./data/markdown # Directory for markdown output
 
 logging:
   level: INFO
@@ -99,7 +101,7 @@ logging:
 
 The configuration values directly map to the Enum types defined in each module:
 
-- **`loader_name`** → `LoaderType` enum (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`)
+- **`loader.file_type_mapping`** → Maps file extensions (e.g., `.pdf`) to loader configurations. Each entry contains `loader_name` (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`) and optional `loader_config`
 - **`chunker_name`** → `ChunkerType` enum (e.g., `"langchain"` → `ChunkerType.LANGCHAIN`)
 - **`embed_name`** → `EmbeddingModelType` enum (e.g., `"huggingface"` → `EmbeddingModelType.HUGGINGFACE`)
 - **`store_name`** → `VectorStoreType` enum (e.g., `"chromadb"` → `VectorStoreType.CHROMADB`)
@@ -110,6 +112,8 @@ The system uses these values to:
 2. Map the string values to the corresponding Enum types
 3. Use the Factory pattern to create instances of the selected components
 4. Pass additional configuration parameters to the component constructors
+
+**Note on Loader Configuration**: The `loader.file_type_mapping` allows you to configure different loaders for different file types. This enables the system to support multiple file formats (PDF, images, videos, audio) with appropriate loaders for each type. When adding support for a new file type, add an entry to `file_type_mapping` with the file extension as the key.
 
 ### Configuration Examples
 
@@ -137,6 +141,20 @@ chunking:
   chunk_size: 1500
   chunk_overlap: 300
   method: character  # Options: recursive, character, token
+```
+
+**Configuring loaders for different file types:**
+```yaml
+loader:
+  file_type_mapping:
+    .pdf:
+      loader_name: pymupdf
+      loader_config: null
+    # When other loaders are added, you can configure them like:
+    # .mp4:
+    #   loader_name: video_loader
+    #   loader_config:
+    #     extract_audio: true
 ```
 
 **Note**: When adding a new component, the value you use in `config.yaml` must match the Enum value (the string value, not the Enum name). For example, if you add `COHERE = "cohere"` to the Enum, use `embed_name: cohere` in the config file.
@@ -224,10 +242,10 @@ embedding:
 
 ### Process Summary
 
-1. ✅ Add type to Enum in `types.py`
-2. ✅ Create implementation file with `create_*` function
-3. ✅ Import and register in `factory.py`
-4. ✅ Configure in `config.yaml` (if applicable)
+1. Add type to Enum in `types.py`
+2. Create implementation file with `create_*` function
+3. Import and register in `factory.py`
+4. Configure in `config.yaml` (if applicable)
 
 This same process applies to:
 - **`chunkers/`**: Add new chunking algorithms
@@ -258,15 +276,16 @@ python src/cli/ingest.py /path/to/document.pdf
 # Ingest all supported files in a directory
 python src/cli/ingest.py /path/to/directory/
 
-# Using default path from config.yaml
+# Using default path from config.yaml (uses paths.input_path)
 python src/cli/ingest.py
 ```
 
 **What it does:**
 - Accepts media files or directories containing supported file types
 - Currently supports PDF files; future versions will support images, videos, and audio
+- Automatically selects the appropriate loader based on file extension using `loader.file_type_mapping` in `config.yaml`
 - Uses components configured in `config.yaml` (loader, chunker, embedding model, vector store)
-- Saves processed content (e.g., Markdown files) to the configured output directory
+- Saves processed content (e.g., Markdown files) to the configured output directory (`paths.markdown_dir`)
 - Stores chunks and embeddings in the vector database at the configured `persist_directory`
 - Provides detailed logging of each step in the pipeline
 
@@ -301,7 +320,6 @@ python src/cli/query.py your question here
   - Similarity score (higher = more similar)
   - Document content (chunk text)
   - Metadata (source file, page numbers, etc.)
-- Score interpretation guide
 
 **Important**: The embedding model used for querying must match the one used during ingestion to ensure accurate similarity search.
 
