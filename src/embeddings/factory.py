@@ -58,86 +58,12 @@ class EmbeddingModelFactory:
 
 
 # Register default embedding models
-@EmbeddingModelFactory.register("sentence-transformers")
-def _create_sentence_transformers(config: Dict[str, Any]) -> Embeddings:
-    """Create sentence-transformers embedding model."""
-    try:
-        # Try newest import path first (langchain-huggingface - recommended)
-        from langchain_huggingface import HuggingFaceEmbeddings
-    except ImportError:
-        try:
-            # Fallback to langchain_community
-            from langchain_community.embeddings import HuggingFaceEmbeddings
-        except ImportError:
-            try:
-                # Fallback to old import path
-                from langchain.embeddings import HuggingFaceEmbeddings
-            except ImportError:
-                raise ImportError(
-                    "sentence-transformers requires 'sentence-transformers', 'numpy', and 'langchain-huggingface' packages. "
-                    "Install with: pip install sentence-transformers numpy langchain-huggingface"
-                )
-    model_name = config.get(
-        "model_name", 
-        "sentence-transformers/all-MiniLM-L6-v2"
-    )
-    # Explicitly pass model_name to avoid deprecation warning
-    return HuggingFaceEmbeddings(model_name=model_name)
+from .huggingface import create_huggingface_embedding, create_sentence_transformers_embedding
+from .openai import create_openai_embedding
 
-
-@EmbeddingModelFactory.register("openai")
-def _create_openai(config: Dict[str, Any]) -> Embeddings:
-    """Create OpenAI embedding model."""
-    try:
-        # Try newest import path first (langchain-openai - recommended)
-        from langchain_openai import OpenAIEmbeddings
-    except ImportError:
-        try:
-            # Fallback to langchain_community
-            from langchain_community.embeddings import OpenAIEmbeddings
-        except ImportError:
-            try:
-                # Fallback to old import path
-                from langchain.embeddings import OpenAIEmbeddings
-            except ImportError:
-                raise ImportError(
-                    "OpenAI embeddings require 'openai', 'tiktoken', and 'langchain-openai' packages. "
-                    "Install with: pip install openai tiktoken langchain-openai"
-                )
-    return OpenAIEmbeddings(**{k: v for k, v in config.items() if k != "model_name"})
-
-
-@EmbeddingModelFactory.register("huggingface")
-def _create_huggingface(config: Dict[str, Any]) -> Embeddings:
-    """Create HuggingFace embedding model."""
-    try:
-        # Try newest import path first (langchain-huggingface - recommended)
-        from langchain_huggingface import HuggingFaceEmbeddings
-    except ImportError:
-        try:
-            # Fallback to langchain_community
-            from langchain_community.embeddings import HuggingFaceEmbeddings
-        except ImportError:
-            try:
-                # Fallback to old import path
-                from langchain.embeddings import HuggingFaceEmbeddings
-            except ImportError:
-                raise ImportError(
-                    "HuggingFace embeddings require 'sentence-transformers', 'numpy', and 'langchain-huggingface' packages. "
-                    "Install with: pip install sentence-transformers numpy langchain-huggingface"
-                )
-    
-    # Get model name from config or use default
-    model_name = config.get(
-        "model_name",
-        "sentence-transformers/all-MiniLM-L6-v2"
-    )
-    
-    # Filter out model_name from config before passing to constructor
-    filtered_config = {k: v for k, v in config.items() if k != "model_name"}
-    
-    # Explicitly pass model_name to avoid deprecation warning
-    return HuggingFaceEmbeddings(model_name=model_name, **filtered_config)
+EmbeddingModelFactory.register("sentence-transformers")(create_sentence_transformers_embedding)
+EmbeddingModelFactory.register("huggingface")(create_huggingface_embedding)
+EmbeddingModelFactory.register("openai")(create_openai_embedding)
 
 
 class ChunkEmbedder:

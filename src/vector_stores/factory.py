@@ -58,35 +58,9 @@ class VectorStoreFactory:
 
 
 # Register vector store implementations
-@VectorStoreFactory.register("chromadb")
-def _create_chromadb(config: Dict[str, Any]) -> VectorStore:
-    """Create ChromaDB vector store."""
-    try:
-        from langchain_community.vectorstores import Chroma
-        import chromadb
-    except ImportError:
-        raise ImportError(
-            "ChromaDB requires 'chromadb' and 'langchain-community' packages. "
-            "Install with: pip install chromadb langchain-community"
-        )
-    
-    # Get configuration
-    persist_directory = config.get("persist_directory", "./vector_db")
-    collection_name = config.get("collection_name", "rag_documents")
-    embedding_function = config.get("embedding_function")
-    
-    if embedding_function is None:
-        raise ValueError(
-            "ChromaDB requires an embedding_function. "
-            "Pass it via config: {'embedding_function': embedder.embedding_model}"
-        )
-    
-    # Create ChromaDB instance
-    return Chroma(
-        embedding_function=embedding_function,
-        persist_directory=persist_directory,
-        collection_name=collection_name,
-    )
+from .chromadb import create_chromadb_store
+
+VectorStoreFactory.register("chromadb")(create_chromadb_store)
 
 
 class VectorStoreIngester:
