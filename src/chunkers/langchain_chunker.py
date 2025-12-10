@@ -156,8 +156,40 @@ class LangChainChunker:
 
 
 def create_langchain_chunker(config: dict) -> Chunker:
+    """Create a LangChain chunker from configuration.
+    
+    Parameters
+    ----------
+    config
+        Configuration dictionary with keys:
+        - chunk_size: int (optional) - Size of text chunks in characters
+        - chunk_overlap: int (optional) - Overlap between chunks in characters
+        - method: str (optional) - Chunking method (recursive, character, token)
+    
+    Returns
+    -------
+    Chunker instance.
+    """
+    # Use defaults if not provided
+    chunk_size = config.get("chunk_size", DEFAULT_CHUNK_SIZE)
+    chunk_overlap = config.get("chunk_overlap", DEFAULT_CHUNK_OVERLAP)
+    method = config.get("method", CHUNKING_METHOD_RECURSIVE)
+    
+    # Validate types
+    if not isinstance(chunk_size, int) or chunk_size <= 0:
+        raise ValueError(f"chunk_size must be a positive integer, got: {chunk_size}")
+    if not isinstance(chunk_overlap, int) or chunk_overlap < 0:
+        raise ValueError(f"chunk_overlap must be a non-negative integer, got: {chunk_overlap}")
+    if chunk_overlap >= chunk_size:
+        raise ValueError(f"chunk_overlap ({chunk_overlap}) must be less than chunk_size ({chunk_size})")
+    if method not in [CHUNKING_METHOD_RECURSIVE, CHUNKING_METHOD_CHARACTER, CHUNKING_METHOD_TOKEN]:
+        raise ValueError(
+            f"method must be one of: {CHUNKING_METHOD_RECURSIVE}, {CHUNKING_METHOD_CHARACTER}, "
+            f"{CHUNKING_METHOD_TOKEN}, got: {method}"
+        )
+    
     return LangChainChunker(
-        chunk_size=config.get("chunk_size"),
-        chunk_overlap=config.get("chunk_overlap"),
-        method=config.get("method"),
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        method=method,
     )

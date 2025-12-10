@@ -21,5 +21,8 @@ def create_openai_embedding(config: Dict[str, Any]) -> Embeddings:
         if k in valid_params
     }
     
-    return OpenAIEmbeddings(**filtered_config)
+    try:
+        return OpenAIEmbeddings(**filtered_config)
+    except Exception as e:
+        raise ValueError(f"Failed to create OpenAI embedding model: {e}") from e
 

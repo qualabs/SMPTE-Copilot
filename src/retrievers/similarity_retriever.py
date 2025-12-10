@@ -64,9 +64,29 @@ class DocumentRetriever:
 
 
 def create_similarity_retriever(config: Dict[str, Any]) -> Retriever:
+    """Create a similarity retriever from configuration.
+    
+    Parameters
+    ----------
+    config
+        Configuration dictionary with keys:
+        - vector_store: VectorStore (required) - Vector store instance
+        - k: int (optional) - Number of documents to retrieve
+    
+    Returns
+    -------
+    Retriever instance.
+    """
     vector_store = config.get("vector_store")
     if vector_store is None:
         raise ValueError("vector_store is required for similarity retriever")
-    k = config.get("k")
+    
+    k = config.get("k", DEFAULT_RETRIEVAL_K)
+    
+    # Validate k if provided
+    if k is not None:
+        if not isinstance(k, int) or k <= 0:
+            raise ValueError(f"k must be a positive integer, got: {k}")
+    
     return DocumentRetriever(vector_store, k=k)
 

@@ -26,4 +26,7 @@ def create_huggingface_embedding(config: Dict[str, Any]) -> Embeddings:
     if "model_name" not in filtered_config:
         filtered_config["model_name"] = DEFAULT_HUGGINGFACE_MODEL
     
-    return HuggingFaceEmbeddings(**filtered_config)
+    try:
+        return HuggingFaceEmbeddings(**filtered_config)
+    except Exception as e:
+        raise ValueError(f"Failed to create HuggingFace embedding model: {e}") from e
