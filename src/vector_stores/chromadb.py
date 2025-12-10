@@ -6,6 +6,7 @@ from typing import Dict, Any
 from langchain_community.vectorstores import Chroma
 import chromadb  # noqa: F401
 
+from .constants import DEFAULT_COLLECTION_NAME, DEFAULT_VECTOR_DB_DIR
 from .protocol import VectorStore
 
 
@@ -14,8 +15,8 @@ def create_chromadb_store(config: Dict[str, Any]) -> VectorStore:
     from ..embeddings.protocol import Embeddings
     
     # Get configuration
-    persist_directory = config.get("persist_directory", "./vector_db")
-    collection_name = config.get("collection_name", "rag_documents")
+    persist_directory = config.get("persist_directory", DEFAULT_VECTOR_DB_DIR)
+    collection_name = config.get("collection_name", DEFAULT_COLLECTION_NAME)
     embedding_function: Embeddings = config.get("embedding_function")
     
     if embedding_function is None:

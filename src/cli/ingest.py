@@ -14,6 +14,11 @@ from src import (
 )
 from src.vector_stores.helpers import VectorStoreHelper
 from src.embeddings.helpers import EmbeddingHelper
+from .constants import (
+    SEPARATOR_LENGTH,
+    SEPARATOR_CHAR,
+    EXIT_CODE_ERROR,
+)
 
 def _resolve_pdf_inputs(input_path: Path) -> List[Path]:
     """Resolve input path to a list of PDF files."""
@@ -24,7 +29,7 @@ def _resolve_pdf_inputs(input_path: Path) -> List[Path]:
             raise ValueError(f"Not a PDF file: {input_path}")
         return [input_path]
     # Directory: collect all PDFs (non-recursive)
-    pdf_files = sorted(input_path.glob("*.pdf"))
+    pdf_files = sorted(input_path.glob(f"*.pdf"))
     if not pdf_files:
         raise FileNotFoundError(f"No PDF files found in directory: {input_path}")
     return pdf_files
@@ -41,9 +46,9 @@ def ingest_pdf(
     embedding_model,
     config,
 ) -> None:
-    print("=" * 60)
+    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     print(f"Ingesting: {pdf_path}")
-    print("=" * 60)
+    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
     # Step 1: PDF → Markdown
     print("Step 1: Converting PDF to Markdown...")
@@ -91,15 +96,15 @@ def ingest_pdf(
     print(f"✓ Ingested {len(embedded_chunks)} chunks")
 
     # Summary
-    print("\n" + "=" * 60)
+    print("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
     print("Ingestion Complete!")
-    print("=" * 60)
+    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     print(f"✓ PDF processed: {pdf_path.name}")
     print(f"✓ Markdown file: {markdown_path}")
     print(f"✓ Chunks created: {len(chunks)}")
     print(f"✓ Database location: {config.vector_store.persist_directory}")
     print(f"✓ Collection: {config.vector_store.collection_name}")
-    print("=" * 60 + "\n")
+    print(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
 
 
 def main():
@@ -120,11 +125,11 @@ def main():
         print("\nConfiguration:")
         print("  - Config file: config.yaml or config.yml")
         print("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
-        sys.exit(1)
+        sys.exit(EXIT_CODE_ERROR)
 
-    print("=" * 60)
+    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     print("RAG Document Ingestion Pipeline")
-    print("=" * 60)
+    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     print(f"Inputs: {len(pdf_files)} PDF(s)")
     print(f"Database: {config.vector_store.persist_directory}")
     print(f"Collection: {config.vector_store.collection_name}")
@@ -158,7 +163,7 @@ def main():
         import traceback
 
         traceback.print_exc()
-        sys.exit(1)
+        sys.exit(EXIT_CODE_ERROR)
 
 
 if __name__ == "__main__":

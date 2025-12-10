@@ -5,6 +5,8 @@ from typing import List
 
 from langchain.schema import Document
 
+from ..embeddings.constants import EMBEDDING_METADATA_KEY
+from .constants import CHUNK_ID_PREFIX
 from .protocol import VectorStore
 
 
@@ -36,7 +38,7 @@ class VectorStoreHelper:
             return
 
         # Check if chunks have pre-computed embeddings
-        has_embeddings = any("embedding" in chunk.metadata for chunk in chunks)
+        has_embeddings = any(EMBEDDING_METADATA_KEY in chunk.metadata for chunk in chunks)
         
         # Try to use add_texts with pre-computed embeddings if available
         # This is more efficient than letting the store recompute embeddings
@@ -44,12 +46,12 @@ class VectorStoreHelper:
             try:
                 # Extract embeddings and texts separately
                 texts = [chunk.page_content for chunk in chunks]
-                embeddings = [chunk.metadata.get("embedding") for chunk in chunks]
+                embeddings = [chunk.metadata.get(EMBEDDING_METADATA_KEY) for chunk in chunks]
                 metadatas = [
-                    {k: v for k, v in chunk.metadata.items() if k != "embedding"}
+                    {k: v for k, v in chunk.metadata.items() if k != EMBEDDING_METADATA_KEY}
                     for chunk in chunks
                 ]
-                ids = [f"chunk_{i}" for i in range(len(chunks))]
+                ids = [f"{CHUNK_ID_PREFIX}{i}" for i in range(len(chunks))]
                 
                 # Use add_texts with embeddings (if supported by the store)
                 vector_store.add_texts(

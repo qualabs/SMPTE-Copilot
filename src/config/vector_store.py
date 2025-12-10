@@ -6,6 +6,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 from src.vector_stores.types import VectorStoreType
+from src.vector_stores.constants import DEFAULT_COLLECTION_NAME
 
 
 class VectorStoreConfig(BaseSettings):
@@ -20,7 +21,7 @@ class VectorStoreConfig(BaseSettings):
         description="Directory to persist vector store data",
     )
     collection_name: str = Field(
-        default="rag_collection",
+        default=DEFAULT_COLLECTION_NAME,
         description="Collection name in the vector store",
     )
     store_config: Optional[dict] = Field(

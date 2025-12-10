@@ -5,6 +5,7 @@ from typing import Dict, Any
 
 from langchain_huggingface import HuggingFaceEmbeddings
 
+from .constants import DEFAULT_HUGGINGFACE_MODEL
 from .protocol import Embeddings
 
 
@@ -12,7 +13,7 @@ def create_huggingface_embedding(config: Dict[str, Any]) -> Embeddings:
     """Create HuggingFace embedding model."""
     model_name = config.get(
         "model_name",
-        "sentence-transformers/all-MiniLM-L6-v2"
+        DEFAULT_HUGGINGFACE_MODEL
     )
     
     # Filter out model_name from config before passing to constructor
@@ -26,7 +27,7 @@ def create_sentence_transformers_embedding(config: Dict[str, Any]) -> Embeddings
     """Create sentence-transformers embedding model."""
     model_name = config.get(
         "model_name", 
-        "sentence-transformers/all-MiniLM-L6-v2"
+        DEFAULT_HUGGINGFACE_MODEL
     )
     # Explicitly pass model_name to avoid deprecation warning
     return HuggingFaceEmbeddings(model_name=model_name)

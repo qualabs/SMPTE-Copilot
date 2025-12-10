@@ -5,6 +5,7 @@ from typing import List
 
 from langchain.schema import Document
 
+from .constants import EMBEDDING_METADATA_KEY, EMBEDDING_MODEL_METADATA_KEY
 from .protocol import Embeddings
 from .types import EmbeddingModelType
 
@@ -50,8 +51,8 @@ class EmbeddingHelper:
                 page_content=chunk.page_content,
                 metadata={
                     **chunk.metadata,
-                    "embedding": embedding,
-                    "embedding_model": model_name.value,  # Track which model was used
+                    EMBEDDING_METADATA_KEY: embedding,
+                    EMBEDDING_MODEL_METADATA_KEY: model_name.value,  # Track which model was used
                 }
             )
             embedded_chunks.append(embedded_chunk)

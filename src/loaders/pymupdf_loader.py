@@ -9,6 +9,7 @@ from langchain_community.document_loaders import PyMuPDFLoader as LangChainPyMuP
 from langchain.schema import Document
 import pymupdf4llm
 
+from ..constants import DEFAULT_ENCODING
 from .protocol import DocumentLoader
 
 PageSpecifier = Union[Sequence[int], range, None]
@@ -57,7 +58,7 @@ class PyMuPDFLoader:
         if destination.exists() and not overwrite:
             raise FileExistsError(f"File already exists: {destination}")
 
-        destination.write_text(md_text, encoding="utf-8")
+        destination.write_text(md_text, encoding=DEFAULT_ENCODING)
         return destination
 
     def _resolve_output_path(self, output_path: Union[Path, None]) -> Path:

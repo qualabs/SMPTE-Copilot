@@ -5,6 +5,8 @@ from typing import Protocol, List, Optional
 
 from langchain.schema import Document
 
+from ..constants import DEFAULT_ENCODING
+
 
 class Chunker(Protocol):
     """Protocol for text chunking implementations.
@@ -47,7 +49,7 @@ class Chunker(Protocol):
     def chunk_markdown_file(
         self, 
         file_path: str, 
-        encoding: str = "utf-8"
+        encoding: str = DEFAULT_ENCODING
     ) -> List[Document]:
         """Load a markdown file and chunk it.
         

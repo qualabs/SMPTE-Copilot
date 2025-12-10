@@ -11,6 +11,17 @@ from langchain.text_splitter import (
 )
 from langchain.schema import Document
 
+from ..constants import DEFAULT_ENCODING
+from .constants import (
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_CHUNK_OVERLAP,
+    CHUNKING_METHOD_RECURSIVE,
+    CHUNKING_METHOD_CHARACTER,
+    CHUNKING_METHOD_TOKEN,
+    RECURSIVE_SEPARATORS,
+    CHUNK_INDEX_METADATA_KEY,
+    TOTAL_CHUNKS_METADATA_KEY,
+)
 from .protocol import Chunker
 
 
@@ -23,9 +34,9 @@ class LangChainChunker:
 
     def __init__(
         self,
-        chunk_size: int = 1000,
-        chunk_overlap: int = 200,
-        method: str = "recursive",
+        chunk_size: int = DEFAULT_CHUNK_SIZE,
+        chunk_overlap: int = DEFAULT_CHUNK_OVERLAP,
+        method: str = CHUNKING_METHOD_RECURSIVE,
     ):
         """Initialize the chunker.
 
@@ -49,9 +60,9 @@ class LangChainChunker:
     def _create_splitter(self):
         """Create the appropriate text splitter based on method."""
         splitters = {
-            "recursive": (RecursiveCharacterTextSplitter, {"separators": ["\n\n", "\n", ". ", " ", ""]}),
-            "character": (CharacterTextSplitter, {"separator": "\n\n"}),
-            "token": (TokenTextSplitter, {}),
+            CHUNKING_METHOD_RECURSIVE: (RecursiveCharacterTextSplitter, {"separators": RECURSIVE_SEPARATORS}),
+            CHUNKING_METHOD_CHARACTER: (CharacterTextSplitter, {"separator": "\n\n"}),
+            CHUNKING_METHOD_TOKEN: (TokenTextSplitter, {}),
         }
         if self.method not in splitters:
             raise ValueError(
@@ -87,8 +98,8 @@ class LangChainChunker:
 
         # Add chunk index to metadata
         for i, chunk in enumerate(chunks):
-            chunk.metadata["chunk_index"] = i
-            chunk.metadata["total_chunks"] = len(chunks)
+            chunk.metadata[CHUNK_INDEX_METADATA_KEY] = i
+            chunk.metadata[TOTAL_CHUNKS_METADATA_KEY] = len(chunks)
 
         return chunks
 
@@ -112,12 +123,12 @@ class LangChainChunker:
 
         # Add chunk metadata
         for i, chunk in enumerate(all_chunks):
-            chunk.metadata["chunk_index"] = i
-            chunk.metadata["total_chunks"] = len(all_chunks)
+            chunk.metadata[CHUNK_INDEX_METADATA_KEY] = i
+            chunk.metadata[TOTAL_CHUNKS_METADATA_KEY] = len(all_chunks)
 
         return all_chunks
 
-    def chunk_markdown_file(self, file_path: str, encoding: str = "utf-8") -> List[Document]:
+    def chunk_markdown_file(self, file_path: str, encoding: str = DEFAULT_ENCODING) -> List[Document]:
         """Load a markdown file and chunk it.
 
         Parameters

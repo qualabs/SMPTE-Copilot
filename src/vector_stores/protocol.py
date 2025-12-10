@@ -5,6 +5,8 @@ from typing import Protocol, List, Optional, Dict, Any
 
 from langchain.schema import Document
 
+from ..constants import DEFAULT_RETRIEVAL_K
+
 
 class VectorStore(Protocol):
     """Protocol for vector store implementations.
@@ -19,7 +21,7 @@ class VectorStore(Protocol):
     def similarity_search(
         self, 
         query: str, 
-        k: int = 4
+        k: int = DEFAULT_RETRIEVAL_K
     ) -> List[Document]:
         """Search for similar documents.
         
@@ -39,7 +41,7 @@ class VectorStore(Protocol):
     def similarity_search_with_score(
         self, 
         query: str, 
-        k: int = 4
+        k: int = DEFAULT_RETRIEVAL_K
     ) -> List[tuple[Document, float]]:
         """Search for similar documents with similarity scores.
         

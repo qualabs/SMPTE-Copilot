@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 
 from langchain.schema import Document
 
+from ..constants import DEFAULT_RETRIEVAL_K
 from .protocol import Retriever
 from ..vector_stores.protocol import VectorStore
 
@@ -19,7 +20,7 @@ class DocumentRetriever:
     def __init__(
         self,
         vector_store: VectorStore,
-        k: int = 4,
+        k: int = DEFAULT_RETRIEVAL_K,
     ):
         """Initialize the retriever.
 
@@ -28,7 +29,7 @@ class DocumentRetriever:
         vector_store
             Vector store instance (created via VectorStoreFactory).
         k
-            Number of documents to retrieve. Default: 4
+            Number of documents to retrieve. Default: DEFAULT_RETRIEVAL_K
         """
         self.vector_store = vector_store
         self.k = k

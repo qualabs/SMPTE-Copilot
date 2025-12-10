@@ -5,6 +5,7 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 
 from src.retrievers.types import RetrieverType
+from src.constants import DEFAULT_RETRIEVAL_K  # Shared across retrievers, vector_stores, and config
 
 
 class RetrievalConfig(BaseSettings):
@@ -15,7 +16,7 @@ class RetrievalConfig(BaseSettings):
         description="Retrieval strategy type",
     )
     k: int = Field(
-        default=5,
+        default=DEFAULT_RETRIEVAL_K,
         description="Number of results to retrieve",
         gt=0,
     )

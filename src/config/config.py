@@ -2,9 +2,11 @@
 
 from pathlib import Path
 from typing import Optional
+import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from .constants import CONFIG_FILE_NAME
 from .chunking import ChunkingConfig
 from .embedding import EmbeddingConfig
 from .loader import LoaderConfig
@@ -30,12 +32,9 @@ class Config(BaseSettings):
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
         
-        suffix = config_path.suffix.lower()
+        if config_path.suffix.lower() != ".yaml":
+            raise ValueError(f"Configuration file must be YAML (.yaml), got: {config_path.suffix}")
         
-        if suffix not in (".yaml", ".yml"):
-            raise ValueError(f"Configuration file must be YAML (.yaml or .yml), got: {suffix}")
-        
-        import yaml
         with open(config_path, "r") as f:
             data = yaml.safe_load(f) or {}
         
@@ -46,7 +45,7 @@ class Config(BaseSettings):
     def get_config() -> "Config":
         """Get the global configuration instance (singleton pattern).
         
-        The configuration is loaded once from config.yaml (or config.yml) 
+        The configuration is loaded once from config.yaml 
         and cached for subsequent calls. If the config file doesn't exist,
         uses default values.
         
@@ -58,15 +57,9 @@ class Config(BaseSettings):
         global _config
         
         if _config is None:
-            file_path = None
-            for path_str in ["config.yaml", "config.yml"]:
-                path = Path(path_str)
-                if path.exists():
-                    file_path = path
-                    break
-            
-            if file_path:
-                _config = Config.from_file(file_path)
+            config_path = Path(CONFIG_FILE_NAME)
+            if config_path.exists():
+                _config = Config.from_file(config_path)
             else:
                 _config = Config()
         
