@@ -48,28 +48,21 @@ class LangChainChunker:
 
     def _create_splitter(self):
         """Create the appropriate text splitter based on method."""
-        if self.method == "recursive":
-            return RecursiveCharacterTextSplitter(
-                chunk_size=self.chunk_size,
-                chunk_overlap=self.chunk_overlap,
-                separators=["\n\n", "\n", ". ", " ", ""],
-            )
-        elif self.method == "character":
-            return CharacterTextSplitter(
-                chunk_size=self.chunk_size,
-                chunk_overlap=self.chunk_overlap,
-                separator="\n\n",
-            )
-        elif self.method == "token":
-            return TokenTextSplitter(
-                chunk_size=self.chunk_size,
-                chunk_overlap=self.chunk_overlap,
-            )
-        else:
+        splitters = {
+            "recursive": (RecursiveCharacterTextSplitter, {"separators": ["\n\n", "\n", ". ", " ", ""]}),
+            "character": (CharacterTextSplitter, {"separator": "\n\n"}),
+            "token": (TokenTextSplitter, {}),
+        }
+        if self.method not in splitters:
             raise ValueError(
-                f"Unknown method: {self.method}. "
-                "Choose from: 'recursive', 'character', 'token'"
+                f"Unknown method: {self.method}. Choose from: {', '.join(splitters.keys())}"
             )
+        splitter_class, extra_kwargs = splitters[self.method]
+        return splitter_class(
+            chunk_size=self.chunk_size,
+            chunk_overlap=self.chunk_overlap,
+            **extra_kwargs
+        )
 
     def chunk_text(self, text: str, metadata: Optional[dict] = None) -> List[Document]:
         """Chunk a markdown text string into LangChain Documents.
