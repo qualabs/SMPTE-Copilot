@@ -1,7 +1,7 @@
 """Chunking configuration."""
 
 from typing import Literal
-from pydantic import Field, field_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings
 
 from src.chunkers.types import ChunkerType
@@ -34,11 +34,12 @@ class ChunkingConfig(BaseSettings):
         description="Chunking method to use",
     )
     
-    @field_validator("chunk_overlap")
-    @classmethod
-    def validate_overlap(cls, v: int, info) -> int:
-        """Ensure overlap is less than chunk size."""
-        if "chunk_size" in info.data and v >= info.data["chunk_size"]:
-            raise ValueError("chunk_overlap must be less than chunk_size")
-        return v
+    @model_validator(mode='after')
+    def validate_overlap_less_than_size(self) -> 'ChunkingConfig':
+        if self.chunk_overlap >= self.chunk_size:
+            raise ValueError(
+                f"chunk_overlap ({self.chunk_overlap}) must be less than "
+                f"chunk_size ({self.chunk_size})"
+            )
+        return self
 
