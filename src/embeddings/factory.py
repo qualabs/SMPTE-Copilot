@@ -3,8 +3,6 @@ from __future__ import annotations
 
 from typing import List, Dict, Any, Callable
 
-from langchain.embeddings.base import Embeddings as LangChainEmbeddings
-
 from .protocol import Embeddings
 
 from .huggingface import create_huggingface_embedding, create_sentence_transformers_embedding
@@ -13,7 +11,7 @@ from .openai import create_openai_embedding
 class EmbeddingModelFactory:
     """Factory for creating embedding models. Easily extensible."""
     
-    _registry: Dict[str, Callable[[Dict[str, Any]], LangChainEmbeddings]] = {}
+    _registry: Dict[str, Callable[[Dict[str, Any]], Embeddings]] = {}
     
     @classmethod
     def register(cls, name: str):
@@ -24,7 +22,7 @@ class EmbeddingModelFactory:
         name
             Name to register the model under.
         """
-        def decorator(factory_func: Callable[[Dict[str, Any]], LangChainEmbeddings]):
+        def decorator(factory_func: Callable[[Dict[str, Any]], Embeddings]):
             cls._registry[name] = factory_func
             return factory_func
         return decorator
