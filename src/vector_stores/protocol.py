@@ -15,7 +15,6 @@ class VectorStore(Protocol):
     regardless of inheritance hierarchy. This allows LangChain's vector
     stores (Chroma, Pinecone, etc.) to work seamlessly without modification.
     
-    Methods marked as optional may not be available in all implementations.
     """
     
     def similarity_search(
@@ -83,11 +82,11 @@ class VectorStore(Protocol):
         ids: Optional[List[str]] = None,
         embeddings: Optional[List[List[float]]] = None,
     ) -> List[str]:
-        """Add texts to the vector store (optional method).
+        """Add texts to the vector store.
         
-        Some vector stores support adding texts directly with optional
-        embeddings and metadata. This method is optional but recommended
-        for better performance when embeddings are pre-computed.
+        Add texts directly with optional embeddings and metadata.
+        This method is recommended for better performance when embeddings
+        are pre-computed.
         
         Parameters
         ----------
@@ -107,15 +106,15 @@ class VectorStore(Protocol):
         ...
     
     def persist(self) -> None:
-        """Persist the vector store to disk (optional method).
+        """Persist the vector store to disk.
         
-        Not all vector stores support persistence. This method should
-        be called if available to save the vector store state.
+        Save the vector store state to disk. This method should
+        be called to ensure data is persisted.
         """
         ...
     
     def delete(self, ids: Optional[List[str]] = None) -> None:
-        """Delete documents or the entire collection (optional method).
+        """Delete documents or the entire collection.
         
         Parameters
         ----------

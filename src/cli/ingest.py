@@ -94,8 +94,7 @@ def ingest_pdf(
     logger.info(f"  Collection: {config.vector_store.collection_name}")
 
     VectorStoreHelper.ingest_chunks_with_embeddings(vector_store, embedded_chunks)
-    if hasattr(vector_store, "persist"):
-        vector_store.persist()
+    vector_store.persist()
     logger.info(f"✓ Ingested {len(embedded_chunks)} chunks")
 
     # Summary

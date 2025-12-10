@@ -40,30 +40,26 @@ class VectorStoreHelper:
         # Check if chunks have pre-computed embeddings
         has_embeddings = any(EMBEDDING_METADATA_KEY in chunk.metadata for chunk in chunks)
         
-        # Try to use add_texts with pre-computed embeddings if available
+        # Use add_texts with pre-computed embeddings if available
         # This is more efficient than letting the store recompute embeddings
-        if has_embeddings and hasattr(vector_store, "add_texts"):
-            try:
-                # Extract embeddings and texts separately
-                texts = [chunk.page_content for chunk in chunks]
-                embeddings = [chunk.metadata.get(EMBEDDING_METADATA_KEY) for chunk in chunks]
-                metadatas = [
-                    {k: v for k, v in chunk.metadata.items() if k != EMBEDDING_METADATA_KEY}
-                    for chunk in chunks
-                ]
-                ids = [f"{CHUNK_ID_PREFIX}{i}" for i in range(len(chunks))]
-                
-                # Use add_texts with embeddings (if supported by the store)
-                vector_store.add_texts(
-                    texts=texts,
-                    embeddings=embeddings,
-                    metadatas=metadatas,
-                    ids=ids,
-                )
-                return
-            except (TypeError, AttributeError):
-                # Store doesn't support add_texts with embeddings, fall back
-                pass
+        if has_embeddings:
+            # Extract embeddings and texts separately
+            texts = [chunk.page_content for chunk in chunks]
+            embeddings = [chunk.metadata.get(EMBEDDING_METADATA_KEY) for chunk in chunks]
+            metadatas = [
+                {k: v for k, v in chunk.metadata.items() if k != EMBEDDING_METADATA_KEY}
+                for chunk in chunks
+            ]
+            ids = [f"{CHUNK_ID_PREFIX}{i}" for i in range(len(chunks))]
+            
+            # Use add_texts with embeddings (defined in VectorStore protocol)
+            vector_store.add_texts(
+                texts=texts,
+                embeddings=embeddings,
+                metadatas=metadatas,
+                ids=ids,
+            )
+            return
         
         # Fallback: Let the vector store compute embeddings automatically
         vector_store.add_documents(chunks)
