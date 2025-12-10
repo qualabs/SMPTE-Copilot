@@ -12,6 +12,7 @@ from .vector_store import VectorStoreIngester
 from .retrieval import DocumentRetriever
 from .pipeline import RetrievalPipeline
 from .config import Config, get_config
+from .protocols import VectorStore, Embeddings
 
 __all__ = [
     "PDFMarkdownLoader",
@@ -22,5 +23,7 @@ __all__ = [
     "RetrievalPipeline",
     "Config",
     "get_config",
+    "VectorStore",
+    "Embeddings",
 ]
 

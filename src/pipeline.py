@@ -1,12 +1,13 @@
 """Retrieval pipeline for RAG queries."""
 from __future__ import annotations
 
-from typing import List, Optional, Any
+from typing import List, Optional
 
 from langchain.schema import Document
 
 from .embeddings import ChunkEmbedder
 from .retrieval import DocumentRetriever
+from .protocols import VectorStore, Embeddings
 
 
 class RetrievalPipeline:
@@ -20,8 +21,8 @@ class RetrievalPipeline:
 
     def __init__(
         self,
-        vector_store: Any,
-        embedding_model: Any = None,
+        vector_store: VectorStore,
+        embedding_model: Optional[Embeddings] = None,
         embedder: Optional[ChunkEmbedder] = None,
         searcher_strategy: str = "similarity",
         searcher_config: Optional[dict] = None,
@@ -85,7 +86,7 @@ class RetrievalPipeline:
         
         return results
 
-    def retrieve_with_scores(self, query: str) -> List[tuple]:
+    def retrieve_with_scores(self, query: str) -> List[tuple[Document, float]]:
         """Run the retrieval pipeline and return results with similarity scores.
 
         Parameters

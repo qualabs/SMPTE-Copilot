@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 from typing import List, Optional, Dict, Any, Callable
-from abc import ABC, abstractmethod
 from pathlib import Path
 
 from langchain.schema import Document
+
+from .protocols import VectorStore, Embeddings
 
 
 class VectorStoreFactory:
@@ -28,7 +29,7 @@ class VectorStoreFactory:
         return decorator
     
     @classmethod
-    def create(cls, store_name: str, **kwargs) -> Any:
+    def create(cls, store_name: str, **kwargs) -> VectorStore:
         """Create a vector store by name.
         
         Parameters
@@ -58,7 +59,7 @@ class VectorStoreFactory:
 
 # Register vector store implementations
 @VectorStoreFactory.register("chromadb")
-def _create_chromadb(config: Dict[str, Any]) -> Any:
+def _create_chromadb(config: Dict[str, Any]) -> VectorStore:
     """Create ChromaDB vector store."""
     try:
         from langchain_community.vectorstores import Chroma
@@ -93,10 +94,10 @@ class VectorStoreIngester:
 
     def __init__(
         self,
-        vector_store: Any = None,
+        vector_store: Optional[VectorStore] = None,
         store_name: str = "chromadb",
         store_config: Optional[Dict[str, Any]] = None,
-        embedding_function: Any = None,
+        embedding_function: Optional[Embeddings] = None,
     ):
         """Initialize the vector store ingester.
 
@@ -186,7 +187,7 @@ class VectorStoreIngester:
         """
         return self.vector_store.similarity_search(query, k=k)
 
-    def search_with_scores(self, query: str, k: int = 4) -> List[tuple]:
+    def search_with_scores(self, query: str, k: int = 4) -> List[tuple[Document, float]]:
         """Search the vector store with similarity scores.
 
         Parameters

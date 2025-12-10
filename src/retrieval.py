@@ -5,6 +5,8 @@ from typing import List, Optional, Dict, Any, Callable
 
 from langchain.schema import Document
 
+from .protocols import VectorStore
+
 
 class RetrievalStrategyFactory:
     """Factory for creating retrieval strategies. Easily extensible."""
@@ -71,7 +73,7 @@ class DocumentRetriever:
 
     def __init__(
         self,
-        vector_store: Any,
+        vector_store: VectorStore,
         strategy: str = "similarity",
         strategy_config: Optional[Dict[str, Any]] = None,
     ):
@@ -109,7 +111,7 @@ class DocumentRetriever:
         k = self.strategy["k"]
         return self.vector_store.similarity_search(query, k=k)
 
-    def retrieve_with_scores(self, query: str) -> List[tuple]:
+    def retrieve_with_scores(self, query: str) -> List[tuple[Document, float]]:
         """Retrieve documents with similarity scores.
 
         Parameters
