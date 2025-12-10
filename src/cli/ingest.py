@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 from typing import List
 from src import (
-    PyMuPDFLoader,
-    LangChainChunker,
+    LoaderFactory,
+    ChunkerFactory,
     EmbeddingModelFactory,
     VectorStore,
     VectorStoreFactory,
@@ -47,9 +47,10 @@ def ingest_pdf(
 
     # Step 1: PDF → Markdown
     print("Step 1: Converting PDF to Markdown...")
-    loader = PyMuPDFLoader(
-        pdf_path,
-        output_dir=_prepare_output_dir(config.paths.markdown_dir),
+    loader = LoaderFactory.create(
+        "pymupdf",
+        pdf_path=str(pdf_path),
+        output_dir=str(_prepare_output_dir(config.paths.markdown_dir)),
     )
     markdown_path = loader.to_markdown_file()
     print(f"✓ Markdown saved to: {markdown_path}")
@@ -59,7 +60,8 @@ def ingest_pdf(
         f"\nStep 2: Chunking markdown (size={config.chunking.chunk_size}, "
         f"overlap={config.chunking.chunk_overlap})..."
     )
-    chunker = LangChainChunker(
+    chunker = ChunkerFactory.create(
+        "langchain",
         chunk_size=config.chunking.chunk_size,
         chunk_overlap=config.chunking.chunk_overlap,
         method=config.chunking.method,
