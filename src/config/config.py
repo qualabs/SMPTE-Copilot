@@ -14,6 +14,7 @@ from .loader import LoaderConfig
 from .vector_store import VectorStoreConfig
 from .retrieval import RetrievalConfig
 from .paths import PathsConfig
+from .logging import LoggingConfig
 
 class Config(BaseSettings):
     """Main configuration class combining all sub-configurations."""
@@ -24,6 +25,7 @@ class Config(BaseSettings):
     vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
     paths: PathsConfig = Field(default_factory=PathsConfig)
+    logging: LoggingConfig = Field(default_factory=LoggingConfig)
     
     @classmethod
     def from_file(cls, config_path: Path) -> "Config":

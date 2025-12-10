@@ -2,6 +2,7 @@
 """Simple script to query the vector database with a question."""
 
 import sys
+import logging
 from pathlib import Path
 from src import EmbeddingModelFactory, VectorStoreFactory, RetrieverFactory, Config
 from src.cli.constants import (
@@ -16,26 +17,31 @@ from src.cli.constants import (
     MAX_SCORE_DISTANCE,
     EXIT_CODE_ERROR,
 )
+from src.logger import Logger
 
 def main():
     config = Config.get_config()
     
+    # Setup logging from config
+    Logger.setup(config)
+    logger = logging.getLogger()
+    
     query = " ".join(sys.argv[1:])
     
-    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    print("Querying Vector Database")
-    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    print(f"Query: {query}\n")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info("Querying Vector Database")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info(f"Query: {query}\n")
     
     try:
         # Step 1: Check if database exists
         vector_db_path = config.vector_store.persist_directory
         if not vector_db_path.exists():
-            print(f"✗ Error: Vector database not found: {vector_db_path}")
-            print("\nPlease ingest documents first:")
-            print("  python ingest.py /path/to/document.pdf")
-            print("\nOr set RAG_CONFIG_FILE or environment variables, then run:")
-            print("  python ingest.py")
+            logger.error(f"✗ Error: Vector database not found: {vector_db_path}")
+            logger.error("\nPlease ingest documents first:")
+            logger.error("  python ingest.py /path/to/document.pdf")
+            logger.error("\nOr set RAG_CONFIG_FILE or environment variables, then run:")
+            logger.error("  python ingest.py")
             sys.exit(EXIT_CODE_ERROR)
         
         # Step 2: Create embedding model using factory
@@ -65,32 +71,30 @@ def main():
         )
         
         # Step 5: Query the database using retriever (with scores)
-        print("Searching...")
+        logger.info("Searching...")
         results_with_scores = retriever.retrieve_with_scores(query)
         
         # Step 6: Display results with similarity scores
-        print(f"\nFound {len(results_with_scores)} relevant documents:\n")
-        print(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
-        print("Similarity Score Guide:")
-        print("  - Higher score = More similar to query")
-        print(f"  - Score range depends on distance metric (usually {MIN_SCORE}-{MAX_SCORE_COSINE} or {MIN_SCORE}-{MAX_SCORE_DISTANCE})")
-        print(f"  - For cosine similarity: closer to {MAX_SCORE_COSINE} = more similar")
-        print(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info(f"\nFound {len(results_with_scores)} relevant documents:\n")
+        logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info("Similarity Score Guide:")
+        logger.info("  - Higher score = More similar to query")
+        logger.info(f"  - Score range depends on distance metric (usually {MIN_SCORE}-{MAX_SCORE_COSINE} or {MIN_SCORE}-{MAX_SCORE_DISTANCE})")
+        logger.info(f"  - For cosine similarity: closer to {MAX_SCORE_COSINE} = more similar")
+        logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
         
         for i, (doc, score) in enumerate(results_with_scores, ENUMERATE_START):
-            print(f"\n[{i}] Similarity Score: {score:.{SCORE_DECIMAL_PLACES}f}")
-            print(f"    Content: {doc.page_content}")
+            logger.info(f"\n[{i}] Similarity Score: {score:.{SCORE_DECIMAL_PLACES}f}")
+            logger.info(f"    Content: {doc.page_content}")
             if doc.metadata:
-                print(f"    Metadata: {doc.metadata}")
+                logger.info(f"    Metadata: {doc.metadata}")
         
-        print("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
-        print("Note: Higher similarity scores indicate better matches to your query.")
-        print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info("Note: Higher similarity scores indicate better matches to your query.")
+        logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
         
     except Exception as e:
-        print(f"✗ Error: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"✗ Error: {e}", exc_info=True)
         sys.exit(EXIT_CODE_ERROR)
 
 if __name__ == "__main__":

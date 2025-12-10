@@ -34,3 +34,6 @@ paths:
   pdf_path: /app/data           # Default path for PDF files
   markdown_dir: /app/data/markdown  # Directory for markdown output
 
+logging:
+  level: INFO                    # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+

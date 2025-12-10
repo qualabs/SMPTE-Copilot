@@ -19,6 +19,8 @@ from src.cli.constants import (
     SEPARATOR_CHAR,
     EXIT_CODE_ERROR,
 )
+from src.logger import Logger
+import logging
 
 def _resolve_pdf_inputs(input_path: Path) -> List[Path]:
     """Resolve input path to a list of PDF files."""
@@ -46,12 +48,13 @@ def ingest_pdf(
     embedding_model,
     config,
 ) -> None:
-    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    print(f"Ingesting: {pdf_path}")
-    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger = logging.getLogger()
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info(f"Ingesting: {pdf_path}")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
     # Step 1: PDF → Markdown
-    print("Step 1: Converting PDF to Markdown...")
+    logger.info("Step 1: Converting PDF to Markdown...")
     loader_config = {
         "pdf_path": str(pdf_path),
         "output_dir": str(_prepare_output_dir(config.paths.markdown_dir)),
@@ -61,10 +64,10 @@ def ingest_pdf(
         **loader_config,
     )
     markdown_path = loader.to_markdown_file()
-    print(f"✓ Markdown saved to: {markdown_path}")
+    logger.info(f"✓ Markdown saved to: {markdown_path}")
 
     # Step 2: Markdown → Chunks
-    print(
+    logger.info(
         f"\nStep 2: Chunking markdown (size={config.chunking.chunk_size}, "
         f"overlap={config.chunking.chunk_overlap})..."
     )
@@ -78,33 +81,33 @@ def ingest_pdf(
         **chunker_config,
     )
     chunks = chunker.chunk_markdown_file(str(markdown_path))
-    print(f"✓ Created {len(chunks)} chunks")
+    logger.info(f"✓ Created {len(chunks)} chunks")
 
     # Step 3: Chunks → Embeddings
-    print(f"\nStep 3: Embedding chunks (model={config.embedding.embed_name})...")
+    logger.info(f"\nStep 3: Embedding chunks (model={config.embedding.embed_name})...")
     embedded_chunks = EmbeddingHelper.embed_chunks(embedding_model, chunks, model_name=config.embedding.embed_name)
-    print(f"✓ Embedded {len(embedded_chunks)} chunks")
+    logger.info(f"✓ Embedded {len(embedded_chunks)} chunks")
 
     # Step 4: Embeddings → Vector Database
-    print(f"\nStep 4: Storing in vector database...")
-    print(f"  Database location: {config.vector_store.persist_directory}")
-    print(f"  Collection: {config.vector_store.collection_name}")
+    logger.info(f"\nStep 4: Storing in vector database...")
+    logger.info(f"  Database location: {config.vector_store.persist_directory}")
+    logger.info(f"  Collection: {config.vector_store.collection_name}")
 
     VectorStoreHelper.ingest_chunks_with_embeddings(vector_store, embedded_chunks)
     if hasattr(vector_store, "persist"):
         vector_store.persist()
-    print(f"✓ Ingested {len(embedded_chunks)} chunks")
+    logger.info(f"✓ Ingested {len(embedded_chunks)} chunks")
 
     # Summary
-    print("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    print("Ingestion Complete!")
-    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    print(f"✓ PDF processed: {pdf_path.name}")
-    print(f"✓ Markdown file: {markdown_path}")
-    print(f"✓ Chunks created: {len(chunks)}")
-    print(f"✓ Database location: {config.vector_store.persist_directory}")
-    print(f"✓ Collection: {config.vector_store.collection_name}")
-    print(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
+    logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info("Ingestion Complete!")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info(f"✓ PDF processed: {pdf_path.name}")
+    logger.info(f"✓ Markdown file: {markdown_path}")
+    logger.info(f"✓ Chunks created: {len(chunks)}")
+    logger.info(f"✓ Database location: {config.vector_store.persist_directory}")
+    logger.info(f"✓ Collection: {config.vector_store.collection_name}")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
 
 
 def main():
@@ -112,30 +115,34 @@ def main():
     # Load configuration
     config = Config.get_config()
     
+    # Setup logging from config
+    Logger.setup(config)
+    logger = logging.getLogger()
+    
     # Determine input (CLI arg > config > default path)
     input_path = config.paths.pdf_path
 
     try:
         pdf_files = _resolve_pdf_inputs(input_path)
-    except Exception as exc:
-        print(f"✗ {exc}")
-        print("\nUsage:")
-        print("  python ingest.py /app/data/file.pdf")
-        print("  python ingest.py /app/data  # Ingest all PDFs in directory")
-        print("\nConfiguration:")
-        print("  - Config file: config.yaml or config.yml")
-        print("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
+    except (FileNotFoundError, ValueError) as exc:
+        logger.error(f"✗ {exc}")
+        logger.error("\nUsage:")
+        logger.error("  python ingest.py /app/data/file.pdf")
+        logger.error("  python ingest.py /app/data  # Ingest all PDFs in directory")
+        logger.error("\nConfiguration:")
+        logger.error("  - Config file: config.yaml or config.yml")
+        logger.error("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
         sys.exit(EXIT_CODE_ERROR)
 
-    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    print("RAG Document Ingestion Pipeline")
-    print(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    print(f"Inputs: {len(pdf_files)} PDF(s)")
-    print(f"Database: {config.vector_store.persist_directory}")
-    print(f"Collection: {config.vector_store.collection_name}")
-    print(f"Chunk size: {config.chunking.chunk_size}, overlap: {config.chunking.chunk_overlap}")
-    print(f"Embedding model: {config.embedding.embed_name}")
-    print()
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info("RAG Document Ingestion Pipeline")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info(f"Inputs: {len(pdf_files)} PDF(s)")
+    logger.info(f"Database: {config.vector_store.persist_directory}")
+    logger.info(f"Collection: {config.vector_store.collection_name}")
+    logger.info(f"Chunk size: {config.chunking.chunk_size}, overlap: {config.chunking.chunk_overlap}")
+    logger.info(f"Embedding model: {config.embedding.embed_name}")
+    logger.info("")
 
     try:
         # Create embedding model using factory
@@ -156,13 +163,10 @@ def main():
         for pdf_file in pdf_files:
             ingest_pdf(pdf_file, vector_store, embedding_model, config)
 
-        print("✓ All PDFs processed successfully.")
+        logger.info("✓ All PDFs processed successfully.")
 
     except Exception as exc:
-        print(f"\n✗ Error during ingestion: {exc}")
-        import traceback
-
-        traceback.print_exc()
+        logger.error(f"\n✗ Error during ingestion: {exc}", exc_info=True)
         sys.exit(EXIT_CODE_ERROR)
 
 

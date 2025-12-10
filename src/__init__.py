@@ -11,6 +11,7 @@ from .embeddings import Embeddings, EmbeddingModelFactory, EmbeddingHelper
 from .vector_stores import VectorStore, VectorStoreFactory, VectorStoreHelper
 from .retrievers import Retriever, DocumentRetriever, RetrieverFactory
 from .config import Config
+from .logger import Logger
 
 __all__ = [
     # Protocols
@@ -34,5 +35,7 @@ __all__ = [
     "EmbeddingHelper",
     # Config
     "Config",
+    # Logger
+    "Logger",
 ]
 
