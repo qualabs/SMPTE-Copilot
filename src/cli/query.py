@@ -3,7 +3,7 @@
 
 import sys
 from pathlib import Path
-from src import ChunkEmbedder, VectorStoreFactory, RetrievalPipeline, get_config
+from src import EmbeddingModelFactory, VectorStoreFactory, RetrievalPipeline, get_config
 
 def main():
     config = get_config()
@@ -36,15 +36,18 @@ def main():
             print("  python ingest.py")
             sys.exit(1)
         
-        # Step 2: Initialize embedder
-        embedder = ChunkEmbedder(model_name=config.embedding.model_name)
+        # Step 2: Create embedding model using factory
+        embedding_model = EmbeddingModelFactory.create(
+            config.embedding.model_name,
+            **(config.embedding.model_config or {}),
+        )
         
         # Step 3: Create vector store using factory
         vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,
             persist_directory=str(vector_db_path),
             collection_name=config.vector_store.collection_name,
-            embedding_function=embedder.embedding_model,
+            embedding_function=embedding_model,
             **(config.vector_store.store_config or {}),
         )
         
@@ -55,7 +58,7 @@ def main():
         
         pipeline = RetrievalPipeline(
             vector_store=vector_store,
-            embedder=embedder,
+            embedding_model=embedding_model,
             searcher_strategy=config.retrieval.searcher_strategy,
             searcher_config=searcher_config,
         )

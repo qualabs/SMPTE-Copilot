@@ -1,11 +1,10 @@
 """Retrieval pipeline for RAG queries."""
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List
 
 from langchain.schema import Document
 
-from .embeddings import ChunkEmbedder
 from .retrievers import RetrieverFactory
 from .vector_stores import VectorStore
 
@@ -14,7 +13,7 @@ class RetrievalPipeline:
     """Basic retrieval pipeline for RAG queries.
     
     Pipeline flow:
-    1. Query → Embed (using ChunkEmbedder)
+    1. Query → Embed (handled by vector store's embedding function)
     2. Embedding → Search (using DocumentRetriever)
     3. Return documents
     """
@@ -22,11 +21,9 @@ class RetrievalPipeline:
     def __init__(
         self,
         vector_store: VectorStore,
-        embedder: Optional[ChunkEmbedder] = None,
-        model_name: str = "huggingface",
-        model_config: Optional[dict] = None,
+        embedding_model=None,  # Not used directly, but kept for API compatibility
         searcher_strategy: str = "similarity",
-        searcher_config: Optional[dict] = None,
+        searcher_config: dict | None = None,
     ):
         """Initialize the retrieval pipeline.
 
@@ -34,14 +31,10 @@ class RetrievalPipeline:
         ----------
         vector_store
             Vector store instance (created via VectorStoreFactory).
-        embedder
-            Pre-initialized ChunkEmbedder instance.
-            If provided, model_name and model_config are ignored.
-        model_name
-            Name of the embedding model to use.
-            Default: "huggingface"
-        model_config
-            Optional configuration for the embedding model.
+            The vector store already has the embedding function configured.
+        embedding_model
+            Deprecated: embedding model is already configured in vector_store.
+            Kept for backward compatibility but not used.
         searcher_strategy
             Retrieval strategy name.
             Use RetrieverFactory.list_retrievers() to see available strategies.
@@ -51,13 +44,6 @@ class RetrievalPipeline:
             For similarity: {"k": 4}
         """
         self.vector_store = vector_store
-        
-        # Initialize embedder
-        if embedder is not None:
-            self.embedder = embedder
-        else:
-            config = model_config or {}
-            self.embedder = ChunkEmbedder(model_name=model_name, model_config=config)
         
         # Initialize searcher using factory
         config = searcher_config or {}

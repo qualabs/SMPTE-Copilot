@@ -2,7 +2,7 @@
 
 from .protocol import Embeddings
 from .factory import EmbeddingModelFactory
-from .chunk_embedder import ChunkEmbedder
+from .helpers import embed_chunks
 
-__all__ = ["Embeddings", "EmbeddingModelFactory", "ChunkEmbedder"]
+__all__ = ["Embeddings", "EmbeddingModelFactory", "embed_chunks"]
 

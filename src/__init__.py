@@ -7,7 +7,7 @@ vector storage, and retrieval.
 
 from .loaders import DocumentLoader, PyMuPDFLoader, LoaderFactory
 from .chunkers import Chunker, LangChainChunker, ChunkerFactory
-from .embeddings import Embeddings, ChunkEmbedder, EmbeddingModelFactory
+from .embeddings import Embeddings, EmbeddingModelFactory, embed_chunks
 from .vector_stores import VectorStore, VectorStoreFactory, ingest_chunks_with_embeddings
 from .retrievers import Retriever, DocumentRetriever, RetrieverFactory
 from .pipeline import RetrievalPipeline
@@ -23,7 +23,6 @@ __all__ = [
     # Implementations
     "PyMuPDFLoader",
     "LangChainChunker",
-    "ChunkEmbedder",
     "DocumentRetriever",
     "RetrievalPipeline",
     # Factories
@@ -34,6 +33,7 @@ __all__ = [
     "RetrieverFactory",
     # Helpers
     "ingest_chunks_with_embeddings",
+    "embed_chunks",
     # Config
     "Config",
     "get_config",
