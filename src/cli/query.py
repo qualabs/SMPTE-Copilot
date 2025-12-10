@@ -4,7 +4,7 @@
 import sys
 from pathlib import Path
 from src import EmbeddingModelFactory, VectorStoreFactory, RetrieverFactory, Config
-from .constants import (
+from src.cli.constants import (
     MIN_CLI_ARGS,
     SEPARATOR_LENGTH,
     SEPARATOR_CHAR,

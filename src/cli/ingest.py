@@ -14,7 +14,7 @@ from src import (
 )
 from src.vector_stores.helpers import VectorStoreHelper
 from src.embeddings.helpers import EmbeddingHelper
-from .constants import (
+from src.cli.constants import (
     SEPARATOR_LENGTH,
     SEPARATOR_CHAR,
     EXIT_CODE_ERROR,

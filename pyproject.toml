@@ -7,6 +7,7 @@ requires-python = ">=3.9"
 dependencies = [
   "langchain>=0.3.0",
   "langchain-community>=0.3.0",
+  "langchain-openai>=0.1.0",
   "pymupdf>=1.24.9",
   "pymupdf4llm>=0.0.17",
   "pydantic>=2.0.0",
@@ -26,7 +27,6 @@ dev = [
 openai = [
   "openai>=1.0.0",  # For OpenAI embeddings
   "tiktoken>=0.5.0",  # Required by OpenAIEmbeddings for token counting
-  "langchain-openai>=0.1.0",  # Recommended OpenAI embeddings package
 ]
 
 

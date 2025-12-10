@@ -13,7 +13,5 @@ DEFAULT_ENCODING = "utf-8"
 # ============================================================================
 # Retrieval (used across retrievers, vector_stores, and config)
 # ============================================================================
-# Default number of documents to retrieve
-# Note: This matches the default in RetrievalConfig (5)
 DEFAULT_RETRIEVAL_K = 5
 
