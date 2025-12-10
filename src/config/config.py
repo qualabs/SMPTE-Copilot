@@ -2,6 +2,7 @@
 
 from pathlib import Path
 from typing import Optional
+import threading
 import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -43,27 +44,35 @@ class Config(BaseSettings):
     
     @staticmethod
     def get_config() -> "Config":
-        """Get the global configuration instance (singleton pattern).
+        """Get the global configuration instance (thread-safe singleton pattern).
         
         The configuration is loaded once from config.yaml 
         and cached for subsequent calls. If the config file doesn't exist,
         uses default values.
+        
+        This method is thread-safe and ensures that only one instance
+        is created even when called concurrently from multiple threads.
         
         Returns
         -------
         Config
             The global configuration instance (same instance on subsequent calls).
         """
-        global _config
+        global _config, _config_lock
         
+        # Double-checked locking pattern for thread safety
         if _config is None:
-            config_path = Path(CONFIG_FILE_NAME)
-            if config_path.exists():
-                _config = Config.from_file(config_path)
-            else:
-                _config = Config()
+            with _config_lock:
+                # Check again inside the lock to prevent race conditions
+                if _config is None:
+                    config_path = Path(CONFIG_FILE_NAME)
+                    if config_path.exists():
+                        _config = Config.from_file(config_path)
+                    else:
+                        _config = Config()
         
         return _config
 
-# Global configuration instance (singleton pattern)
+# Global configuration instance (thread-safe singleton pattern)
 _config: Optional[Config] = None
+_config_lock = threading.Lock()
