@@ -3,7 +3,7 @@
 
 import sys
 from pathlib import Path
-from src import EmbeddingModelFactory, VectorStoreFactory, RetrievalPipeline, get_config
+from src import EmbeddingModelFactory, VectorStoreFactory, RetrieverFactory, get_config
 
 def main():
     config = get_config()
@@ -51,21 +51,20 @@ def main():
             **(config.vector_store.store_config or {}),
         )
         
-        # Step 4: Create retrieval pipeline
+        # Step 4: Create retriever
         searcher_config = {"k": config.retrieval.k}
         if config.retrieval.searcher_config:
             searcher_config.update(config.retrieval.searcher_config)
+        searcher_config["vector_store"] = vector_store
         
-        pipeline = RetrievalPipeline(
-            vector_store=vector_store,
-            embedding_model=embedding_model,
-            searcher_strategy=config.retrieval.searcher_strategy,
-            searcher_config=searcher_config,
+        retriever = RetrieverFactory.create(
+            config.retrieval.searcher_strategy,
+            **searcher_config,
         )
         
-        # Step 5: Query the database using pipeline (with scores)
+        # Step 5: Query the database using retriever (with scores)
         print("Searching...")
-        results_with_scores = pipeline.retrieve_with_scores(query)
+        results_with_scores = retriever.retrieve_with_scores(query)
         
         # Step 6: Display results with similarity scores
         print(f"\nFound {len(results_with_scores)} relevant documents:\n")
