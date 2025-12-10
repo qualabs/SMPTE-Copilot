@@ -12,6 +12,10 @@ dependencies = [
   "pydantic>=2.0.0",
   "pydantic-settings>=2.0.0",
   "pyyaml>=6.0",
+  "chromadb>=0.4.0",
+  "sentence-transformers>=2.2.0",
+  "numpy>=1.24.0,<2.0",
+  "langchain-huggingface>=0.0.1",
 ]
 
 [project.optional-dependencies]
@@ -19,16 +23,10 @@ dev = [
   "ipykernel>=6.29.0",
   "jupyter>=1.0.0",
 ]
-embeddings = [
+openai = [
   "openai>=1.0.0",  # For OpenAI embeddings
   "tiktoken>=0.5.0",  # Required by OpenAIEmbeddings for token counting
   "langchain-openai>=0.1.0",  # Recommended OpenAI embeddings package
-  "sentence-transformers>=2.2.0",  # For HuggingFace/sentence-transformers
-  "numpy>=1.24.0,<2.0",  # Required by sentence-transformers (PyTorch compatibility)
-  "langchain-huggingface>=0.0.1",  # Recommended HuggingFace embeddings package
-]
-vectorstore = [
-  "chromadb>=0.4.0",  # For ChromaDB vector store
 ]
 
 
