@@ -31,8 +31,12 @@ class LoaderHelper:
         Raises
         ------
         ValueError
-            If the file type is not supported or no loader is configured for it.
+            If the file type is not supported, no loader is configured for it,
+            or the loader configuration is invalid.
         """
+        if not isinstance(file_path, Path):
+            raise TypeError(f"file_path must be a Path object, got {type(file_path)}")
+        
         suffix = file_path.suffix.lower()
         
         # Check if extension is supported
@@ -66,7 +70,19 @@ class LoaderHelper:
                 f"Received: {loader_entry}"
             )
         
+        if not isinstance(loader_name, str) or not loader_name.strip():
+            raise ValueError(
+                f"Loader name for '{suffix}' must be a non-empty string. "
+                f"Received: {loader_name!r}"
+            )
+        
         loader_config = loader_entry.get("loader_config") or {}
+        if not isinstance(loader_config, dict):
+            raise ValueError(
+                f"Loader config for '{suffix}' must be a dictionary or None. "
+                f"Received: {type(loader_config)}"
+            )
+        
         return loader_name, loader_config
 
     @staticmethod
@@ -80,15 +96,20 @@ class LoaderHelper:
             
         Returns
         -------
-        List of file paths.
+        List of file paths (sorted).
             
         Raises
         ------
+        TypeError
+            If input_path is not a Path object.
         FileNotFoundError
             If the path doesn't exist or no supported files are found.
         ValueError
             If a file has an unsupported extension.
         """
+        if not isinstance(input_path, Path):
+            raise TypeError(f"input_path must be a Path object, got {type(input_path)}")
+        
         if not input_path.exists():
             raise FileNotFoundError(f"Path not found: {input_path}")
         
@@ -103,10 +124,16 @@ class LoaderHelper:
                 )
             return [input_path]
         
+        if not input_path.is_dir():
+            raise ValueError(f"Path is neither a file nor a directory: {input_path}")
+        
         # Directory: collect all supported files (non-recursive)
-        media_files = []
-        for ext in SUPPORTED_FILE_EXTENSIONS:
-            media_files.extend(input_path.glob(f"*{ext}"))
+        # Filter to ensure we only get files, not directories with matching extensions
+        media_files = [
+            path for ext in SUPPORTED_FILE_EXTENSIONS
+            for path in input_path.glob(f"*{ext}")
+            if path.is_file()
+        ]
         
         media_files = sorted(media_files)
         if not media_files:
@@ -156,8 +183,27 @@ class LoaderHelper:
         Returns
         -------
         Configuration dictionary for the loader.
+        
+        Raises
+        ------
+        TypeError
+            If any parameter has an invalid type.
+        ValueError
+            If loader_name is empty or loader_config_from_mapping is not a dict.
         """
-
+        if not isinstance(file_path, Path):
+            raise TypeError(f"file_path must be a Path object, got {type(file_path)}")
+        
+        if not isinstance(loader_name, str) or not loader_name.strip():
+            raise ValueError(
+                f"loader_name must be a non-empty string, got: {loader_name!r}"
+            )
+        
+        if not isinstance(loader_config_from_mapping, dict):
+            raise TypeError(
+                f"loader_config_from_mapping must be a dict, got {type(loader_config_from_mapping)}"
+            )
+        
         output_dir = LoaderHelper.prepare_output_dir(config.paths.markdown_dir)
 
         result = loader_config_from_mapping.copy()

@@ -35,26 +35,76 @@ class PyMuPDFLoader:
         config
             Configuration dictionary. Must contain 'file_path' key.
             Optional keys: 'output_dir', and any other loader-specific config.
+        
+        Raises
+        ------
+        ValueError
+            If 'file_path' is missing or the file is not a PDF.
+        FileNotFoundError
+            If the PDF file does not exist.
         """
         self.config = config
         
         file_path = config.get("file_path")
+        if not file_path:
+            raise ValueError("'file_path' is required in loader configuration")
         
         self.pdf_path = Path(file_path).expanduser().resolve()
         if not self.pdf_path.exists():
             raise FileNotFoundError(f"PDF not found: {self.pdf_path}")
+        
+        # Validate file extension
+        if self.pdf_path.suffix.lower() != ".pdf":
+            raise ValueError(
+                f"Expected PDF file, got file with extension: {self.pdf_path.suffix}"
+            )
 
         output_dir = config.get("output_dir")
         self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
 
     def load_documents(self) -> List[Document]:
-        """Load the PDF into LangChain Document objects."""
-        loader = LangChainPyMuPDFLoader(str(self.pdf_path))
-        return loader.load()
+        """Load the PDF into LangChain Document objects.
+        
+        Returns
+        -------
+        List of Document objects representing the PDF content.
+        
+        Raises
+        ------
+        Exception
+            If the PDF cannot be loaded (e.g., corrupted file, permission issues).
+        """
+        try:
+            loader = LangChainPyMuPDFLoader(str(self.pdf_path))
+            return loader.load()
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load PDF from {self.pdf_path}: {e}"
+            ) from e
 
     def to_markdown_text(self, pages: PageSpecifier = None) -> str:
-        """Return the PDF rendered as Markdown text."""
-        return pymupdf4llm.to_markdown(str(self.pdf_path), pages=pages)
+        """Return the PDF rendered as Markdown text.
+        
+        Parameters
+        ----------
+        pages
+            Optional sequence of page numbers, range, or None for all pages.
+        
+        Returns
+        -------
+        Markdown representation of the PDF.
+        
+        Raises
+        ------
+        Exception
+            If the PDF cannot be converted to Markdown (e.g., corrupted file).
+        """
+        try:
+            return pymupdf4llm.to_markdown(str(self.pdf_path), pages=pages)
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to convert PDF to Markdown from {self.pdf_path}: {e}"
+            ) from e
 
     def to_markdown_file(
         self,
@@ -63,7 +113,22 @@ class PyMuPDFLoader:
         output_path: Union[Path, None] = None,
         overwrite: bool = True,
     ) -> Path:
-        """Persist the rendered Markdown to disk and return its path."""
+        """Persist the rendered Markdown to disk and return its path.
+        
+        Parameters
+        ----------
+        pages
+            Optional sequence of page numbers, range, or None for all pages.
+        output_path
+            Optional path where to save the Markdown file.
+            If None, uses a default path based on the source document.
+        overwrite
+            Whether to overwrite existing files.
+        
+        Returns
+        -------
+        Path to the saved Markdown file.
+        """
         md_text = self.to_markdown_text(pages=pages)
         destination = self._resolve_output_path(output_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
@@ -89,15 +154,22 @@ def create_pymupdf_loader(config: Dict[str, Any]) -> DocumentLoader:
     Parameters
     ----------
     config
-        Configuration dictionary. The loader will extract necessary parameters
-        from this config. Supported keys:
-        - file_path, pdf_path, or path (required): Path to the PDF file
-        - output_dir, output_directory, or markdown_dir (optional): Directory for output
-        - Any other keys are passed through to the loader
+        Configuration dictionary. Must contain:
+        - file_path (required): Path to the PDF file
+        Optional keys:
+        - output_dir (optional): Directory for output markdown files
+        - Any other keys are stored in the loader's config attribute
     
     Returns
     -------
     DocumentLoader instance.
+    
+    Raises
+    ------
+    ValueError
+        If 'file_path' is missing or the file is not a PDF.
+    FileNotFoundError
+        If the PDF file does not exist.
     """
     return PyMuPDFLoader(config=config)
 
