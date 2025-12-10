@@ -155,7 +155,7 @@ class LangChainChunker:
         return self.chunk_text(text, metadata=metadata)
 
 
-def create_langchain_chunker(config: dict) -> Chunker:
+def create_langchain_chunker(config: Dict[str, Any]) -> Chunker:
     """Create a LangChain chunker from configuration.
     
     Parameters

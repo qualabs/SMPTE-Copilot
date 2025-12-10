@@ -11,6 +11,7 @@ from src import (
     VectorStore,
     VectorStoreFactory,
     Config,
+    Embeddings,
 )
 from src.vector_stores.helpers import VectorStoreHelper
 from src.embeddings.helpers import EmbeddingHelper
@@ -45,8 +46,8 @@ def _prepare_output_dir(output_dir: Path) -> Path:
 def ingest_pdf(
     pdf_path: Path,
     vector_store: VectorStore,
-    embedding_model,
-    config,
+    embedding_model: Embeddings,
+    config: Config,
 ) -> None:
     logger = logging.getLogger()
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)

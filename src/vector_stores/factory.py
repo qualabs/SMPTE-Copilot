@@ -28,7 +28,7 @@ from .chromadb import create_chromadb_store
 
 class VectorStoreFactory:
     """Factory for creating vector store implementations. Easily extensible."""
-    _registry: Dict[VectorStoreType, Callable[[Dict[str, Any]], Any]] = {}
+    _registry: Dict[VectorStoreType, Callable[[Dict[str, Any]], VectorStore]] = {}
     
     @classmethod
     def register(cls, store_type: VectorStoreType):
@@ -39,7 +39,7 @@ class VectorStoreFactory:
         store_type
             Type to register the vector store under.
         """
-        def decorator(factory_func: Callable[[Dict[str, Any]], Any]):
+        def decorator(factory_func: Callable[[Dict[str, Any]], VectorStore]):
             cls._registry[store_type] = factory_func
             return factory_func
         return decorator
