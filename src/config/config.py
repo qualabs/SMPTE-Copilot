@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings
 
 from .chunking import ChunkingConfig
 from .embedding import EmbeddingConfig
+from .loader import LoaderConfig
 from .vector_store import VectorStoreConfig
 from .retrieval import RetrievalConfig
 from .paths import PathsConfig
@@ -14,6 +15,7 @@ from .paths import PathsConfig
 class Config(BaseSettings):
     """Main configuration class combining all sub-configurations."""
     
+    loader: LoaderConfig = Field(default_factory=LoaderConfig)
     chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
     embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
     vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)

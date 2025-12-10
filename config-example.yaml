@@ -1,7 +1,12 @@
 # Example configuration file for SMPTE-Copilot RAG system
 # Copy this file to config.yaml and modify as needed
 
+loader:
+  loader_name: pymupdf       # Document loader name (pymupdf)
+  loader_config: null        # Additional loader-specific configuration (dict)
+
 chunking:
+  chunker_name: langchain    # Chunker name (langchain)
   chunk_size: 1000          # Size of text chunks in characters
   chunk_overlap: 200         # Overlap between chunks in characters
   method: recursive          # Options: recursive, character, token

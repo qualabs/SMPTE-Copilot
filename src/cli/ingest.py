@@ -47,10 +47,15 @@ def ingest_pdf(
 
     # Step 1: PDF → Markdown
     print("Step 1: Converting PDF to Markdown...")
+    loader_config = {
+        "pdf_path": str(pdf_path),
+        "output_dir": str(_prepare_output_dir(config.paths.markdown_dir)),
+    }
+    if config.loader.loader_config:
+        loader_config.update(config.loader.loader_config)
     loader = LoaderFactory.create(
-        "pymupdf",
-        pdf_path=str(pdf_path),
-        output_dir=str(_prepare_output_dir(config.paths.markdown_dir)),
+        config.loader.loader_name,
+        **loader_config,
     )
     markdown_path = loader.to_markdown_file()
     print(f"✓ Markdown saved to: {markdown_path}")
@@ -60,11 +65,14 @@ def ingest_pdf(
         f"\nStep 2: Chunking markdown (size={config.chunking.chunk_size}, "
         f"overlap={config.chunking.chunk_overlap})..."
     )
+    chunker_config = {
+        "chunk_size": config.chunking.chunk_size,
+        "chunk_overlap": config.chunking.chunk_overlap,
+        "method": config.chunking.method,
+    }
     chunker = ChunkerFactory.create(
-        "langchain",
-        chunk_size=config.chunking.chunk_size,
-        chunk_overlap=config.chunking.chunk_overlap,
-        method=config.chunking.method,
+        config.chunking.chunker_name,
+        **chunker_config,
     )
     chunks = chunker.chunk_markdown_file(str(markdown_path))
     print(f"✓ Created {len(chunks)} chunks")

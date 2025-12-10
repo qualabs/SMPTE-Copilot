@@ -8,6 +8,10 @@ from pydantic_settings import BaseSettings
 class ChunkingConfig(BaseSettings):
     """Chunking configuration."""
     
+    chunker_name: str = Field(
+        default="langchain",
+        description="Chunker name (langchain)",
+    )
     chunk_size: int = Field(
         default=1000,
         description="Size of text chunks in characters",
