@@ -6,7 +6,7 @@ from typing import List, Optional
 from langchain.schema import Document
 
 from .embeddings import ChunkEmbedder
-from .retrievers import DocumentRetriever
+from .retrievers import RetrieverFactory
 from .vector_stores import VectorStore
 
 
@@ -43,7 +43,8 @@ class RetrievalPipeline:
         model_config
             Optional configuration for the embedding model.
         searcher_strategy
-            Retrieval strategy for DocumentRetriever.
+            Retrieval strategy name.
+            Use RetrieverFactory.list_retrievers() to see available strategies.
             Default: "similarity"
         searcher_config
             Configuration for the searcher strategy.
@@ -58,13 +59,10 @@ class RetrievalPipeline:
             config = model_config or {}
             self.embedder = ChunkEmbedder(model_name=model_name, model_config=config)
         
-        # Initialize searcher
+        # Initialize searcher using factory
         config = searcher_config or {}
-        self.retriever = DocumentRetriever(
-            vector_store=vector_store,
-            strategy=searcher_strategy,
-            strategy_config=config,
-        )
+        config["vector_store"] = vector_store
+        self.retriever = RetrieverFactory.create(searcher_strategy, **config)
         self.searcher_strategy = searcher_strategy
 
     def retrieve(self, query: str) -> List[Document]:

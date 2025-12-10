@@ -9,7 +9,7 @@ from .loaders import DocumentLoader, PyMuPDFLoader, LoaderFactory
 from .chunkers import Chunker, LangChainChunker, ChunkerFactory
 from .embeddings import Embeddings, ChunkEmbedder, EmbeddingModelFactory
 from .vector_stores import VectorStore, VectorStoreIngester
-from .retrievers import Retriever, DocumentRetriever
+from .retrievers import Retriever, DocumentRetriever, RetrieverFactory
 from .pipeline import RetrievalPipeline
 from .config import Config, get_config
 
@@ -31,6 +31,7 @@ __all__ = [
     "LoaderFactory",
     "ChunkerFactory",
     "EmbeddingModelFactory",
+    "RetrieverFactory",
     # Config
     "Config",
     "get_config",
