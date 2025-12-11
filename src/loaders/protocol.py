@@ -1,10 +1,13 @@
 """Protocol for document loader implementations."""
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, Union
 
 from langchain.schema import Document
+
+PageSpecifier = Union[Sequence[int], range, None]
 
 
 class DocumentLoader(Protocol):
@@ -24,14 +27,13 @@ class DocumentLoader(Protocol):
         """
         ...
 
-    def to_markdown_text(self, pages: list[int] | None = None) -> str:
+    def to_markdown_text(self, pages: PageSpecifier = None) -> str:
         """Convert the document to Markdown text.
 
         Parameters
         ----------
         pages
-            Optional list of page numbers to extract (for multi-page documents).
-            If None, extracts all pages.
+            Optional sequence of page numbers, range, or None for all pages.
 
         Returns
         -------
@@ -42,7 +44,7 @@ class DocumentLoader(Protocol):
     def to_markdown_file(
         self,
         *,
-        pages: list[int] | None = None,
+        pages: PageSpecifier = None,
         output_path: Path | None = None,
         overwrite: bool = True,
     ) -> Path:
@@ -51,7 +53,7 @@ class DocumentLoader(Protocol):
         Parameters
         ----------
         pages
-            Optional list of page numbers to extract.
+            Optional sequence of page numbers, range, or None for all pages.
         output_path
             Optional path where to save the Markdown file.
             If None, uses a default path based on the source document.

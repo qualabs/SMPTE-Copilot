@@ -58,7 +58,18 @@ class LangChainChunker:
         self._splitter = self._create_splitter()
 
     def _create_splitter(self):
-        """Create the appropriate text splitter based on method."""
+        """Create the appropriate text splitter based on the chunking method.
+
+        Returns
+        -------
+        Text splitter instance (RecursiveCharacterTextSplitter, CharacterTextSplitter,
+        or TokenTextSplitter) configured with chunk_size and chunk_overlap.
+
+        Raises
+        ------
+        ValueError
+            If the method is not one of the supported methods.
+        """
         splitters = {
             CHUNKING_METHOD_RECURSIVE: (
                 RecursiveCharacterTextSplitter,

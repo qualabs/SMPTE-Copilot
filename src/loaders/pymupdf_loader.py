@@ -140,7 +140,18 @@ class PyMuPDFLoader:
         return destination
 
     def _resolve_output_path(self, output_path: Path | None) -> Path:
-        """Resolve the output path for the markdown file."""
+        """Resolve the output path for the markdown file.
+
+        Parameters
+        ----------
+        output_path
+            Optional explicit output path. If None, generates a default path
+            based on the PDF file name in the output directory or PDF's parent directory.
+
+        Returns
+        -------
+        Resolved Path object for the markdown output file.
+        """
         if output_path is not None:
             return Path(output_path).expanduser().resolve()
 

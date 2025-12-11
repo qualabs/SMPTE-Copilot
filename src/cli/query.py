@@ -20,6 +20,12 @@ from src.logger import Logger
 
 
 def main():
+    """Query the vector database with a question from command line arguments.
+
+    Reads the query from command line arguments, loads the vector database,
+    creates the necessary components (embedding model, vector store, retriever),
+    and displays the search results with similarity scores.
+    """
     config = Config.get_config()
 
     Logger.setup(config)

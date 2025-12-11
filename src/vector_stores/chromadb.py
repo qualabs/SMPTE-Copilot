@@ -11,8 +11,25 @@ from .protocol import VectorStore
 
 
 def create_chromadb_store(config: dict[str, Any]) -> VectorStore:
-    """Create ChromaDB vector store."""
+    """Create a ChromaDB vector store from configuration.
 
+    Parameters
+    ----------
+    config
+        Configuration dictionary with keys:
+        - embedding_function: Embeddings (required) - Embedding model instance
+        - persist_directory: str (optional) - Directory to persist the database
+        - collection_name: str (optional) - Name of the collection
+
+    Returns
+    -------
+    VectorStore instance.
+
+    Raises
+    ------
+    ValueError
+        If embedding_function is not provided.
+    """
     persist_directory = config.get("persist_directory", DEFAULT_VECTOR_DB_DIR)
     collection_name = config.get("collection_name", DEFAULT_COLLECTION_NAME)
     embedding_function: Embeddings = config.get("embedding_function")
