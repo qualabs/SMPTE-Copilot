@@ -16,11 +16,11 @@ if [[ "$1" == "--fix" ]]; then
 else
     # Run ruff check
     echo "Running Ruff linter..."
-    ruff check src/
+    ruff check src/ --show-files
     exit_code=$?
     echo ""
     if [ $exit_code -ne 0 ]; then
-        echo "Tip: Run './lint.sh --fix' to automatically fix issues"
+        echo "Tip: Run './scripts/lint.sh --fix' to automatically fix issues"
     fi
 fi
 
