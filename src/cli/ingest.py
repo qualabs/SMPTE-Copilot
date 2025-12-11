@@ -19,32 +19,37 @@ from src.cli.constants import (
     SEPARATOR_CHAR,
     SEPARATOR_LENGTH,
 )
-from src.embeddings.helpers import EmbeddingHelper
 from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
 from src.loaders.helpers import LoaderHelper
 from src.loaders.types import LoaderType
 from src.logger import Logger
-from src.vector_stores.helpers import VectorStoreHelper
+from src.pipeline import IngestionContext, PipelineExecutor, PipelineStatus
+from src.pipeline.steps import (
+    ChunkStep,
+    EmbeddingGenerationStep,
+    LoadStep,
+    SaveStep,
+)
 
 
 def ingest_file(
     file_path: Path,
-    vector_store: VectorStore,
-    embedding_model: Embeddings,
     config: Config,
+    embedding_model: Embeddings,
+    vector_store: VectorStore,
 ) -> None:
-    """Ingest a media file into the vector database.
+    """Ingest a media file into the vector database using the pipeline pattern.
 
     Parameters
     ----------
     file_path
         Path to the media file to ingest.
-    vector_store
-        Vector store instance.
-    embedding_model
-        Embedding model instance.
     config
         Configuration object.
+    embedding_model
+        Embedding model instance.
+    vector_store
+        Vector store instance.
     """
     logger = logging.getLogger()
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
@@ -65,9 +70,8 @@ def ingest_file(
             f"Available loaders: {available}"
         ) from exc
 
-    # Step 1: Media → Text/Markdown
     logger.info(
-        f"Step 1: Converting {file_extension} file to Markdown "
+        f"Converting {file_extension} file to Markdown "
         f"(loader: {loader_name_str})..."
     )
     loader_config = LoaderHelper.create_loader_config(
@@ -77,14 +81,7 @@ def ingest_file(
         config,
     )
     loader = LoaderFactory.create(loader_type, **loader_config)
-    markdown_path = loader.to_markdown_file()
-    logger.info(f"✓ Markdown saved to: {markdown_path}")
 
-    # Step 2: Markdown → Chunks
-    logger.info(
-        f"\nStep 2: Chunking markdown (size={config.chunking.chunk_size}, "
-        f"overlap={config.chunking.chunk_overlap})..."
-    )
     chunker_config = {
         "chunk_size": config.chunking.chunk_size,
         "chunk_overlap": config.chunking.chunk_overlap,
@@ -94,30 +91,38 @@ def ingest_file(
         config.chunking.chunker_name,
         **chunker_config,
     )
-    chunks = chunker.chunk_markdown_file(str(markdown_path))
-    logger.info(f"✓ Created {len(chunks)} chunks")
 
-    # Step 3: Chunks → Embeddings
-    logger.info(f"\nStep 3: Embedding chunks (model={config.embedding.embed_name})...")
-    embedded_chunks = EmbeddingHelper.embed_chunks(
-        embedding_model, chunks, model_name=config.embedding.embed_name
+    logger.info(
+        f"Chunking markdown (size={config.chunking.chunk_size}, "
+        f"overlap={config.chunking.chunk_overlap})..."
     )
-    logger.info(f"✓ Embedded {len(embedded_chunks)} chunks")
-
-    # Step 4: Embeddings → Vector Database
-    logger.info("\nStep 4: Storing in vector database...")
+    logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
+    logger.info("Storing in vector database...")
     logger.info(f"  Database location: {config.vector_store.persist_directory}")
     logger.info(f"  Collection: {config.vector_store.collection_name}")
 
-    VectorStoreHelper.ingest_chunks_with_embeddings(vector_store, embedded_chunks)
-    vector_store.persist()
-    logger.info(f"✓ Ingested {len(embedded_chunks)} chunks")
+    context = IngestionContext(file_path=file_path)
+
+    steps = [
+        LoadStep(loader),
+        ChunkStep(chunker),
+        EmbeddingGenerationStep(embedding_model, config.embedding.embed_name),
+        SaveStep(vector_store),
+    ]
+
+    executor = PipelineExecutor(steps)
+    context = executor.execute(context)
+
+    if context.status == PipelineStatus.FAILED:
+        raise RuntimeError(f"Pipeline failed: {context.error}")
+
     logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("Ingestion Complete!")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"✓ File processed: {file_path.name}")
-    logger.info(f"✓ Markdown file: {markdown_path}")
-    logger.info(f"✓ Chunks created: {len(chunks)}")
+    if context.markdown_path:
+        logger.info(f"✓ Markdown file: {context.markdown_path}")
+    logger.info(f"✓ Chunks created: {len(context.chunks)}")
     logger.info(f"✓ Database location: {config.vector_store.persist_directory}")
     logger.info(f"✓ Collection: {config.vector_store.collection_name}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
@@ -174,7 +179,7 @@ def main():
         )
 
         for media_file in media_files:
-            ingest_file(media_file, vector_store, embedding_model, config)
+            ingest_file(media_file, config, embedding_model, vector_store)
 
         logger.info("✓ All files processed successfully.")
 

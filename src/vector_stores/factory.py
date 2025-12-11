@@ -12,9 +12,8 @@ Usage:
     ...     collection_name="docs",
     ...     embedding_function=embedder.embedding_model
     ... )
-    >>> # Use store directly or with helper class
-    >>> from src.vector_stores.helpers import VectorStoreHelper
-    >>> VectorStoreHelper.ingest_chunks_with_embeddings(store, chunks)
+    >>> # Use store directly in pipeline steps or with add_documents/add_texts
+    >>> store.add_documents(chunks)
 """
 from __future__ import annotations
 

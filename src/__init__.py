@@ -7,11 +7,11 @@ vector storage, and retrieval.
 
 from .chunkers import Chunker, ChunkerFactory, LangChainChunker
 from .config import Config
-from .embeddings import EmbeddingHelper, EmbeddingModelFactory, Embeddings
+from .embeddings import EmbeddingModelFactory, Embeddings
 from .loaders import DocumentLoader, LoaderFactory, LoaderHelper, PyMuPDFLoader
 from .logger import Logger
 from .retrievers import DocumentRetriever, Retriever, RetrieverFactory
-from .vector_stores import VectorStore, VectorStoreFactory, VectorStoreHelper
+from .vector_stores import VectorStore, VectorStoreFactory
 
 __all__ = [
     # Protocols
@@ -32,8 +32,6 @@ __all__ = [
     "RetrieverFactory",
     # Helpers
     "LoaderHelper",
-    "VectorStoreHelper",
-    "EmbeddingHelper",
     # Config
     "Config",
     # Logger

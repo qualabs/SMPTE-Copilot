@@ -17,6 +17,8 @@ from src.cli.constants import (
     SEPARATOR_LENGTH,
 )
 from src.logger import Logger
+from src.pipeline import PipelineExecutor, PipelineStatus, QueryContext
+from src.pipeline.steps import QueryEmbeddingStep, RetrieveStep
 
 
 def main():
@@ -39,7 +41,6 @@ def main():
     logger.info(f"Query: {query}\n")
 
     try:
-        # Step 1: Check if database exists
         vector_db_path = config.vector_store.persist_directory
         if not vector_db_path.exists():
             logger.error(f"✗ Error: Vector database not found: {vector_db_path}")
@@ -50,13 +51,11 @@ def main():
             logger.error(" python ingest.py")
             sys.exit(EXIT_CODE_ERROR)
 
-        # Step 2: Create embedding model using factory
         embedding_model = EmbeddingModelFactory.create(
             config.embedding.embed_name,
             **(config.embedding.embed_config or {}),
         )
 
-        # Step 3: Create vector store using factory
         vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,
             persist_directory=str(vector_db_path),
@@ -65,7 +64,6 @@ def main():
             **(config.vector_store.store_config or {}),
         )
 
-        # Step 4: Create retriever
         searcher_config = {"k": config.retrieval.k}
         if config.retrieval.searcher_config:
             searcher_config.update(config.retrieval.searcher_config)
@@ -76,11 +74,21 @@ def main():
             **searcher_config,
         )
 
-        # Step 5: Query the database using retriever (with scores)
-        logger.info("Searching...")
-        results_with_scores = retriever.retrieve_with_scores(query)
+        context = QueryContext(user_query=query)
 
-        # Step 6: Display results with similarity scores
+        steps = [
+            QueryEmbeddingStep(embedding_model),
+            RetrieveStep(retriever),
+        ]
+
+        executor = PipelineExecutor(steps)
+        context = executor.execute(context)
+
+        if context.status == PipelineStatus.FAILED:
+            raise RuntimeError(f"Pipeline failed: {context.error}")
+
+        results_with_scores = context.retrieved_docs
+
         logger.info(f"\nFound {len(results_with_scores)} relevant documents:\n")
         logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
         logger.info("Similarity Score Guide:")

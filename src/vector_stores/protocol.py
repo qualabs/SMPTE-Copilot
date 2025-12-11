@@ -1,7 +1,7 @@
 """Protocol for vector store implementations."""
 from __future__ import annotations
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from langchain.schema import Document
 
@@ -43,9 +43,9 @@ class VectorStore(Protocol):
     def add_texts(
         self,
         texts: list[str],
-        metadatas: list[dict[str, Any]] | None = None,
-        ids: list[str] | None = None,
-        embeddings: list[list[float]] | None = None,
+        metadatas: Optional[list[dict[str, Any]]] = None,
+        ids: Optional[list[str]] = None,
+        embeddings: Optional[list[list[float]]] = None,
     ) -> list[str]:
         """Add texts to the vector store.
 
@@ -74,7 +74,7 @@ class VectorStore(Protocol):
         """Persist the vector store to disk."""
         ...
 
-    def delete(self, ids: list[str] | None = None) -> None:
+    def delete(self, ids: Optional[list[str]] = None) -> None:
         """Delete documents or the entire collection.
 
         Parameters

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import pymupdf4llm
 from langchain.schema import Document
@@ -106,7 +106,7 @@ class PyMuPDFLoader:
         self,
         *,
         pages: PageSpecifier = None,
-        output_path: Path | None = None,
+        output_path: Optional[Path] = None,
         overwrite: bool = True,
     ) -> Path:
         """Persist the rendered Markdown to disk and return its path.
@@ -131,7 +131,7 @@ class PyMuPDFLoader:
         destination.write_text(md_text, encoding=DEFAULT_ENCODING)
         return destination
 
-    def _resolve_output_path(self, output_path: Path | None) -> Path:
+    def _resolve_output_path(self, output_path: Optional[Path]) -> Path:
         """Resolve the output path for the markdown file.
 
         Parameters

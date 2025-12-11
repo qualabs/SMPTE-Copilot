@@ -1,7 +1,7 @@
 """Protocol for chunker implementations."""
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Optional, Protocol
 
 from langchain.schema import Document
 
@@ -16,7 +16,7 @@ class Chunker(Protocol):
     This allows swapping chunking algorithms without changing the rest of the code.
     """
 
-    def chunk_text(self, text: str, metadata: dict | None = None) -> list[Document]:
+    def chunk_text(self, text: str, metadata: Optional[dict] = None) -> list[Document]:
         """Chunk a text string into Document objects."""
         ...
 

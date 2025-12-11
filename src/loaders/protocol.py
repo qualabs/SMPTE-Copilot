@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Protocol, Union
+from typing import Optional, Protocol, Union
 
 from langchain.schema import Document
 
@@ -36,7 +36,7 @@ class DocumentLoader(Protocol):
         self,
         *,
         pages: PageSpecifier = None,
-        output_path: Path | None = None,
+        output_path: Optional[Path] = None,
         overwrite: bool = True,
     ) -> Path:
         """Save the document as a Markdown file.
