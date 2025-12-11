@@ -7,3 +7,4 @@ class LoaderType(str, Enum):
 
     PYMUPDF = "pymupdf"
 
+

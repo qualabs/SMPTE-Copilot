@@ -7,3 +7,4 @@ class RetrieverType(str, Enum):
 
     SIMILARITY = "similarity"
 
+
