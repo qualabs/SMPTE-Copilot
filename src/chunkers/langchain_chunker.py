@@ -60,7 +60,10 @@ class LangChainChunker:
     def _create_splitter(self):
         """Create the appropriate text splitter based on method."""
         splitters = {
-            CHUNKING_METHOD_RECURSIVE: (RecursiveCharacterTextSplitter, {"separators": RECURSIVE_SEPARATORS}),
+            CHUNKING_METHOD_RECURSIVE: (
+                RecursiveCharacterTextSplitter,
+                {"separators": RECURSIVE_SEPARATORS},
+            ),
             CHUNKING_METHOD_CHARACTER: (CharacterTextSplitter, {"separator": "\n\n"}),
             CHUNKING_METHOD_TOKEN: (TokenTextSplitter, {}),
         }
@@ -128,7 +131,9 @@ class LangChainChunker:
 
         return all_chunks
 
-    def chunk_markdown_file(self, file_path: str, encoding: str = DEFAULT_ENCODING) -> list[Document]:
+    def chunk_markdown_file(
+        self, file_path: str, encoding: str = DEFAULT_ENCODING
+    ) -> list[Document]:
         """Load a markdown file and chunk it.
 
         Parameters

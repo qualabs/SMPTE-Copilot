@@ -1,8 +1,6 @@
 #!/bin/bash
 # Script to run Ruff linter on the project
 
-set -e
-
 # Check if ruff is installed
 if ! command -v ruff &> /dev/null; then
     echo "Ruff is not installed. Installing from dev dependencies..."
@@ -14,12 +12,16 @@ if [[ "$1" == "--fix" ]]; then
     echo "Running Ruff linter with auto-fix..."
     ruff check --fix --unsafe-fixes src/
     echo "✓ Fixed all auto-fixable issues!"
+    exit_code=0
 else
     # Run ruff check
     echo "Running Ruff linter..."
     ruff check src/
+    exit_code=$?
     echo ""
-    echo "Tip: Run './lint.sh --fix' to automatically fix issues"
+    if [ $exit_code -ne 0 ]; then
+        echo "Tip: Run './lint.sh --fix' to automatically fix issues"
+    fi
 fi
 
 # Optionally run ruff format check (uncomment if you want to enforce formatting)
@@ -27,4 +29,5 @@ fi
 # ruff format --check src/
 
 echo "Linting complete!"
+exit $exit_code
 

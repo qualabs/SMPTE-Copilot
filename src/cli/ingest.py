@@ -52,7 +52,9 @@ def ingest_file(
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
     # Determine loader based on file extension and configuration
-    loader_name_str, loader_config_from_mapping = LoaderHelper.get_loader_config_for_file(file_path, config)
+    loader_name_str, loader_config_from_mapping = (
+        LoaderHelper.get_loader_config_for_file(file_path, config)
+    )
     file_extension = file_path.suffix.lower()
 
     # Convert string to LoaderType enum
@@ -66,7 +68,10 @@ def ingest_file(
         ) from exc
 
     # Step 1: Media → Text/Markdown
-    logger.info(f"Step 1: Converting {file_extension} file to Markdown (loader: {loader_name_str})...")
+    logger.info(
+        f"Step 1: Converting {file_extension} file to Markdown "
+        f"(loader: {loader_name_str})..."
+    )
     loader_config = LoaderHelper.create_loader_config(
         file_path,
         loader_name_str,
@@ -96,7 +101,9 @@ def ingest_file(
 
     # Step 3: Chunks → Embeddings
     logger.info(f"\nStep 3: Embedding chunks (model={config.embedding.embed_name})...")
-    embedded_chunks = EmbeddingHelper.embed_chunks(embedding_model, chunks, model_name=config.embedding.embed_name)
+    embedded_chunks = EmbeddingHelper.embed_chunks(
+        embedding_model, chunks, model_name=config.embedding.embed_name
+    )
     logger.info(f"✓ Embedded {len(embedded_chunks)} chunks")
 
     # Step 4: Embeddings → Vector Database
@@ -152,7 +159,10 @@ def main():
     logger.info(f"Inputs: {len(media_files)} file(s)")
     logger.info(f"Database: {config.vector_store.persist_directory}")
     logger.info(f"Collection: {config.vector_store.collection_name}")
-    logger.info(f"Chunk size: {config.chunking.chunk_size}, overlap: {config.chunking.chunk_overlap}")
+    logger.info(
+        f"Chunk size: {config.chunking.chunk_size}, "
+        f"overlap: {config.chunking.chunk_overlap}"
+    )
     logger.info(f"Embedding model: {config.embedding.embed_name}")
     logger.info("")
 

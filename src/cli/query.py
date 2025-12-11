@@ -38,7 +38,10 @@ def main():
         vector_db_path = config.vector_store.persist_directory
         if not vector_db_path.exists():
             logger.error(f"✗ Error: Vector database not found: {vector_db_path}")
-            logger.error("\nPlease ingest documents first Or set RAG_CONFIG_FILE or environment variables, then run:")
+            logger.error(
+                "\nPlease ingest documents first Or set RAG_CONFIG_FILE "
+                "or environment variables, then run:"
+            )
             logger.error(" python ingest.py")
             sys.exit(EXIT_CODE_ERROR)
 
@@ -77,7 +80,11 @@ def main():
         logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
         logger.info("Similarity Score Guide:")
         logger.info("  - Higher score = More similar to query")
-        logger.info(f"  - Score range depends on distance metric (usually {MIN_SCORE}-{MAX_SCORE_COSINE} or {MIN_SCORE}-{MAX_SCORE_DISTANCE})")
+        logger.info(
+            f"  - Score range depends on distance metric "
+            f"(usually {MIN_SCORE}-{MAX_SCORE_COSINE} or "
+            f"{MIN_SCORE}-{MAX_SCORE_DISTANCE})"
+        )
         logger.info(f"  - For cosine similarity: closer to {MAX_SCORE_COSINE} = more similar")
         logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
 

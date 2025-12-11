@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import chromadb
 from langchain_community.vectorstores import Chroma
 
 from ..embeddings.protocol import Embeddings
