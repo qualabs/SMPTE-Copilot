@@ -90,13 +90,9 @@ class PyMuPDFLoader:
         pages
             Optional sequence of page numbers, range, or None for all pages.
 
-        Returns
-        -------
-        Markdown representation of the PDF.
-
         Raises
         ------
-        Exception
+        RuntimeError
             If the PDF cannot be converted to Markdown (e.g., corrupted file).
         """
         try:
@@ -124,10 +120,6 @@ class PyMuPDFLoader:
             If None, uses a default path based on the source document.
         overwrite
             Whether to overwrite existing files.
-
-        Returns
-        -------
-        Path to the saved Markdown file.
         """
         md_text = self.to_markdown_text(pages=pages)
         destination = self._resolve_output_path(output_path)
@@ -147,10 +139,6 @@ class PyMuPDFLoader:
         output_path
             Optional explicit output path. If None, generates a default path
             based on the PDF file name in the output directory or PDF's parent directory.
-
-        Returns
-        -------
-        Resolved Path object for the markdown output file.
         """
         if output_path is not None:
             return Path(output_path).expanduser().resolve()

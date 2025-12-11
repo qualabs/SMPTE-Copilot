@@ -90,19 +90,7 @@ class LangChainChunker:
         )
 
     def chunk_text(self, text: str, metadata: dict | None = None) -> list[Document]:
-        """Chunk a markdown text string into LangChain Documents.
-
-        Parameters
-        ----------
-        text
-            The markdown text to chunk.
-        metadata
-            Optional metadata to add to each chunk.
-
-        Returns
-        -------
-        List of LangChain Document objects, each representing a chunk.
-        """
+        """Chunk a markdown text string into LangChain Documents."""
         if not text or not text.strip():
             return []
 
@@ -116,17 +104,7 @@ class LangChainChunker:
         return chunks
 
     def chunk_documents(self, documents: list[Document]) -> list[Document]:
-        """Chunk a list of LangChain Documents into smaller chunks.
-
-        Parameters
-        ----------
-        documents
-            List of LangChain Document objects to chunk.
-
-        Returns
-        -------
-        List of chunked LangChain Document objects.
-        """
+        """Chunk a list of LangChain Documents into smaller chunks."""
         if not documents:
             return []
 

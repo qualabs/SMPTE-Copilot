@@ -17,33 +17,11 @@ class Chunker(Protocol):
     """
 
     def chunk_text(self, text: str, metadata: dict | None = None) -> list[Document]:
-        """Chunk a text string into Document objects.
-
-        Parameters
-        ----------
-        text
-            The text to chunk.
-        metadata
-            Optional metadata to add to each chunk.
-
-        Returns
-        -------
-        List of Document objects, each representing a chunk.
-        """
+        """Chunk a text string into Document objects."""
         ...
 
     def chunk_documents(self, documents: list[Document]) -> list[Document]:
-        """Chunk a list of Document objects into smaller chunks.
-
-        Parameters
-        ----------
-        documents
-            List of Document objects to chunk.
-
-        Returns
-        -------
-        List of chunked Document objects.
-        """
+        """Chunk a list of Document objects into smaller chunks."""
         ...
 
     def chunk_markdown_file(
@@ -51,18 +29,6 @@ class Chunker(Protocol):
         file_path: str,
         encoding: str = DEFAULT_ENCODING
     ) -> list[Document]:
-        """Load a markdown file and chunk it.
-
-        Parameters
-        ----------
-        file_path
-            Path to the markdown file.
-        encoding
-            File encoding (default: utf-8).
-
-        Returns
-        -------
-        List of chunked Document objects.
-        """
+        """Load a markdown file and chunk it."""
         ...
 

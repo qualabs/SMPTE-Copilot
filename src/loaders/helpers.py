@@ -142,17 +142,7 @@ class LoaderHelper:
 
     @staticmethod
     def prepare_output_dir(output_dir: Path) -> Path:
-        """Prepare output directory, creating it if it doesn't exist.
-
-        Parameters
-        ----------
-        output_dir
-            Path to the output directory.
-
-        Returns
-        -------
-        Path to the prepared output directory.
-        """
+        """Create output directory if it doesn't exist and return it."""
         output_dir.mkdir(parents=True, exist_ok=True)
         return output_dir
 

@@ -35,31 +35,11 @@ class DocumentRetriever:
         self.k = k
 
     def retrieve(self, query: str) -> list[Document]:
-        """Retrieve relevant documents for a query.
-
-        Parameters
-        ----------
-        query
-            The search query.
-
-        Returns
-        -------
-        List of Document objects, most relevant first.
-        """
+        """Retrieve relevant documents for a query."""
         return self.vector_store.similarity_search(query, k=self.k)
 
     def retrieve_with_scores(self, query: str) -> list[tuple[Document, float]]:
-        """Retrieve documents with similarity scores.
-
-        Parameters
-        ----------
-        query
-            The search query.
-
-        Returns
-        -------
-        List of tuples: (Document, score), most relevant first.
-        """
+        """Retrieve documents with similarity scores."""
         return self.vector_store.similarity_search_with_score(query, k=self.k)
 
 

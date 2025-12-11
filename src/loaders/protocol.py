@@ -19,12 +19,7 @@ class DocumentLoader(Protocol):
     """
 
     def load_documents(self) -> list[Document]:
-        """Load documents into LangChain Document objects.
-
-        Returns
-        -------
-        List of Document objects representing the loaded content.
-        """
+        """Load documents into LangChain Document objects."""
         ...
 
     def to_markdown_text(self, pages: PageSpecifier = None) -> str:
@@ -34,10 +29,6 @@ class DocumentLoader(Protocol):
         ----------
         pages
             Optional sequence of page numbers, range, or None for all pages.
-
-        Returns
-        -------
-        Markdown representation of the document.
         """
         ...
 
@@ -59,10 +50,6 @@ class DocumentLoader(Protocol):
             If None, uses a default path based on the source document.
         overwrite
             Whether to overwrite existing files.
-
-        Returns
-        -------
-        Path to the saved Markdown file.
         """
         ...
 

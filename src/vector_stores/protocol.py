@@ -22,19 +22,7 @@ class VectorStore(Protocol):
         query: str,
         k: int = DEFAULT_RETRIEVAL_K
     ) -> list[Document]:
-        """Search for similar documents.
-
-        Parameters
-        ----------
-        query
-            Search query text.
-        k
-            Number of results to return.
-
-        Returns
-        -------
-        List of Document objects, most similar first.
-        """
+        """Search for similar documents."""
         ...
 
     def similarity_search_with_score(
@@ -42,37 +30,14 @@ class VectorStore(Protocol):
         query: str,
         k: int = DEFAULT_RETRIEVAL_K
     ) -> list[tuple[Document, float]]:
-        """Search for similar documents with similarity scores.
-
-        Parameters
-        ----------
-        query
-            Search query text.
-        k
-            Number of results to return.
-
-        Returns
-        -------
-        List of tuples: (Document, score), most similar first.
-        Higher scores indicate better matches.
-        """
+        """Search for similar documents with similarity scores."""
         ...
 
     def add_documents(
         self,
         documents: list[Document]
     ) -> list[str]:
-        """Add documents to the vector store.
-
-        Parameters
-        ----------
-        documents
-            List of Document objects to add.
-
-        Returns
-        -------
-        List of document IDs (if supported).
-        """
+        """Add documents to the vector store."""
         ...
 
     def add_texts(
@@ -106,11 +71,7 @@ class VectorStore(Protocol):
         ...
 
     def persist(self) -> None:
-        """Persist the vector store to disk.
-
-        Save the vector store state to disk. This method should
-        be called to ensure data is persisted.
-        """
+        """Persist the vector store to disk."""
         ...
 
     def delete(self, ids: list[str] | None = None) -> None:

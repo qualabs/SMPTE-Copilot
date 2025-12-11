@@ -14,30 +14,10 @@ class Retriever(Protocol):
     """
 
     def retrieve(self, query: str) -> list[Document]:
-        """Retrieve relevant documents for a query.
-
-        Parameters
-        ----------
-        query
-            The search query.
-
-        Returns
-        -------
-        List of Document objects, most relevant first.
-        """
+        """Retrieve relevant documents for a query."""
         ...
 
     def retrieve_with_scores(self, query: str) -> list[tuple[Document, float]]:
-        """Retrieve documents with similarity scores.
-
-        Parameters
-        ----------
-        query
-            The search query.
-
-        Returns
-        -------
-        List of tuples: (Document, score), most relevant first.
-        """
+        """Retrieve documents with similarity scores."""
         ...
 

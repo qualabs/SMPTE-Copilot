@@ -12,30 +12,10 @@ class Embeddings(Protocol):
     """
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
-        """Embed a list of documents.
-
-        Parameters
-        ----------
-        texts
-            List of text strings to embed.
-
-        Returns
-        -------
-        List of embedding vectors, each as a list of floats.
-        """
+        """Embed a list of documents."""
         ...
 
     def embed_query(self, text: str) -> list[float]:
-        """Embed a single query text.
-
-        Parameters
-        ----------
-        text
-            Query text to embed.
-
-        Returns
-        -------
-        Embedding vector as a list of floats.
-        """
+        """Embed a single query text."""
         ...
 
