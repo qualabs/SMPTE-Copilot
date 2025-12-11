@@ -22,7 +22,6 @@ from src.logger import Logger
 def main():
     config = Config.get_config()
 
-    # Setup logging from config
     Logger.setup(config)
     logger = logging.getLogger()
 

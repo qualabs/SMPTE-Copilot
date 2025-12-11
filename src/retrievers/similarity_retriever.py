@@ -83,7 +83,6 @@ def create_similarity_retriever(config: dict[str, Any]) -> Retriever:
 
     k = config.get("k", DEFAULT_RETRIEVAL_K)
 
-    # Validate k if provided
     if k is not None and (not isinstance(k, int) or k <= 0):
         raise ValueError(f"k must be a positive integer, got: {k}")
 

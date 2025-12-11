@@ -1,5 +1,4 @@
 #!/bin/bash
-# Script to run Ruff linter on the project
 
 # Check if ruff is installed
 if ! command -v ruff &> /dev/null; then
@@ -24,10 +23,5 @@ else
     fi
 fi
 
-# Optionally run ruff format check (uncomment if you want to enforce formatting)
-# echo "Checking code formatting..."
-# ruff format --check src/
-
 echo "Linting complete!"
 exit $exit_code
-

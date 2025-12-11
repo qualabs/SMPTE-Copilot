@@ -51,13 +51,11 @@ def ingest_file(
     logger.info(f"Ingesting: {file_path}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
-    # Determine loader based on file extension and configuration
     loader_name_str, loader_config_from_mapping = (
         LoaderHelper.get_loader_config_for_file(file_path, config)
     )
     file_extension = file_path.suffix.lower()
 
-    # Convert string to LoaderType enum
     try:
         loader_type = LoaderType(loader_name_str)
     except ValueError as exc:
@@ -114,8 +112,6 @@ def ingest_file(
     VectorStoreHelper.ingest_chunks_with_embeddings(vector_store, embedded_chunks)
     vector_store.persist()
     logger.info(f"✓ Ingested {len(embedded_chunks)} chunks")
-
-    # Summary
     logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("Ingestion Complete!")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
@@ -129,14 +125,11 @@ def ingest_file(
 
 def main():
     """Run the ingestion pipeline for one or more media files."""
-    # Load configuration
     config = Config.get_config()
 
-    # Setup logging from config
     Logger.setup(config)
     logger = logging.getLogger()
 
-    # Determine input (CLI arg > config > default path)
     input_path = config.paths.input_path
 
     try:
@@ -167,13 +160,11 @@ def main():
     logger.info("")
 
     try:
-        # Create embedding model using factory
         embedding_model = EmbeddingModelFactory.create(
             config.embedding.embed_name,
             **(config.embedding.embed_config or {}),
         )
 
-        # Create vector store using factory
         vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,
             persist_directory=str(config.vector_store.persist_directory),

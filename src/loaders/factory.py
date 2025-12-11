@@ -50,7 +50,5 @@ class LoaderFactory:
             )
         return cls._registry[loader_type](kwargs)
 
-
-# Register default loaders
 LoaderFactory.register(LoaderType.PYMUPDF)(create_pymupdf_loader)
 

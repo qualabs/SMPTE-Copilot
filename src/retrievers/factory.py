@@ -50,6 +50,4 @@ class RetrieverFactory:
             )
         return cls._registry[retriever_type](kwargs)
 
-
-# Register default retrievers
 RetrieverFactory.register(RetrieverType.SIMILARITY)(create_similarity_retriever)

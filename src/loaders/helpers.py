@@ -40,7 +40,6 @@ class LoaderHelper:
 
         suffix = file_path.suffix.lower()
 
-        # Check if extension is supported
         if suffix not in SUPPORTED_FILE_EXTENSIONS:
             supported = ", ".join(SUPPORTED_FILE_EXTENSIONS)
             raise ValueError(
@@ -48,7 +47,6 @@ class LoaderHelper:
                 f"Supported types: {supported}"
             )
 
-        # Get loader from file type mapping (required)
         if suffix not in config.loader.file_type_mapping:
             raise ValueError(
                 f"No loader configured for file type: {suffix}. "
@@ -115,7 +113,6 @@ class LoaderHelper:
             raise FileNotFoundError(f"Path not found: {input_path}")
 
         if input_path.is_file():
-            # Validate file type
             suffix = input_path.suffix.lower()
             if suffix not in SUPPORTED_FILE_EXTENSIONS:
                 supported = ", ".join(SUPPORTED_FILE_EXTENSIONS)
@@ -128,8 +125,6 @@ class LoaderHelper:
         if not input_path.is_dir():
             raise ValueError(f"Path is neither a file nor a directory: {input_path}")
 
-        # Directory: collect all supported files (non-recursive)
-        # Filter to ensure we only get files, not directories with matching extensions
         media_files = [
             path for ext in SUPPORTED_FILE_EXTENSIONS
             for path in input_path.glob(f"*{ext}")

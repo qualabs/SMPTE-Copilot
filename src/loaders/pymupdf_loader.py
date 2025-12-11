@@ -54,7 +54,6 @@ class PyMuPDFLoader:
         if not self.pdf_path.exists():
             raise FileNotFoundError(f"PDF not found: {self.pdf_path}")
 
-        # Validate file extension
         if self.pdf_path.suffix.lower() != ".pdf":
             raise ValueError(
                 f"Expected PDF file, got file with extension: {self.pdf_path.suffix}"

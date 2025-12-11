@@ -66,5 +66,4 @@ class VectorStoreFactory:
             )
         return cls._registry[store_type](kwargs)
 
-# Register vector store implementations
 VectorStoreFactory.register(VectorStoreType.CHROMADB)(create_chromadb_store)

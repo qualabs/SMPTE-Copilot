@@ -95,11 +95,9 @@ class LangChainChunker:
         if not text or not text.strip():
             return []
 
-        # Create a temporary document to split
         temp_doc = Document(page_content=text, metadata=metadata or {})
         chunks = self._splitter.split_documents([temp_doc])
 
-        # Add chunk index to metadata
         for i, chunk in enumerate(chunks):
             chunk.metadata[CHUNK_INDEX_METADATA_KEY] = i
             chunk.metadata[TOTAL_CHUNKS_METADATA_KEY] = len(chunks)
@@ -121,10 +119,8 @@ class LangChainChunker:
         if not documents:
             return []
 
-        # Split all documents
         all_chunks = self._splitter.split_documents(documents)
 
-        # Add chunk metadata
         for i, chunk in enumerate(all_chunks):
             chunk.metadata[CHUNK_INDEX_METADATA_KEY] = i
             chunk.metadata[TOTAL_CHUNKS_METADATA_KEY] = len(all_chunks)
@@ -175,12 +171,10 @@ def create_langchain_chunker(config: dict[str, Any]) -> Chunker:
     -------
     Chunker instance.
     """
-    # Use defaults if not provided
     chunk_size = config.get("chunk_size", DEFAULT_CHUNK_SIZE)
     chunk_overlap = config.get("chunk_overlap", DEFAULT_CHUNK_OVERLAP)
     method = config.get("method", CHUNKING_METHOD_RECURSIVE)
 
-    # Validate types
     if not isinstance(chunk_size, int) or chunk_size <= 0:
         raise ValueError(f"chunk_size must be a positive integer, got: {chunk_size}")
     if not isinstance(chunk_overlap, int) or chunk_overlap < 0:

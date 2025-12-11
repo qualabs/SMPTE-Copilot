@@ -35,16 +35,12 @@ class EmbeddingHelper:
         if not chunks:
             return []
 
-        # Extract texts for embedding
         texts = [chunk.page_content for chunk in chunks]
 
-        # Generate embeddings
         embeddings = embedding_model.embed_documents(texts)
 
-        # Add embeddings to document metadata
         embedded_chunks = []
         for chunk, embedding in zip(chunks, embeddings):
-            # Create a copy to avoid modifying original
             embedded_chunk = Document(
                 page_content=chunk.page_content,
                 metadata={

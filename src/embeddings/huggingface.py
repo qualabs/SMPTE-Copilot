@@ -32,7 +32,6 @@ def create_huggingface_embedding(config: dict[str, Any]) -> Embeddings:
         If model creation fails or invalid parameters are provided.
     """
 
-    # Use default model_name if not provided
     if "model_name" not in config:
         config = {**config, "model_name": DEFAULT_HUGGINGFACE_MODEL}
 

@@ -50,5 +50,4 @@ class ChunkerFactory:
             )
         return cls._registry[chunker_type](kwargs)
 
-# Register default chunkers
 ChunkerFactory.register(ChunkerType.LANGCHAIN)(create_langchain_chunker)

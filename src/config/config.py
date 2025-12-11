@@ -43,7 +43,6 @@ class Config(BaseSettings):
         with config_path.open() as f:
             data = yaml.safe_load(f) or {}
 
-        # Create config from nested dict
         return cls(**data)
 
     @staticmethod
@@ -64,10 +63,8 @@ class Config(BaseSettings):
         """
         global _config, _config_lock
 
-        # Double-checked locking pattern for thread safety
         if _config is None:
             with _config_lock:
-                # Check again inside the lock to prevent race conditions
                 if _config is None:
                     config_path = Path(CONFIG_FILE_NAME)
                     _config = Config.from_file(config_path) if config_path.exists() else Config()
