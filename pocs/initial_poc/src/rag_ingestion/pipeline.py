@@ -65,13 +65,15 @@ class RetrievalPipeline:
         )
         self.searcher_strategy = searcher_strategy
 
-    def retrieve(self, query: str) -> List[Document]:
+    def retrieve(self, query: str, metadata_filter: dict = None) -> List[Document]:
         """Run the retrieval pipeline.
 
         Parameters
         ----------
         query
             The search query string.
+        metadata_filter
+            Optional metadata filter for role-aware access control.
 
         Returns
         -------
@@ -80,24 +82,26 @@ class RetrievalPipeline:
         # Step 2: Embed query (query is already text, embedding happens in search)
         # The retriever handles embedding internally via the vector store's embedding function
         
-        # Step 3: Search vector store
-        results = self.retriever.retrieve(query)
+        # Step 3: Search vector store with optional filter
+        results = self.retriever.retrieve(query, filter=metadata_filter)
         
         return results
 
-    def retrieve_with_scores(self, query: str) -> List[tuple]:
+    def retrieve_with_scores(self, query: str, metadata_filter: dict = None) -> List[tuple]:
         """Run the retrieval pipeline and return results with similarity scores.
 
         Parameters
         ----------
         query
             The search query string.
+        metadata_filter
+            Optional metadata filter for role-aware access control.
 
         Returns
         -------
         List of tuples: (Document, score), most relevant first.
         """
-        return self.retriever.retrieve_with_scores(query)
+        return self.retriever.retrieve_with_scores(query, filter=metadata_filter)
 
 
 
