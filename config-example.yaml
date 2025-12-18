@@ -33,6 +33,13 @@ retrieval:
   k: 5                          # Number of results to retrieve
   searcher_config: null         # Additional searcher-specific configuration (dict)
 
+llm:
+  llm_name: gemini
+  llm_config:
+    model: gemini-2.5-flash
+    api_key: 
+
+
 paths:
   input_path: ./data         # Default path for input media files (relative to current working directory)
   markdown_dir: ./data/markdown  # Directory for markdown output (relative to current working directory)
