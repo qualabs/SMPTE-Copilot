@@ -17,7 +17,7 @@ from rag_ingestion import (
 # Default locations (can be overridden via env vars or CLI)
 DEFAULT_PDF_LOCATION = Path(os.environ.get("PDF_PATH", "/app/data"))
 MARKDOWN_OUTPUT_DIR = Path(os.environ.get("MARKDOWN_DIR", "/app/data/markdown"))
-CHROMA_DB_PATH = Path(os.environ.get("CHROMA_DB_PATH", "/app/chroma_db"))
+QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "rag_collection")
 
 # Chunking configuration
@@ -79,6 +79,7 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
         print(f"  Required Role: {access_metadata.get('required_role_strict', 'None')}")
         for chunk in chunks:
             chunk.metadata.update(access_metadata)
+            print("chunk meta: ", chunk.metadata)
         print(f"✓ Access metadata added to {len(chunks)} chunks")
 
     # Step 3: Chunks → Embeddings
@@ -89,7 +90,7 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
 
     # Step 4: Embeddings → Vector Database
     print(f"\nStep 4: Storing in vector database...")
-    print(f"  Database location: {CHROMA_DB_PATH}")
+    print(f"  Database URL: {QDRANT_URL}")
     print(f"  Collection: {COLLECTION_NAME}")
 
     vector_store.ingest_chunks(embedded_chunks)
@@ -103,7 +104,7 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
     print(f"✓ PDF processed: {pdf_path.name}")
     print(f"✓ Markdown file: {markdown_path}")
     print(f"✓ Chunks created: {len(chunks)}")
-    print(f"✓ Database location: {CHROMA_DB_PATH}")
+    print(f"✓ Database URL: {QDRANT_URL}")
     print(f"✓ Collection: {COLLECTION_NAME}")
     print("=" * 60 + "\n")
 
@@ -162,14 +163,14 @@ def main():
         print("  python ingest.py /app/data/file.pdf --tags 'Finance,Public'")
         print("  python ingest.py /app/data/file.pdf --required-role 'Admin'")
         print("  python ingest.py /app/data  # Ingest all PDFs in directory")
-        print("\nConfigure defaults with env vars: PDF_PATH, MARKDOWN_DIR, CHROMA_DB_PATH, COLLECTION_NAME")
+        print("\nConfigure defaults with env vars: PDF_PATH, MARKDOWN_DIR, QDRANT_URL, COLLECTION_NAME")
         sys.exit(1)
 
     print("=" * 60)
     print("RAG Document Ingestion Pipeline")
     print("=" * 60)
     print(f"Inputs: {len(pdf_files)} PDF(s)")
-    print(f"Database: {CHROMA_DB_PATH}")
+    print(f"Database URL: {QDRANT_URL}")
     print(f"Collection: {COLLECTION_NAME}")
     if access_metadata:
         print(f"Access Control: {access_metadata}")
@@ -178,9 +179,9 @@ def main():
     try:
         embedder = ChunkEmbedder(model_name=EMBEDDING_MODEL)
         vector_store = VectorStoreIngester(
-            store_name="chromadb",
+            store_name="qdrant",
             store_config={
-                "persist_directory": str(CHROMA_DB_PATH),
+                "url": QDRANT_URL,
                 "collection_name": COLLECTION_NAME,
             },
             embedding_function=embedder.embedding_model,
