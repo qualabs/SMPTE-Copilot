@@ -70,14 +70,13 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
         **(config.vector_store.store_config or {}),
     )
 
-    searcher_config = {"k": config.retrieval.k}
+    retriever_kwargs = {"vector_store": vector_store, "k": config.retrieval.k}
     if config.retrieval.searcher_config:
-        searcher_config.update(config.retrieval.searcher_config)
-    searcher_config["vector_store"] = vector_store
+        retriever_kwargs.update(config.retrieval.searcher_config)
 
     retriever = RetrieverFactory.create(
         config.retrieval.searcher_strategy,
-        **searcher_config,
+        **retriever_kwargs,
     )
 
     llm = LLMFactory.create(
@@ -119,7 +118,7 @@ def execute_query(components: RAGComponents, query: str) -> QueryContext:
     steps = [
         QueryEmbeddingStep(components.embedding_model),
         RetrieveStep(components.retriever),
-        GenerationStep(components.llm, components.config.llm.llm_name),
+        GenerationStep(components.llm),
     ]
 
     executor = PipelineExecutor(steps)

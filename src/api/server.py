@@ -25,26 +25,28 @@ from src.pipeline import PipelineStatus
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
+    # Initialize state attributes
+    app.state.logger = logging.getLogger()
+    app.state.initialized = False
+    
     # Startup
     try:
         config = Config.get_config()
         Logger.setup(config)
-        logger = logging.getLogger()
-        logger.info("Initializing RAG components...")
+        app.state.logger = logging.getLogger()
+        app.state.logger.info("Initializing RAG components...")
         
         app.state.components = initialize_rag_components(config)
-        app.state.logger = logger
         app.state.initialized = True
         
-        logger.info("Server startup complete")
+        app.state.logger.info("Server startup complete")
     except Exception as e:
-        logging.error(f"Failed to initialize components: {e}")
+        app.state.logger.error(f"Failed to initialize components: {e}")
         app.state.initialized = False
     
     yield
     
-    logger = getattr(app.state, "logger", logging.getLogger())
-    logger.info("Server shutting down")
+    app.state.logger.info("Server shutting down")
 
 
 app = FastAPI(
@@ -66,10 +68,9 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    initialized = getattr(app.state, "initialized", False)
     return {
-        "status": "healthy" if initialized else "initializing",
-        "initialized": initialized,
+        "status": "healthy" if app.state.initialized else "initializing",
+        "initialized": app.state.initialized,
     }
 
 
@@ -81,7 +82,7 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
     runs it through the RAG pipeline, and returns a response in
     OpenAI-compatible format.
     """
-    if not getattr(app.state, "initialized", False):
+    if not app.state.initialized:
         raise HTTPException(
             status_code=503,
             detail="Service not initialized. Please ensure vector database is available.",
