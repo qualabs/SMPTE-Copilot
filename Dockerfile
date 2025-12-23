@@ -1,4 +1,4 @@
-# Dockerfile for RAG Ingestion & Retrieval Pipeline
+# Dockerfile for SMPTE-Copilot (CLI tools and API server)
 FROM python:3.9-slim
 
 # Set working directory
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 COPY pyproject.toml .
 COPY src/ ./src/
 
-# Install Python dependencies and the package
+# Install Python dependencies
 # Using pyproject.toml as single source of truth
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -e .
@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # Set Python path
 ENV PYTHONPATH=/app
 
-# Default command (can be overridden)
+# Expose API port
+EXPOSE 8000
+
+# Default command
 CMD ["python", "--version"]
 
