@@ -6,13 +6,24 @@ loader:
     .pdf: 
       loader_name: pymupdf            # PDF files use pymupdf loader
       loader_config: null             # Optional loader-specific configuration
-    # Future examples (uncomment when loaders are added):
+    # Docling loader supports PDF, DOCX, and Markdown:
+    # .pdf:
+    #   loader_name: docling           # Use Docling for PDF parsing
+    #   loader_config: null
+    # .docx:
+    #   loader_name: docling           # Use Docling for DOCX parsing
+    #   loader_config: null
   
 chunking:
-  chunker_name: langchain    # Chunker name (langchain)
-  chunk_size: 1000          # Size of text chunks in characters
-  chunk_overlap: 200         # Overlap between chunks in characters
-  method: recursive          # Options: recursive, character, token
+  chunker_name: langchain    # Chunker name (langchain, hybrid)
+  chunk_size: 1000          # Size of text chunks in characters (for langchain only)
+  chunk_overlap: 200         # Overlap between chunks in characters (for langchain only)
+  method: recursive          # Options: recursive, character, token (for langchain only)
+  # For hybrid chunking (semantic + token-based):
+  # chunker_name: hybrid
+  # max_tokens: 2000          # Maximum tokens per chunk (REQUIRED for hybrid, default: 2000)
+  # merge_peers: false        # Whether to merge peer chunks (default: false)
+  # Note: chunk_size and chunk_overlap are NOT used by hybrid chunker (it's token-based)
 
 embedding:
   embed_name: huggingface    # Options: huggingface, openai, gemini

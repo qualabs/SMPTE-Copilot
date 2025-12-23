@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, ClassVar
 
+from .docling_loader import create_docling_loader
 from .protocol import DocumentLoader
 from .pymupdf_loader import create_pymupdf_loader
 from .types import LoaderType
@@ -51,4 +52,5 @@ class LoaderFactory:
         return cls._registry[loader_type](kwargs)
 
 LoaderFactory.register(LoaderType.PYMUPDF)(create_pymupdf_loader)
+LoaderFactory.register(LoaderType.DOCLING)(create_docling_loader)
 

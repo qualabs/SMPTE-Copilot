@@ -32,6 +32,10 @@ openai = [
 gemini = [
   "langchain-google-genai>=0.1.0",  # For Gemini embeddings
 ]
+docling = [
+  "docling>=1.0.0",  # For Docling document parsing and hybrid chunking
+  "google-genai>=0.2.0",  # For Gemini token counting API (new API, not deprecated)
+]
 
 [build-system]
 requires = ["setuptools>=68.0"]
