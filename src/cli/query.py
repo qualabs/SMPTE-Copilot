@@ -133,6 +133,5 @@ def main():
         logger.error(f"✗ Error: {e}", exc_info=True)
         sys.exit(EXIT_CODE_ERROR)
 
-
 if __name__ == "__main__":
     main()
