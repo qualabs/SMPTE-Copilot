@@ -10,6 +10,7 @@ services:
       - ./config.yaml:/app/config.yaml:ro
     environment:
       - PYTHONUNBUFFERED=1
+      #- GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
     command: python src/cli/ingest.py --help
 
   # Service for querying documents
@@ -22,6 +23,7 @@ services:
       - ./config.yaml:/app/config.yaml:ro
     environment:
       - PYTHONUNBUFFERED=1
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
     command: python src/cli/query.py --help
 
 volumes:

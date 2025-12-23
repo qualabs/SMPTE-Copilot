@@ -16,7 +16,7 @@ COPY src/ ./src/
 # Install Python dependencies and the package
 # Using pyproject.toml as single source of truth
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -e .
+    pip install --no-cache-dir -e .[gemini]
 
 # Set Python path
 ENV PYTHONPATH=/app
