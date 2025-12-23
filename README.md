@@ -26,6 +26,7 @@ SMPTE-Copilot/
 ├── src/
 │   ├── chunkers/          # Module for splitting documents into chunks
 │   ├── embeddings/        # Module for embedding models
+│   ├── llms/              # Module for LLM models
 │   ├── loaders/           # Module for loading documents from various sources
 │   ├── retrievers/        # Module for document retrieval
 │   ├── vector_stores/     # Module for vector storage
@@ -45,7 +46,7 @@ The project uses two main architectural patterns that enable modularity and exte
 
 ### Module Architecture
 
-All main modules (`chunkers`, `embeddings`, `loaders`, `retrievers`, `vector_stores`) follow the same architectural structure based on the Factory pattern. This consistency facilitates code understanding and the incorporation of new components.
+All main modules (`chunkers`, `embeddings`, `llms`, `loaders`, `retrievers`, `vector_stores`) follow the same architectural structure based on the Factory pattern. This consistency facilitates code understanding and the incorporation of new components.
 
 #### Module Structure (Example: `embeddings/`)
 
@@ -263,10 +264,10 @@ context = executor.execute(context)
 
 ### Query Pipeline
 
-The query pipeline (`query.py`) processes user queries through two sequential steps:
+The query pipeline (`query.py`) processes user queries through three sequential steps:
 
 ```
-QueryEmbedding → Retrieve
+QueryEmbedding → Retrieve → Generate
 ```
 
 **Pipeline Flow:**
@@ -279,6 +280,10 @@ QueryEmbedding → Retrieve
    - Input: `user_query` (uses query directly, not the vector)
    - Output: Sets `retrieved_docs` (list of tuples with Document and score) in context
 
+3. **GenerateStep**:  Generates a response using an LLM based on the retrieved documents
+   - Input: `retrieved_docs` from RetrieveStep
+   - Output: Sets `response` and `citations` in context
+
 **Implementation Example:**
 
 ```python
@@ -290,6 +295,7 @@ context = QueryContext(user_query=query)
 steps = [
     QueryEmbeddingStep(embedding_model),
     RetrieveStep(retriever),
+    GenerateStep(llm),
 ]
 
 executor = PipelineExecutor(steps)
@@ -312,6 +318,8 @@ Each pipeline uses a context object that extends `PipelineContext`:
   - `user_query`: Original user query string
   - `query_vector`: Embedding vector for the query
   - `retrieved_docs`: Retrieved documents with similarity scores
+  - `response`: Generated response from LLM
+  - `citations`: List of citations for the response
   - `status`: Pipeline execution status
   - `error`: Error message if pipeline failed
 
@@ -433,6 +441,12 @@ embedding:
   embed_name: huggingface       # Maps to EmbeddingModelType.HUGGINGFACE
   embed_config:                 # Additional model-specific config
     model_name: "sentence-transformers/all-MiniLM-L6-v2"
+
+llm:
+  llm_name: gemini
+  llm_config:
+    model: gemini-2.5-flash
+    # api_key: "${GEMINI_API_KEY}"
 
 vector_store:
   store_name: chromadb          # Maps to VectorStoreType.CHROMADB

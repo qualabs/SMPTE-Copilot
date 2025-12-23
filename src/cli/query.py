@@ -4,12 +4,17 @@
 import logging
 import sys
 
-from src import Config, EmbeddingModelFactory, RetrieverFactory, VectorStoreFactory
+from src import (
+    Config,
+    EmbeddingModelFactory,
+    RetrieverFactory,
+    VectorStoreFactory,
+    LLMFactory,
+)
 from src.cli.constants import (
     ALT_SEPARATOR_CHAR,
     ENUMERATE_START,
     EXIT_CODE_ERROR,
-    MAX_SCORE_COSINE,
     MAX_SCORE_DISTANCE,
     MIN_SCORE,
     SCORE_DECIMAL_PLACES,
@@ -18,16 +23,11 @@ from src.cli.constants import (
 )
 from src.logger import Logger
 from src.pipeline import PipelineExecutor, PipelineStatus, QueryContext
-from src.pipeline.steps import QueryEmbeddingStep, RetrieveStep
+from src.pipeline.steps import QueryEmbeddingStep, RetrieveStep, GenerationStep
 
 
 def main():
-    """Query the vector database with a question from command line arguments.
-
-    Reads the query from command line arguments, loads the vector database,
-    creates the necessary components (embedding model, vector store, retriever),
-    and displays the search results with similarity scores.
-    """
+    """Query the vector database with a question from command line arguments."""
     config = Config.get_config()
 
     Logger.setup(config)
@@ -74,11 +74,17 @@ def main():
             **searcher_config,
         )
 
+        llm = LLMFactory.create(
+            config.llm.llm_name,
+            **(config.llm.llm_config or {}),
+        )
+
         context = QueryContext(user_query=query)
 
         steps = [
             QueryEmbeddingStep(embedding_model),
             RetrieveStep(retriever),
+            GenerationStep(llm),
         ]
 
         executor = PipelineExecutor(steps)
@@ -87,28 +93,40 @@ def main():
         if context.status == PipelineStatus.FAILED:
             raise RuntimeError(f"Pipeline failed: {context.error}")
 
-        results_with_scores = context.retrieved_docs
+        logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info("Final Answer")
+        logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info(context.llm_response or "(no response)")
 
-        logger.info(f"\nFound {len(results_with_scores)} relevant documents:\n")
-        logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
-        logger.info("Similarity Score Guide:")
-        logger.info("  - Higher score = More similar to query")
+        if context.citations:
+            logger.info("\nSources:")
+            for c in context.citations:
+                cid = c.get("id")
+                source = c.get("source")
+                score = c.get("score")
+                logger.info(f"  [{cid}] {source}  distance={score}")
+
+        results_with_scores = context.retrieved_docs or []
+
+        logger.info("\n" + ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info(f"Retrieved {len(results_with_scores)} chunks (debug):")
+        logger.info("Distance Score Guide (similarity_search_with_score):")
+        logger.info("  - Lower score = More similar to query")
         logger.info(
-            f"  - Score range depends on distance metric "
-            f"(usually {MIN_SCORE}-{MAX_SCORE_COSINE} or "
-            f"{MIN_SCORE}-{MAX_SCORE_DISTANCE})"
+            f"  - Score range depends on the distance metric "
+            f"(often around {MIN_SCORE}-{MAX_SCORE_DISTANCE})"
         )
-        logger.info(f"  - For cosine similarity: closer to {MAX_SCORE_COSINE} = more similar")
+        logger.info("  - Closer to 0 = more similar")
         logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
         for i, (doc, score) in enumerate(results_with_scores, ENUMERATE_START):
-            logger.info(f"\n[{i}] Similarity Score: {score:.{SCORE_DECIMAL_PLACES}f}")
+            logger.info(f"\n[{i}] Distance Score: {score:.{SCORE_DECIMAL_PLACES}f}")
             logger.info(f"    Content: {doc.page_content}")
             if doc.metadata:
                 logger.info(f"    Metadata: {doc.metadata}")
 
         logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
-        logger.info("Note: Higher similarity scores indicate better matches to your query.")
+        logger.info("Note: Lower distance scores indicate better matches to your query.")
         logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
     except Exception as e:

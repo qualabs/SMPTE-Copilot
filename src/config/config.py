@@ -16,6 +16,7 @@ from .logging import LoggingConfig
 from .paths import PathsConfig
 from .retrieval import RetrievalConfig
 from .vector_store import VectorStoreConfig
+from .llm import LLMConfig
 
 
 class Config(BaseSettings):
@@ -26,6 +27,7 @@ class Config(BaseSettings):
     embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
     vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
+    llm: LLMConfig = Field(default_factory=LLMConfig)
     paths: PathsConfig = Field(default_factory=PathsConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
 
