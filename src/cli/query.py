@@ -35,8 +35,10 @@ def main():
     logger.info(f"Query: {query}\n")
 
     try:
+        # Initialize RAG components
         components = initialize_rag_components(config)
 
+        # Execute query using shared logic
         context = execute_query(components, query)
 
         if context.status == PipelineStatus.FAILED:

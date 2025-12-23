@@ -2,7 +2,7 @@ services:
   # Service for ingesting documents
   ingest:
     build: .
-    image: smpte-copilot
+    image: rag-poc-v1
     container_name: rag-ingest
     volumes:
       - vector_db:/app/vector_db
@@ -15,7 +15,7 @@ services:
   # Service for querying documents
   query:
     build: .
-    image: smpte-copilot
+    image: rag-poc-v1
     container_name: rag-query
     volumes:
       - vector_db:/app/vector_db
@@ -27,7 +27,7 @@ services:
   # API Server - OpenAI-compatible endpoint
   api:
     build: .
-    image: smpte-copilot
+    image: rag-poc-v1
     container_name: smpte-api-server
     ports:
       - "8000:8000"

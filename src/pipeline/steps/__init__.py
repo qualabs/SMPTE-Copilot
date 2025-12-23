@@ -17,5 +17,4 @@ __all__ = [
     "QueryEmbeddingStep",
     "RetrieveStep",
     "GenerationStep",
-
 ]

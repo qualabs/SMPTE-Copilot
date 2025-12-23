@@ -4,8 +4,6 @@ An open-source AI co-pilot that ingests and indexes text, audio, and video to en
 
 ## Execution
 
-### CLI Usage
-
 ```bash
 # Build
 docker-compose build
@@ -58,15 +56,11 @@ SMPTE-Copilot/
 │   ├── loaders/           # Module for loading documents from various sources
 │   ├── retrievers/        # Module for document retrieval
 │   ├── vector_stores/     # Module for vector storage
-│   ├── pipeline/          # Pipeline orchestration and execution
 │   ├── config/            # Project configuration
 │   └── cli/               # Command-line interfaces
 ├── data/                  # Data and documents to process
-├── scripts/               # Utility scripts (test_api.py, query_api.py)
 ├── config.yaml           # Main configuration file
-├── docker-compose.yml    # Docker configuration
-├── Dockerfile            # Dockerfile for CLI tools
-└── Dockerfile.api        # Dockerfile for API server
+└── docker-compose.yml    # Docker configuration
 ```
 
 ## Architecture Patterns
