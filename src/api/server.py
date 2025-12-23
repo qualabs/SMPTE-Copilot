@@ -4,12 +4,13 @@
 import logging
 import time
 import uuid
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from src import Config
-from src.api.types import (
+from src.api.models import (
     ChatCompletionChoice,
     ChatCompletionRequest,
     ChatCompletionResponse,
@@ -20,26 +21,11 @@ from src.components import RAGComponents, execute_query, initialize_rag_componen
 from src.logger import Logger
 from src.pipeline import PipelineStatus
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="SMPTE-Copilot RAG API",
-    description="OpenAI-compatible API for SMPTE document question answering",
-    version="1.0.0",
-)
 
-# Add CORS middleware to allow requests from web UIs
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Configure this appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize components when the server starts."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events."""
+    # Startup
     try:
         config = Config.get_config()
         Logger.setup(config)
@@ -54,6 +40,27 @@ async def startup_event():
     except Exception as e:
         logging.error(f"Failed to initialize components: {e}")
         app.state.initialized = False
+    
+    yield
+    
+    logger = getattr(app.state, "logger", logging.getLogger())
+    logger.info("Server shutting down")
+
+
+app = FastAPI(
+    title="SMPTE-Copilot RAG API",
+    description="OpenAI-compatible API for SMPTE document question answering",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
