@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""FastAPI server exposing OpenAI-compatible chat completions endpoint."""
+"""FastAPI server exposing OpenAI-compatible chat completions endpoint"""
 
 import logging
 import time
@@ -11,10 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from src import Config
-from src.components import RAGComponents, initialize_rag_components
+from src.components import RAGComponents, execute_query, initialize_rag_components
 from src.logger import Logger
-from src.pipeline import PipelineExecutor, PipelineStatus, QueryContext
-from src.pipeline.steps import GenerationStep, QueryEmbeddingStep, RetrieveStep
+from src.pipeline import PipelineStatus
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -96,7 +95,6 @@ async def startup_event():
     except Exception as e:
         logging.error(f"Failed to initialize components: {e}")
         app.state.initialized = False
-        # Allow server to start but requests will fail with proper error
 
 
 @app.get("/health")
@@ -117,7 +115,6 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
     runs it through the RAG pipeline, and returns a response in
     OpenAI-compatible format.
     """
-    # Check if components are initialized
     if not getattr(app.state, "initialized", False):
         raise HTTPException(
             status_code=503,
@@ -139,21 +136,8 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
     logger.info(f"Processing query: {query}")
 
     try:
-        # Create query context
-        context = QueryContext(user_query=query)
+        context = execute_query(components, query)
 
-        # Build pipeline steps
-        steps = [
-            QueryEmbeddingStep(components.embedding_model),
-            RetrieveStep(components.retriever),
-            GenerationStep(components.llm, components.config.llm.llm_name),
-        ]
-
-        # Execute pipeline
-        executor = PipelineExecutor(steps)
-        context = executor.execute(context)
-
-        # Check for pipeline failure
         if context.status == PipelineStatus.FAILED:
             logger.error(f"Pipeline failed: {context.error}")
             raise HTTPException(
@@ -161,14 +145,13 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
                 detail=f"RAG pipeline failed: {context.error}",
             )
 
-        # Get the response
         answer = context.llm_response or "I don't know based on the provided documents."
 
         # Build OpenAI-compatible response
         response_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
         created_timestamp = int(time.time())
 
-        # Estimate token usage (rough approximation)
+        # Estimate token usage
         prompt_tokens = len(context.prompt.split()) if context.prompt else 0
         completion_tokens = len(answer.split())
         total_tokens = prompt_tokens + completion_tokens

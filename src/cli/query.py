@@ -15,10 +15,9 @@ from src.cli.constants import (
     SEPARATOR_CHAR,
     SEPARATOR_LENGTH,
 )
-from src.components import initialize_rag_components
+from src.components import execute_query, initialize_rag_components
 from src.logger import Logger
-from src.pipeline import PipelineExecutor, PipelineStatus, QueryContext
-from src.pipeline.steps import GenerationStep, QueryEmbeddingStep, RetrieveStep
+from src.pipeline import PipelineStatus
 
 
 def main():
@@ -36,19 +35,9 @@ def main():
     logger.info(f"Query: {query}\n")
 
     try:
-        # Initialize RAG components
         components = initialize_rag_components(config)
 
-        context = QueryContext(user_query=query)
-
-        steps = [
-            QueryEmbeddingStep(components.embedding_model),
-            RetrieveStep(components.retriever),
-            GenerationStep(components.llm, components.config.llm.llm_name),
-        ]
-
-        executor = PipelineExecutor(steps)
-        context = executor.execute(context)
+        context = execute_query(components, query)
 
         if context.status == PipelineStatus.FAILED:
             raise RuntimeError(f"Pipeline failed: {context.error}")
