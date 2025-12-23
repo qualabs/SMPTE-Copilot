@@ -84,7 +84,7 @@ def main():
         steps = [
             QueryEmbeddingStep(embedding_model),
             RetrieveStep(retriever),
-            GenerationStep(llm, config.llm.llm_name),
+            GenerationStep(llm),
         ]
 
         executor = PipelineExecutor(steps)

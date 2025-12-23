@@ -15,20 +15,17 @@ from ..step import PipelineStep
 class GenerationStep(PipelineStep):
     """Step that generates the final answer from retrieved documents."""
 
-    def __init__(self, llm: LLM, model_name: LLMType, max_context_chars: int = 12000):
+    def __init__(self, llm: LLM,  max_context_chars: int = 12000):
         """Initialize the generation step.
 
         Parameters
         ----------
         llm
             LLM instance created by LLMFactory (or wired manually).
-        model_name
-            Name of the LLM (for metadata tracking).
         max_context_chars
             Max characters of retrieved context injected into the prompt.
         """
         self.llm = llm
-        self.model_name = model_name
         self.max_context_chars = max_context_chars
 
     def run(self, context: QueryContext) -> None:
@@ -44,10 +41,6 @@ class GenerationStep(PipelineStep):
         if not context.retrieved_docs:
             context.mark_failed("No retrieved docs available. Retrieve step must run first.")
             return
-
-        logger.info(
-            f"Generating answer with {self.model_name.value} from {len(context.retrieved_docs)} chunks"
-        )
 
         retrieved: List[Tuple[Document, float]] = context.retrieved_docs
 
