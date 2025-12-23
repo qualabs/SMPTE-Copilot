@@ -1,0 +1,23 @@
+"""Protocol for retriever implementations."""
+from __future__ import annotations
+
+from typing import Protocol
+
+from langchain.schema import Document
+
+
+class Retriever(Protocol):
+    """Protocol for document retriever implementations.
+
+    Any class implementing these methods can retrieve documents using
+    different strategies (similarity search, MMR, etc.).
+    """
+
+    def retrieve(self, query: str) -> list[Document]:
+        """Retrieve relevant documents for a query."""
+        ...
+
+    def retrieve_with_scores(self, query: str) -> list[tuple[Document, float]]:
+        """Retrieve documents with similarity scores."""
+        ...
+
