@@ -6,21 +6,35 @@ loader:
     .pdf: 
       loader_name: pymupdf            # PDF files use pymupdf loader
       loader_config: null             # Optional loader-specific configuration
-    # Future examples (uncomment when loaders are added):
+    # Docling loader supports PDF, DOCX, and Markdown:
+    # .pdf:
+    #   loader_name: docling           # Use Docling for PDF parsing
+    #   loader_config: null
+    # .docx:
+    #   loader_name: docling           # Use Docling for DOCX parsing
+    #   loader_config: null
   
 chunking:
-  chunker_name: langchain    # Chunker name (langchain)
-  chunk_size: 1000          # Size of text chunks in characters
-  chunk_overlap: 200         # Overlap between chunks in characters
-  method: recursive          # Options: recursive, character, token
+  chunker_name: langchain    # Chunker name (langchain, hybrid)
+  chunk_size: 1000          # Size of text chunks in characters (for langchain only)
+  chunk_overlap: 200         # Overlap between chunks in characters (for langchain only)
+  method: recursive          # Options: recursive, character, token (for langchain only)
+  # For hybrid chunking (semantic + token-based):
+  # chunker_name: hybrid
+  # max_tokens: 2000          # Maximum tokens per chunk (REQUIRED for hybrid, default: 2000)
+  # merge_peers: false        # Whether to merge peer chunks (default: false)
+  # Note: chunk_size and chunk_overlap are NOT used by hybrid chunker (it's token-based)
 
 embedding:
-  embed_name: huggingface    # Options: huggingface, openai
+  embed_name: huggingface    # Options: huggingface, openai, gemini
   embed_config:              # Additional model-specific arguments (dict)
     # For HuggingFace models, you can specify the specific model name:
     model_name: "sentence-transformers/all-MiniLM-L6-v2"  # Default if not specified
     # For OpenAI, you would specify:
     # model: "text-embedding-3-small"  # or other OpenAI embedding model
+    # For Gemini, you would specify:
+    # model: "models/embedding-001"  # or other Gemini embedding model
+    # google_api_key: "${GOOGLE_API_KEY}"  # API key (can use environment variables)
 
 vector_store:
   store_name: chromadb        # Vector store name

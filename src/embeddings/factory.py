@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, ClassVar
 
+from .gemini import create_gemini_embedding
 from .huggingface import create_huggingface_embedding
 from .openai import create_openai_embedding
 from .protocol import Embeddings
@@ -53,3 +54,4 @@ class EmbeddingModelFactory:
 
 EmbeddingModelFactory.register(EmbeddingModelType.HUGGINGFACE)(create_huggingface_embedding)
 EmbeddingModelFactory.register(EmbeddingModelType.OPENAI)(create_openai_embedding)
+EmbeddingModelFactory.register(EmbeddingModelType.GEMINI)(create_gemini_embedding)

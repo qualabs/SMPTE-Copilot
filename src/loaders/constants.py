@@ -2,5 +2,6 @@
 
 SUPPORTED_FILE_EXTENSIONS = [
     ".pdf",
+    ".docx",
     # Future: Add more file types here
 ]
