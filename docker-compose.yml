@@ -1,0 +1,36 @@
+services:
+  rag-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-pipeline
+    restart: "no"  # Run once and stop (no auto-restart)
+    environment:
+      # Google API Key (set this in .env file or override here)
+      - API_KEY=${API_KEY:-}
+    volumes:
+      # Mount data directories (persistent storage)
+      - ./chroma_db:/app/chroma_db
+      - ./markdown_cache:/app/markdown_cache
+      - ./Transcriptions:/app/Transcriptions
+      - ./videos:/app/videos
+      - ./poc2_pdf:/app/poc2_pdf
+      # Optional: mount data directory
+      - ./data:/app/data
+    working_dir: /app
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+    # Override command if needed
+    # command: python main.py
+    # Or run interactively:
+    # command: /bin/bash
+    # Or run specific script:
+    # command: python audio_processor.py
+

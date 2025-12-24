@@ -1,0 +1,21 @@
+# Document Processing
+docling
+docling-core
+
+# Vector Database
+chromadb
+
+# LangChain
+langchain-chroma
+langchain-google-genai
+
+# Google AI
+google-genai
+
+# Audio Processing
+openai-whisper
+
+# Data Validation
+pydantic
+
+# Note: pathlib, typing, os, json, re are built-in Python modules
