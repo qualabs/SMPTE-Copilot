@@ -1,0 +1,52 @@
+# Example configuration file for SMPTE-Copilot RAG system
+# Copy this file to config.yaml and modify as needed
+
+loader:
+  file_type_mapping:         # Map file extensions to loader types (required)
+    .pdf: 
+      loader_name: docling            # PDF files use pymupdf loader
+      loader_config: 
+        llm_api_key:
+        llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
+        llm_model: gemini-2.5-flash
+    # Future examples (uncomment when loaders are added):
+  
+chunking:
+  chunker_name: langchain    # Chunker name (langchain)
+  chunk_size: 1000          # Size of text chunks in characters
+  chunk_overlap: 200         # Overlap between chunks in characters
+  method: recursive          # Options: recursive, character, token
+
+embedding:
+  embed_name: huggingface    # Options: huggingface, openai
+  embed_config:              # Additional model-specific arguments (dict)
+    # For HuggingFace models, you can specify the specific model name:
+    model_name: "sentence-transformers/all-MiniLM-L6-v2"  # Default if not specified
+    # For OpenAI, you would specify:
+    # model: "text-embedding-3-small"  # or other OpenAI embedding model
+
+vector_store:
+  store_name: chromadb        # Vector store name
+  persist_directory: ./vector_db  # Directory to persist vector store data (relative to current working directory)
+  collection_name: rag_collection    # Collection name in the vector store
+  store_config: null         # Additional store-specific configuration (dict)
+
+retrieval:
+  searcher_strategy: similarity  # Retrieval strategy
+  k: 5                          # Number of results to retrieve
+  searcher_config: null         # Additional searcher-specific configuration (dict)
+
+llm:
+  llm_name: gemini
+  llm_config:
+    model: gemini-2.5-flash
+    api_key: 
+
+
+paths:
+  input_path: ./data         # Default path for input media files (relative to current working directory)
+  markdown_dir: ./data/markdown  # Directory for markdown output (relative to current working directory)
+
+logging:
+  level: INFO                    # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
