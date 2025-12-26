@@ -27,7 +27,6 @@ class RAGComponents(NamedTuple):
     vector_store: VectorStore
     retriever: Retriever
     llm: LLM
-    config: Config
 
 
 def initialize_rag_components(config: Config | None = None) -> RAGComponents:
@@ -91,7 +90,6 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
         vector_store=vector_store,
         retriever=retriever,
         llm=llm,
-        config=config,
     )
 
 
