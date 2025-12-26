@@ -2,11 +2,12 @@
 
 import time
 import uuid
+from typing import Optional
 
 from .models import ChatCompletionChoice, ChatCompletionResponse, Message, Usage
 
 
-def estimate_token_usage(prompt: str | None, answer: str) -> Usage:
+def estimate_token_usage(prompt: Optional[str], answer: str) -> Usage:
     """Estimate token usage for the query and response.
     
     Parameters
