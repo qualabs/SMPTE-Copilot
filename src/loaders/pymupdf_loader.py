@@ -9,13 +9,12 @@ import pymupdf4llm
 from langchain.schema import Document
 from langchain_community.document_loaders import PyMuPDFLoader as LangChainPyMuPDFLoader
 
-from ..constants import DEFAULT_ENCODING
 from .protocol import DocumentLoader
 
 PageSpecifier = Union[Sequence[int], range, None]
 
 
-class PyMuPDFLoader:
+class PyMuPDFLoader(DocumentLoader):
     """Load PDFs using PyMuPDF and export Markdown representations.
 
     This is a concrete implementation of the DocumentLoader protocol
@@ -101,50 +100,6 @@ class PyMuPDFLoader:
             raise RuntimeError(
                 f"Failed to convert PDF to Markdown from {self.pdf_path}: {e}"
             ) from e
-
-    def to_markdown_file(
-        self,
-        *,
-        pages: PageSpecifier = None,
-        output_path: Optional[Path] = None,
-        overwrite: bool = True,
-    ) -> Path:
-        """Persist the rendered Markdown to disk and return its path.
-
-        Parameters
-        ----------
-        pages
-            Optional sequence of page numbers, range, or None for all pages.
-        output_path
-            Optional path where to save the Markdown file.
-            If None, uses a default path based on the source document.
-        overwrite
-            Whether to overwrite existing files.
-        """
-        md_text = self.to_markdown_text(pages=pages)
-        destination = self._resolve_output_path(output_path)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-
-        if destination.exists() and not overwrite:
-            raise FileExistsError(f"File already exists: {destination}")
-
-        destination.write_text(md_text, encoding=DEFAULT_ENCODING)
-        return destination
-
-    def _resolve_output_path(self, output_path: Optional[Path]) -> Path:
-        """Resolve the output path for the markdown file.
-
-        Parameters
-        ----------
-        output_path
-            Optional explicit output path. If None, generates a default path
-            based on the PDF file name in the output directory or PDF's parent directory.
-        """
-        if output_path is not None:
-            return Path(output_path).expanduser().resolve()
-
-        target_dir = self.output_dir or self.pdf_path.parent
-        return target_dir / f"{self.pdf_path.stem}.md"
 
 
 def create_pymupdf_loader(config: dict[str, Any]) -> DocumentLoader:
