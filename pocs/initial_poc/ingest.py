@@ -3,6 +3,7 @@
 
 import sys
 import os
+import argparse
 from pathlib import Path
 from typing import List
 from rag_ingestion import (
@@ -16,7 +17,7 @@ from rag_ingestion import (
 # Default locations (can be overridden via env vars or CLI)
 DEFAULT_PDF_LOCATION = Path(os.environ.get("PDF_PATH", "/app/data"))
 MARKDOWN_OUTPUT_DIR = Path(os.environ.get("MARKDOWN_DIR", "/app/data/markdown"))
-CHROMA_DB_PATH = Path(os.environ.get("CHROMA_DB_PATH", "/app/chroma_db"))
+QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333")
 COLLECTION_NAME = os.environ.get("COLLECTION_NAME", "rag_collection")
 
 # Chunking configuration
@@ -47,7 +48,7 @@ def _prepare_output_dir(output_dir: Path) -> Path:
     return output_dir
 
 
-def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: ChunkEmbedder) -> None:
+def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: ChunkEmbedder, access_metadata: dict = None) -> None:
     print("=" * 60)
     print(f"Ingesting: {pdf_path}")
     print("=" * 60)
@@ -71,6 +72,16 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
     chunks = chunker.chunk_markdown_file(str(markdown_path))
     print(f"✓ Created {len(chunks)} chunks")
 
+    # Step 2.5: Add access control metadata to chunks
+    if access_metadata:
+        print(f"\nStep 2.5: Adding access control metadata...")
+        print(f"  Access Tags: {access_metadata.get('access_tags', [])}")
+        print(f"  Required Role: {access_metadata.get('required_role_strict', 'None')}")
+        for chunk in chunks:
+            chunk.metadata.update(access_metadata)
+            print("chunk meta: ", chunk.metadata)
+        print(f"✓ Access metadata added to {len(chunks)} chunks")
+
     # Step 3: Chunks → Embeddings
     print(f"\nStep 3: Embedding chunks (model={EMBEDDING_MODEL})...")
     embedded_chunks = embedder.embed_chunks(chunks)
@@ -79,7 +90,7 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
 
     # Step 4: Embeddings → Vector Database
     print(f"\nStep 4: Storing in vector database...")
-    print(f"  Database location: {CHROMA_DB_PATH}")
+    print(f"  Database URL: {QDRANT_URL}")
     print(f"  Collection: {COLLECTION_NAME}")
 
     vector_store.ingest_chunks(embedded_chunks)
@@ -93,18 +104,55 @@ def ingest_pdf(pdf_path: Path, vector_store: VectorStoreIngester, embedder: Chun
     print(f"✓ PDF processed: {pdf_path.name}")
     print(f"✓ Markdown file: {markdown_path}")
     print(f"✓ Chunks created: {len(chunks)}")
-    print(f"✓ Database location: {CHROMA_DB_PATH}")
+    print(f"✓ Database URL: {QDRANT_URL}")
     print(f"✓ Collection: {COLLECTION_NAME}")
     print("=" * 60 + "\n")
 
 
 def main():
     """Run the ingestion pipeline for one or more PDFs."""
-    # Determine input (CLI arg > env var > default path)
-    if len(sys.argv) > 1:
-        input_path = Path(sys.argv[1])
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(
+        description="Ingest PDF documents with optional role-aware access control"
+    )
+    parser.add_argument(
+        "pdf_path",
+        type=str,
+        nargs="?",
+        default=None,
+        help="Path to PDF file or directory containing PDFs"
+    )
+    parser.add_argument(
+        "--tags",
+        type=str,
+        default="",
+        help="Comma-separated access tags (e.g., 'Finance,Public,Internal')"
+    )
+    parser.add_argument(
+        "--required-role",
+        type=str,
+        default="",
+        help="Strict required role for access (e.g., 'Admin')"
+    )
+    
+    args = parser.parse_args()
+    
+    # Determine input path (CLI arg > env var > default path)
+    if args.pdf_path:
+        input_path = Path(args.pdf_path)
     else:
         input_path = DEFAULT_PDF_LOCATION
+    
+    # Parse access control metadata
+    access_tags = [tag.strip() for tag in args.tags.split(",") if tag.strip()]
+    required_role_strict = args.required_role.strip() or None
+    
+    # Build access metadata dictionary
+    access_metadata = {}
+    if access_tags:
+        access_metadata["access_tags"] = access_tags
+    if required_role_strict:
+        access_metadata["required_role_strict"] = required_role_strict
 
     try:
         pdf_files = _resolve_pdf_inputs(input_path)
@@ -112,31 +160,35 @@ def main():
         print(f"✗ {exc}")
         print("\nUsage:")
         print("  python ingest.py /app/data/file.pdf")
+        print("  python ingest.py /app/data/file.pdf --tags 'Finance,Public'")
+        print("  python ingest.py /app/data/file.pdf --required-role 'Admin'")
         print("  python ingest.py /app/data  # Ingest all PDFs in directory")
-        print("\nConfigure defaults with env vars: PDF_PATH, MARKDOWN_DIR, CHROMA_DB_PATH, COLLECTION_NAME")
+        print("\nConfigure defaults with env vars: PDF_PATH, MARKDOWN_DIR, QDRANT_URL, COLLECTION_NAME")
         sys.exit(1)
 
     print("=" * 60)
     print("RAG Document Ingestion Pipeline")
     print("=" * 60)
     print(f"Inputs: {len(pdf_files)} PDF(s)")
-    print(f"Database: {CHROMA_DB_PATH}")
+    print(f"Database URL: {QDRANT_URL}")
     print(f"Collection: {COLLECTION_NAME}")
+    if access_metadata:
+        print(f"Access Control: {access_metadata}")
     print()
 
     try:
         embedder = ChunkEmbedder(model_name=EMBEDDING_MODEL)
         vector_store = VectorStoreIngester(
-            store_name="chromadb",
+            store_name="qdrant",
             store_config={
-                "persist_directory": str(CHROMA_DB_PATH),
+                "url": QDRANT_URL,
                 "collection_name": COLLECTION_NAME,
             },
             embedding_function=embedder.embedding_model,
         )
 
         for pdf_file in pdf_files:
-            ingest_pdf(pdf_file, vector_store, embedder)
+            ingest_pdf(pdf_file, vector_store, embedder, access_metadata)
 
         print("✓ All PDFs processed successfully.")
 
