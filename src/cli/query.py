@@ -4,13 +4,7 @@
 import logging
 import sys
 
-from src import (
-    Config,
-    EmbeddingModelFactory,
-    RetrieverFactory,
-    VectorStoreFactory,
-    LLMFactory,
-)
+from src import Config
 from src.cli.constants import (
     ALT_SEPARATOR_CHAR,
     ENUMERATE_START,
@@ -21,9 +15,9 @@ from src.cli.constants import (
     SEPARATOR_CHAR,
     SEPARATOR_LENGTH,
 )
+from src.components import execute_query, initialize_rag_components
 from src.logger import Logger
-from src.pipeline import PipelineExecutor, PipelineStatus, QueryContext
-from src.pipeline.steps import QueryEmbeddingStep, RetrieveStep, GenerationStep
+from src.pipeline import PipelineStatus
 
 
 def main():
@@ -41,54 +35,11 @@ def main():
     logger.info(f"Query: {query}\n")
 
     try:
-        vector_db_path = config.vector_store.persist_directory
-        if not vector_db_path.exists():
-            logger.error(f"✗ Error: Vector database not found: {vector_db_path}")
-            logger.error(
-                "\nPlease ingest documents first Or set RAG_CONFIG_FILE "
-                "or environment variables, then run:"
-            )
-            logger.error(" python ingest.py")
-            sys.exit(EXIT_CODE_ERROR)
+        # Initialize RAG components
+        components = initialize_rag_components(config)
 
-        embedding_model = EmbeddingModelFactory.create(
-            config.embedding.embed_name,
-            **(config.embedding.embed_config or {}),
-        )
-
-        vector_store = VectorStoreFactory.create(
-            config.vector_store.store_name,
-            persist_directory=str(vector_db_path),
-            collection_name=config.vector_store.collection_name,
-            embedding_function=embedding_model,
-            **(config.vector_store.store_config or {}),
-        )
-
-        searcher_config = {"k": config.retrieval.k}
-        if config.retrieval.searcher_config:
-            searcher_config.update(config.retrieval.searcher_config)
-        searcher_config["vector_store"] = vector_store
-
-        retriever = RetrieverFactory.create(
-            config.retrieval.searcher_strategy,
-            **searcher_config,
-        )
-
-        llm = LLMFactory.create(
-            config.llm.llm_name,
-            **(config.llm.llm_config or {}),
-        )
-
-        context = QueryContext(user_query=query)
-
-        steps = [
-            QueryEmbeddingStep(embedding_model),
-            RetrieveStep(retriever),
-            GenerationStep(llm),
-        ]
-
-        executor = PipelineExecutor(steps)
-        context = executor.execute(context)
+        # Execute query using shared logic
+        context = execute_query(components, query)
 
         if context.status == PipelineStatus.FAILED:
             raise RuntimeError(f"Pipeline failed: {context.error}")
@@ -132,6 +83,7 @@ def main():
     except Exception as e:
         logger.error(f"✗ Error: {e}", exc_info=True)
         sys.exit(EXIT_CODE_ERROR)
+
 
 if __name__ == "__main__":
     main()
