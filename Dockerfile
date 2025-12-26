@@ -21,6 +21,9 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # Set Python path
 ENV PYTHONPATH=/app
 
+# Expose API port
+EXPOSE 8000
+
 # Default command (can be overridden)
 CMD ["python", "--version"]
 
