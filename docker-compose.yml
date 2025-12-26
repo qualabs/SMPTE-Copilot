@@ -1,0 +1,28 @@
+services:
+  # Service for ingesting documents
+  ingest:
+    build: .
+    image: rag-poc-v1
+    container_name: rag-ingest
+    volumes:
+      - vector_db:/app/vector_db
+      - ./data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python src/cli/ingest.py --help
+
+  # Service for querying documents
+  query:
+    build: .
+    image: rag-poc-v1
+    container_name: rag-query
+    volumes:
+      - vector_db:/app/vector_db
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python src/cli/query.py --help
+
+volumes:
+  vector_db:
