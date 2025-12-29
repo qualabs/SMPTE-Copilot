@@ -8,8 +8,6 @@ from pydantic import ConfigDict
 
 from .protocol import Tokenizer
 
-from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
-
 class SimpleTokenizer(Tokenizer):
     """Simple tokenizer that uses character-based approximation for token counting.
     
