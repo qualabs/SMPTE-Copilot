@@ -41,6 +41,15 @@ curl -X POST http://localhost:8000/v1/chat/completions \
     "messages": [{"role": "user", "content": "What is SMPTE ST 2110?"}]
   }'
 ```
+### OpenWebUI Integration
+
+SMPTE-Copilot can be used with **OpenWebUI** as a chat interface via its OpenAI-compatible API. Once the `api` and `openwebui` services are running, access the UI at **http://localhost:3000**. The backend is automatically configured through `OPENAI_API_BASE_URL` to use the local RAG API (`/v1/chat/completions`). 
+
+To start OpenWebUI with SMPTE-Copilot:
+
+```bash
+docker-compose up openwebui
+```
 
 ## Project Structure
 
