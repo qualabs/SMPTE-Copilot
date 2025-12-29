@@ -3,189 +3,19 @@ import logging
 
 from __future__ import annotations
 
-import os
 import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
 from langchain.schema import Document
-from pydantic import ConfigDict
 
 from ..constants import DEFAULT_ENCODING
 from .protocol import Chunker
+from .tokenizers import Tokenizer, TokenizerFactory, TokenizerType
 
-# Try to import Docling components (optional dependency)
-try:
-    from docling.chunking import HybridChunker as DoclingHybridChunker
-    from docling.datamodel.base_models import InputFormat
-    from docling.document_converter import DocumentConverter
-    from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
-except ImportError:
-    DoclingHybridChunker = None
-    InputFormat = None
-    DocumentConverter = None
-    BaseTokenizer = object  # Fallback if not available
-
-# Try to import new google.genai API
-try:
-    from google import genai
-except ImportError:
-    genai = None
-
-# GeminiTokenizer is an internal helper class, defined in this file
-# It extends Docling's BaseTokenizer to work with HybridChunker
-# Uses the new google.genai API (not the deprecated google.generativeai)
-
-
-class GeminiTokenizer(BaseTokenizer):
-    """Custom tokenizer for Docling's HybridChunker that uses Gemini's token counting API.
-
-    This tokenizer integrates with Google's Gemini API to accurately count tokens
-    for text chunks, with a fast local fallback for performance.
-    """
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    client: Any = None
-    model: str = "gemini-embedding-001"
-    max_tokens: int = 2048
-
-    def __init__(
-        self,
-        client: Any = None,
-        model: str = "gemini-embedding-001",
-        max_tokens: int = 2048,
-        google_api_key: Optional[str] = None,
-    ):
-        """Initialize the Gemini tokenizer.
-
-        Parameters
-        ----------
-        client
-            Optional genai.Client instance. If not provided, will be created from API key.
-        model
-            Gemini model name to use for token counting (default: gemini-embedding-001).
-            Note: Some models like "models/embedding-001" don't support countTokens API.
-        max_tokens
-            Maximum number of tokens per chunk (default: 2048).
-        google_api_key
-            Optional Google API key. Used only if client is not provided.
-            If not provided, uses GOOGLE_API_KEY env var.
-        """
-        # Initialize client using new google.genai API if not provided
-        if client is None and genai is not None:
-            try:
-                api_key = google_api_key or os.environ.get("GOOGLE_API_KEY")
-                if api_key:
-                    client = genai.Client(api_key=api_key)
-            except Exception:
-                # API initialization failed, will use fallback
-                client = None
-
-        # Initialize BaseTokenizer (Pydantic model) with proper fields
-        super().__init__(
-            client=client,
-            model=model,
-            max_tokens=max_tokens,
-        )
-        
-        # Check if model supports countTokens API
-        # Some embedding models (like "models/embedding-001") don't support it
-        self._use_api = False
-        if self.client is not None:
-            # Test if countTokens is supported by trying with a small test string
-            try:
-                test_response = self.client.models.count_tokens(model=self.model, contents="test")
-                # If we get here, the API is supported
-                self._use_api = True
-            except Exception:
-                # Model doesn't support countTokens, use approximation
-                self._use_api = False
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.info(
-                    f"Model '{self.model}' does not support countTokens API. "
-                    "Using fast approximation for token counting."
-                )
-
-    def count_tokens(self, text: str) -> int:
-        """Count tokens using Gemini's API with fallback to local estimation.
-
-        Parameters
-        ----------
-        text
-            The text to count tokens for.
-
-        Returns
-        -------
-        Number of tokens (from API or estimated).
-        """
-        # Only use API if it's confirmed to be supported (avoid repeated 404 errors)
-        if self._use_api and self.client is not None:
-            try:
-                response = self.client.models.count_tokens(model=self.model, contents=text)
-                return response.total_tokens
-            except Exception:
-                # API call failed, fall back to approximation
-                # Disable API for future calls to avoid repeated failures
-                self._use_api = False
-                pass
-
-        # Fast local fallback: approximate 4 characters per token
-        # This is fast and works for all models, even those without countTokens API
-        return len(text) // 4
-
-    def get_max_tokens(self) -> int:
-        """Returns the maximum tokens allowed per chunk.
-
-        Returns
-        -------
-        Maximum tokens.
-        """
-        return self.max_tokens
-
-    def get_tokenizer(self) -> Any:
-        """Returns the underlying tokenizer/client object.
-
-        Returns
-        -------
-        The genai.Client instance.
-        """
-        return self.client
-
-    def split_text(self, text: str) -> list[str]:
-        """Split text into chunks based on token limits.
-
-        Parameters
-        ----------
-        text
-            Text to split.
-
-        Returns
-        -------
-        List of text chunks.
-        """
-        if not text:
-            return []
-
-        chunks = []
-        words = text.split()
-        current_chunk = []
-
-        for word in words:
-            # Estimate tokens for current chunk + new word
-            test_chunk = " ".join(current_chunk + [word])
-            if self.count_tokens(test_chunk) <= self.max_tokens:
-                current_chunk.append(word)
-            else:
-                if current_chunk:
-                    chunks.append(" ".join(current_chunk))
-                current_chunk = [word]
-
-        if current_chunk:
-            chunks.append(" ".join(current_chunk))
-
-        return chunks
+from docling.chunking import HybridChunker as DoclingHybridChunker
+from docling.datamodel.base_models import InputFormat
+from docling.document_converter import DocumentConverter
 
 
 class HybridChunker:
@@ -199,69 +29,38 @@ class HybridChunker:
         self,
         max_tokens: int = 2000,
         merge_peers: bool = False,
-        google_api_key: Optional[str] = None,
-        model: str = "gemini-embedding-001",
+        tokenizer: Optional[Tokenizer] = None,
     ):
         """Initialize the hybrid chunker.
 
         Parameters
         ----------
         max_tokens
-            Maximum tokens per chunk (default: 2000 for Gemini).
+            Maximum tokens per chunk (default: 2000).
         merge_peers
             Whether to merge peer chunks (default: False).
-        google_api_key
-            Optional Google API key for token counting. If not provided,
-            uses GOOGLE_API_KEY environment variable.
-        model
-            Gemini model name for token counting (default: models/embedding-001).
+        tokenizer
+            Optional tokenizer instance. If not provided, uses a simple approximation tokenizer.
         """
         self.logger = logging.getLogger()
 
         self.logger.info(
-            f"Chunking markdown (hybrid, max_tokens: {config.chunking.max_tokens or 2000})..."
+            f"Initializing hybrid chunker (max_tokens: {max_tokens}, merge_peers: {merge_peers})..."
         )
-
-        if DoclingHybridChunker is None:
-            raise ImportError(
-                "docling is required for hybrid chunking. "
-                "Install it with `pip install docling` or `pip install docling-core`."
-            )
 
         self.max_tokens = max_tokens
         self.merge_peers = merge_peers
 
-        # Initialize Gemini tokenizer with API key
-        # Note: Tokenizer uses "gemini-embedding-001" (without "models/" prefix) for countTokens API
-        # Embedding model uses "models/gemini-embedding-001" (with "models/" prefix)
-        api_key = google_api_key or os.environ.get("GOOGLE_API_KEY")
-        # Convert model name from embedding format to tokenizer format if needed
-        tokenizer_model = model
-        if tokenizer_model.startswith("models/"):
-            # Remove "models/" prefix for tokenizer (e.g., "models/gemini-embedding-001" -> "gemini-embedding-001")
-            tokenizer_model = tokenizer_model.replace("models/", "")
-        self.tokenizer = GeminiTokenizer(
-            model=tokenizer_model,
+        self.tokenizer = tokenizer
+        
+        self._chunker = DoclingHybridChunker(
+            tokenizer=self.tokenizer,
             max_tokens=max_tokens,
-            google_api_key=api_key
+            merge_peers=merge_peers,
         )
-
-        # Initialize Docling's HybridChunker
-        # Note: max_tokens is passed to HybridChunker (as per usage example)
-        try:
-            self._chunker = DoclingHybridChunker(
-                tokenizer=self.tokenizer,
-                max_tokens=max_tokens,
-                merge_peers=merge_peers,
-            )
-            # Pre-create a DocumentConverter for efficiency (reuse across chunk operations)
-            self._doc_converter = DocumentConverter() if DocumentConverter else None
-        except Exception:
-            # Fallback if Docling API is different
-            self._chunker = None
-            self._doc_converter = None
-            # We'll implement a fallback chunking strategy
-
+        
+        self._doc_converter = DocumentConverter()
+        
     def chunk_text(self, text: str, metadata: Optional[dict] = None) -> list[Document]:
         """Chunk text using hybrid chunking strategy.
 
@@ -524,8 +323,10 @@ def create_hybrid_chunker(config: dict[str, Any]) -> Chunker:
         Configuration dictionary with keys:
         - max_tokens: int (optional) - Maximum tokens per chunk (default: 2000)
         - merge_peers: bool (optional) - Whether to merge peer chunks (default: False)
-        - google_api_key: str (optional) - Google API key for token counting
-        - model: str (optional) - Gemini model name for token counting (default: models/embedding-001)
+        - tokenizer: str (optional) - Tokenizer type (simple, gemini). Default: simple
+        - tokenizer_config: dict (optional) - Tokenizer-specific configuration.
+          For gemini: google_api_key, model
+          For simple: no additional config needed
 
     Returns
     -------
@@ -535,20 +336,19 @@ def create_hybrid_chunker(config: dict[str, Any]) -> Chunker:
     ------
     ValueError
         If invalid configuration values are provided.
-    
     """
     max_tokens = config.get("max_tokens", 2000)
     merge_peers = config.get("merge_peers", False)
-    google_api_key = config.get("google_api_key")
-    model = config.get("model", "models/embedding-001")
+    tokenizer_type_str = config.get("tokenizer", "simple")
+    tokenizer_config = config.get("tokenizer_config", {})
 
-    if max_tokens <= 0:
-        raise ValueError(f"max_tokens must be positive, got: {max_tokens}")
+    tokenizer_type = TokenizerType(tokenizer_type_str)
+    tokenizer_config_with_max = {**tokenizer_config, "max_tokens": max_tokens}
+    tokenizer = TokenizerFactory.create(tokenizer_type, **tokenizer_config_with_max)
 
     return HybridChunker(
         max_tokens=max_tokens,
         merge_peers=merge_peers,
-        google_api_key=google_api_key,
-        model=model,
+        tokenizer=tokenizer,
     )
 

@@ -29,9 +29,14 @@ chunking:
   # chunker_config:
   #   max_tokens: 2000        # Maximum tokens per chunk (default: 2000)
   #   merge_peers: false      # Whether to merge peer chunks (default: false)
-  # Note: If using Gemini embeddings, google_api_key and model from embed_config
-  #       are automatically passed to the hybrid chunker for token counting
-
+  #   tokenizer: simple       # Tokenizer type: simple (default) or gemini
+  #   tokenizer_config:       # Tokenizer-specific configuration
+  #     # For gemini tokenizer:
+  #     # llm_api_key: "${GOOGLE_API_KEY}"  # Google API key for accurate token counting
+  #     # llm_model: "gemini-embedding-001"        # Gemini model for token counting
+  #     # For simple tokenizer: no additional config needed
+  # Note: chunk_size and chunk_overlap are NOT used by hybrid chunker (it's token-based)
+  
 embedding:
   embed_name: huggingface    # Options: huggingface, openai
   embed_config:              # Additional model-specific arguments (dict)
