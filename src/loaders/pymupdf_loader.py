@@ -1,5 +1,6 @@
-"""PyMuPDF-based PDF loader implementation."""
 from __future__ import annotations
+
+"""PyMuPDF-based PDF loader implementation."""
 
 from collections.abc import Sequence
 from pathlib import Path

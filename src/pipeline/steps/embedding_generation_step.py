@@ -1,5 +1,6 @@
-"""Step that generates embeddings for document chunks."""
 from __future__ import annotations
+
+"""Step that generates embeddings for document chunks."""
 
 import logging
 

@@ -1,5 +1,6 @@
-"""Gemini (Google Generative AI) embedding model implementation."""
 from __future__ import annotations
+
+"""Gemini (Google Generative AI) embedding model implementation."""
 
 from typing import Any
 

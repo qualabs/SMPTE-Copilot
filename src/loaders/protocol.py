@@ -1,5 +1,6 @@
-"""Protocol for document loader implementations."""
 from __future__ import annotations
+
+"""Protocol for document loader implementations."""
 
 from collections.abc import Sequence
 from pathlib import Path

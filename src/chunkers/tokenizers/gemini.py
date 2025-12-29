@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 """Gemini tokenizer implementation."""
 import logging
 import os
-
-from __future__ import annotations
 
 from typing import Any, Optional
 

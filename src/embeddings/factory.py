@@ -1,5 +1,6 @@
-"""Factory for creating embedding models."""
 from __future__ import annotations
+
+"""Factory for creating embedding models."""
 
 from typing import Any, Callable, ClassVar
 

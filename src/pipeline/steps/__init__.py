@@ -1,5 +1,6 @@
-"""Pipeline step implementations that wrap factory products."""
 from __future__ import annotations
+
+"""Pipeline step implementations that wrap factory products."""
 
 from .chunk_step import ChunkStep
 from .embedding_generation_step import EmbeddingGenerationStep

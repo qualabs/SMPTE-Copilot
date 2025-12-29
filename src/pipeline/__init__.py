@@ -1,5 +1,6 @@
-"""Pipeline infrastructure for executing sequential processing steps."""
 from __future__ import annotations
+
+"""Pipeline infrastructure for executing sequential processing steps."""
 
 from .context import PipelineContext
 from .contexts import IngestionContext, QueryContext

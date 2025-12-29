@@ -1,7 +1,7 @@
+from __future__ import annotations
+
 """LangChain-based chunker implementation."""
 import logging
-
-from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, Optional
@@ -57,8 +57,8 @@ class LangChainChunker:
         self.logger = logging.getLogger()
 
         self.logger.info(
-            f"Chunking markdown (size={config.chunking.chunk_size}, "
-            f"overlap={config.chunking.chunk_overlap})..."
+            f"Chunking markdown (size={chunk_size}, "
+            f"overlap={chunk_overlap})..."
         )
 
         self.chunk_size = chunk_size

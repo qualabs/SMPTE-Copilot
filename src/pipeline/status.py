@@ -1,5 +1,6 @@
-"""Pipeline status enumeration."""
 from __future__ import annotations
+
+"""Pipeline status enumeration."""
 
 from enum import Enum
 

@@ -1,6 +1,6 @@
-"""Simple approximation tokenizer implementation."""
-
 from __future__ import annotations
+
+"""Simple approximation tokenizer implementation."""
 
 from typing import Any
 

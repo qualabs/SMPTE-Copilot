@@ -1,5 +1,6 @@
-"""ChromaDB vector store implementation."""
 from __future__ import annotations
+
+"""ChromaDB vector store implementation."""
 
 from typing import Any
 

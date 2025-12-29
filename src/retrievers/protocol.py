@@ -1,5 +1,6 @@
-"""Protocol for retriever implementations."""
 from __future__ import annotations
+
+"""Protocol for retriever implementations."""
 
 from typing import Protocol
 

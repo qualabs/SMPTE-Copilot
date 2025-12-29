@@ -1,5 +1,6 @@
-"""Step that generates the final answer from retrieved documents."""
 from __future__ import annotations
+
+"""Step that generates the final answer from retrieved documents."""
 
 import logging
 from typing import List, Tuple

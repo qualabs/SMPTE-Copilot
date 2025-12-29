@@ -1,5 +1,6 @@
-"""Factory for creating chunker implementations."""
 from __future__ import annotations
+
+"""Factory for creating chunker implementations."""
 
 from typing import Any, Callable, ClassVar
 

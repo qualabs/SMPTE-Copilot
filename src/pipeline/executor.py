@@ -1,5 +1,6 @@
-"""Executes a sequence of pipeline steps sequentially."""
 from __future__ import annotations
+
+"""Executes a sequence of pipeline steps sequentially."""
 
 from typing import TypeVar
 

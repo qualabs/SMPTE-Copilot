@@ -1,5 +1,6 @@
-"""Protocol for embedding model implementations."""
 from __future__ import annotations
+
+"""Protocol for embedding model implementations."""
 
 from typing import Protocol
 

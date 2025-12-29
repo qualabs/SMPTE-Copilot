@@ -1,5 +1,6 @@
-"""Base context for pipeline execution."""
 from __future__ import annotations
+
+"""Base context for pipeline execution."""
 
 from typing import Optional
 

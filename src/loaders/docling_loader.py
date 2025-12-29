@@ -1,4 +1,6 @@
 import os
+import logging
+
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Union
@@ -23,7 +25,6 @@ from src.constants import DEFAULT_IMAGE_DESCRIPTION_PROMPT
 from .protocol import DocumentLoader
 
 PageSpecifier = Union[Sequence[int], range, None]
-
 
 class DoclingLoader(DocumentLoader):
     def __init__(self, config: dict[str, Any]) -> None:
@@ -100,6 +101,7 @@ class DoclingLoader(DocumentLoader):
             ) from e
 
     def load_documents(self) -> list[Document]:
+
         result = self._get_conversion_result()
         md_text = result.document.export_to_markdown()
         
@@ -116,6 +118,7 @@ class DoclingLoader(DocumentLoader):
         ]
 
     def to_markdown_text(self, pages: PageSpecifier = None) -> str:
+
         result = self._get_conversion_result()
         return result.document.export_to_markdown()
 

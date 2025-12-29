@@ -1,5 +1,6 @@
-"""Step that retrieves relevant documents from the vector store."""
 from __future__ import annotations
+
+"""Step that retrieves relevant documents from the vector store."""
 
 import logging
 
