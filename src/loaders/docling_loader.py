@@ -41,19 +41,12 @@ class DoclingLoader(DocumentLoader):
         output_dir = config.get("output_dir")
         self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
         
-        llm_api_key = self.config.get("llm_api_key")
-        if llm_api_key is None:
-            raise ValueError("LLM api key is required for docling")
-        llm_endpoint = self.config.get("llm_endpoint")
-        if llm_endpoint is None:
-            raise ValueError("LLM endpoint is required for docling")
-
-        llm_model = self.config.get("llm_model") or os.getenv("LLM_MODEL")
-        if llm_model is None:
-            raise ValueError("LLM model is required for docling")
-        
         prompt = self.config.get("image_description_prompt", DEFAULT_IMAGE_DESCRIPTION_PROMPT)
 
+        llm_api_key = self.config.get("llm_api_key")
+        llm_endpoint = self.config.get("llm_endpoint")
+        llm_model = self.config.get("llm_model")
+        
         can_do_picture_description = (llm_api_key is not None and
                                        llm_endpoint is not None and
                                          llm_model is not None)
@@ -62,7 +55,7 @@ class DoclingLoader(DocumentLoader):
             enable_remote_services=True,
             do_table_structure=True,
             allow_external_plugins=True,
-            do_ocr=False,
+            do_ocr=not can_do_picture_description,
             do_picture_description=can_do_picture_description,
             table_structure_options=TableStructureOptions(
                 do_cell_matching=True,
@@ -74,6 +67,7 @@ class DoclingLoader(DocumentLoader):
             allow_external_plugins=True,
             enable_remote_services=True,
             do_picture_description=can_do_picture_description,
+            do_ocr=not can_do_picture_description,
         )
 
         # Only configure picture description if credentials are available
