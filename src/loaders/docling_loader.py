@@ -29,7 +29,7 @@ class DoclingLoader(DocumentLoader):
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         
-        file_path = config.get("file_path")
+        file_path = self.config.get("file_path")
         if not file_path:
             raise ValueError("'file_path' is required in loader configuration")
 
@@ -38,7 +38,7 @@ class DoclingLoader(DocumentLoader):
         if not self.doc_path.exists():
             raise FileNotFoundError(f"Doc not found: {self.doc_path}")
 
-        output_dir = config.get("output_dir")
+        output_dir = self.config.get("output_dir")
         self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
         
         prompt = self.config.get("image_description_prompt", DEFAULT_IMAGE_DESCRIPTION_PROMPT)

@@ -1,4 +1,6 @@
 """Hybrid chunker implementation using Docling's HybridChunker."""
+import logging
+
 from __future__ import annotations
 
 import os
@@ -214,6 +216,12 @@ class HybridChunker:
         model
             Gemini model name for token counting (default: models/embedding-001).
         """
+        self.logger = logging.getLogger()
+
+        self.logger.info(
+            f"Chunking markdown (hybrid, max_tokens: {config.chunking.max_tokens or 2000})..."
+        )
+
         if DoclingHybridChunker is None:
             raise ImportError(
                 "docling is required for hybrid chunking. "

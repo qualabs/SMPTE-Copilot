@@ -455,9 +455,15 @@ loader:
 
 chunking:
   chunker_name: langchain # Maps to ChunkerType.LANGCHAIN
-  chunk_size: 1000 # Chunk size in characters
-  chunk_overlap: 200 # Overlap between chunks
-  method: recursive # Chunking method
+  chunker_config: # Chunker-specific configuration dictionary (recommended)
+    chunk_size: 1000 # Chunk size in characters (for langchain)
+    chunk_overlap: 200 # Overlap between chunks (for langchain)
+    method: recursive # Chunking method (for langchain)
+  # For hybrid chunker:
+  # chunker_name: hybrid
+  # chunker_config:
+  #   max_tokens: 2000 # Maximum tokens per chunk (default: 2000)
+  #   merge_peers: false # Whether to merge peer chunks (default: false)
 
 embedding:
   embed_name: huggingface # Maps to EmbeddingModelType.HUGGINGFACE
@@ -531,9 +537,20 @@ embedding:
 ```yaml
 chunking:
   chunker_name: langchain
-  chunk_size: 1500
-  chunk_overlap: 300
-  method: character # Options: recursive, character, token
+  chunker_config:
+    chunk_size: 1500
+    chunk_overlap: 300
+    method: character # Options: recursive, character, token
+```
+
+**Using hybrid chunking (semantic + token-based):**
+
+```yaml
+chunking:
+  chunker_name: hybrid
+  chunker_config:
+    max_tokens: 2000  # Maximum tokens per chunk (default: 2000)
+    merge_peers: false # Whether to merge peer chunks (default: false)
 ```
 
 **Configuring loaders for different file types:**

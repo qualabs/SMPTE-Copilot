@@ -1,8 +1,8 @@
 """Chunking configuration."""
 
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
-from pydantic import Field, model_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 from src.chunkers.constants import (
@@ -20,27 +20,10 @@ class ChunkingConfig(BaseSettings):
         default=ChunkerType.LANGCHAIN,
         description="Chunker type",
     )
-    chunk_size: int = Field(
-        default=DEFAULT_CHUNK_SIZE,
-        description="Size of text chunks in characters",
-        gt=0,
-    )
-    chunk_overlap: int = Field(
-        default=DEFAULT_CHUNK_OVERLAP,
-        description="Overlap between chunks in characters",
-        ge=0,
-    )
-    method: Literal["recursive", "character", "token"] = Field(
-        default=CHUNKING_METHOD_RECURSIVE,
-        description="Chunking method to use (for langchain chunker)",
-    )
-    max_tokens: Optional[int] = Field(
+    chunker_config: Optional[dict[str, Any]] = Field(
         default=None,
-        description="Maximum tokens per chunk (for hybrid chunker, default: 2000)",
-        gt=0,
+        description="Chunker-specific configuration dictionary. "
+        "For langchain: chunk_size, chunk_overlap, method. "
+        "For hybrid: max_tokens, merge_peers.",
     )
-    merge_peers: bool = Field(
-        default=False,
-        description="Whether to merge peer chunks (for hybrid chunker)",
-    )
-
+    

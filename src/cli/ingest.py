@@ -22,6 +22,7 @@ from src.cli.constants import (
 from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
 from src.loaders.helpers import LoaderHelper
 from src.loaders.types import LoaderType
+from src.chunkers.types import ChunkerType
 from src.logger import Logger
 from src.pipeline import IngestionContext, PipelineExecutor, PipelineStatus
 from src.pipeline.steps import (
@@ -82,40 +83,15 @@ def ingest_file(
     )
     loader = LoaderFactory.create(loader_type, **loader_config)
 
-    # Build chunker config based on chunker type
-    if config.chunking.chunker_name.value == "hybrid":
-        # Hybrid chunker uses token-based parameters only
-        chunker_config = {
-            "max_tokens": config.chunking.max_tokens or 2000,
-            "merge_peers": config.chunking.merge_peers,
-        }
-        # Pass google_api_key and model if available (for token counting)
-        if config.embedding.embed_config and config.embedding.embed_config.get("google_api_key"):
-            chunker_config["google_api_key"] = config.embedding.embed_config["google_api_key"]
-        if config.embedding.embed_config and config.embedding.embed_config.get("model"):
-            chunker_config["model"] = config.embedding.embed_config["model"]
-    else:
-        # Langchain chunker uses character-based parameters
-        chunker_config = {
-            "chunk_size": config.chunking.chunk_size,
-            "chunk_overlap": config.chunking.chunk_overlap,
-            "method": config.chunking.method,
-        }
+    chunker_config = config.chunking.chunker_config or {}
+    embedding_config = config.embedding.embed_config or {}
+    
     chunker = ChunkerFactory.create(
         config.chunking.chunker_name,
         **chunker_config,
+        **embedding_config,
     )
 
-    # Show chunking info based on chunker type
-    if config.chunking.chunker_name.value == "hybrid":
-        logger.info(
-            f"Chunking markdown (hybrid, max_tokens: {config.chunking.max_tokens or 2000})..."
-        )
-    else:
-        logger.info(
-            f"Chunking markdown (size={config.chunking.chunk_size}, "
-            f"overlap={config.chunking.chunk_overlap})..."
-        )
     logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
     logger.info("Storing in vector database...")
     logger.info(f"  Database location: {config.vector_store.persist_directory}")
@@ -177,16 +153,7 @@ def main():
     logger.info(f"Inputs: {len(media_files)} file(s)")
     logger.info(f"Database: {config.vector_store.persist_directory}")
     logger.info(f"Collection: {config.vector_store.collection_name}")
-    # Show chunking info based on chunker type
-    if config.chunking.chunker_name.value == "hybrid":
-        logger.info(
-            f"Chunker: hybrid (max_tokens: {config.chunking.max_tokens or 2000})"
-        )
-    else:
-        logger.info(
-            f"Chunk size: {config.chunking.chunk_size}, "
-            f"overlap: {config.chunking.chunk_overlap}"
-        )
+    logger.info(f"Chunker: {config.chunking.chunker_name}")
     logger.info(f"Embedding model: {config.embedding.embed_name}")
     logger.info("")
 

@@ -20,14 +20,17 @@ loader:
 
 chunking:
   chunker_name: langchain    # Chunker name (langchain, hybrid)
-  chunk_size: 1000          # Size of text chunks in characters (for langchain only)
-  chunk_overlap: 200         # Overlap between chunks in characters (for langchain only)
-  method: recursive          # Options: recursive, character, token (for langchain only)
+  chunker_config:            # Chunker-specific configuration (recommended)
+    chunk_size: 1000         # Size of text chunks in characters (for langchain)
+    chunk_overlap: 200       # Overlap between chunks in characters (for langchain)
+    method: recursive         # Options: recursive, character, token (for langchain)
   # For hybrid chunking (semantic + token-based):
   # chunker_name: hybrid
-  # max_tokens: 2000          # Maximum tokens per chunk (REQUIRED for hybrid, default: 2000)
-  # merge_peers: false        # Whether to merge peer chunks (default: false)
-  # Note: chunk_size and chunk_overlap are NOT used by hybrid chunker (it's token-based)
+  # chunker_config:
+  #   max_tokens: 2000        # Maximum tokens per chunk (default: 2000)
+  #   merge_peers: false      # Whether to merge peer chunks (default: false)
+  # Note: If using Gemini embeddings, google_api_key and model from embed_config
+  #       are automatically passed to the hybrid chunker for token counting
 
 embedding:
   embed_name: huggingface    # Options: huggingface, openai
@@ -38,7 +41,7 @@ embedding:
     # model: "text-embedding-3-small"  # or other OpenAI embedding model
     # For Gemini, you would specify:
     # model: "models/embedding-001"  # or other Gemini embedding model
-    # google_api_key: "${GOOGLE_API_KEY}"  # API key (can use environment variables)
+    # google_api_key: 
 
 vector_store:
   store_name: chromadb        # Vector store name
