@@ -4,12 +4,20 @@
 loader:
   file_type_mapping:         # Map file extensions to loader types (required)
     .pdf: 
-      loader_name: docling            # PDF files use pymupdf loader
+      loader_name: docling
       loader_config: 
-        llm_api_key:
-        llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions
-        llm_model: gemini-2.5-flash
-    # Future examples (uncomment when loaders are added):
+        llm_api_key: # LLM key for used for image description
+        llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
+        llm_model: gemini-2.5-flash # Model for image description
+        image_description_prompt: null # Optional prompt for image description if null uses default
+    .docx:
+      loader_name: docling
+      loader_config: 
+        llm_api_key: # LLM key for used for image description
+        llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
+        llm_model: gemini-2.5-flash # LLM Model for image description
+        image_description_prompt: null # Optional prompt for image description if null uses default
+
   
 chunking:
   chunker_name: langchain    # Chunker name (langchain)

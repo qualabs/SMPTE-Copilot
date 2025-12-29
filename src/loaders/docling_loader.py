@@ -1,14 +1,15 @@
 import os
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
     PdfPipelineOptions,
     PictureDescriptionApiOptions,
     TableFormerMode,
-    TableStructureOptions
+    TableStructureOptions,
+    ConvertPipelineOptions
 )
 from docling.document_converter import (
     DocumentConverter,
@@ -17,30 +18,11 @@ from docling.document_converter import (
 )
 from langchain.schema import Document
 
+from src.constants import DEFAULT_IMAGE_DESCRIPTION_PROMPT
+
 from .protocol import DocumentLoader
 
 PageSpecifier = Union[Sequence[int], range, None]
-
-DEFAULT_IMAGE_DESCRIPTION_PROMPT = (
-    "You are an expert technical analyst converting visual data into text for a retrieval system. "
-    "Analyze the image exhaustively. Do not summarize; extract details."
-    "\n\n"
-    "Follow these strict rules based on image type:"
-    "\n"
-    "1. **Charts & Graphs:**\n"
-    "   - State the Title, X-axis label, and Y-axis label.\n"
-    "   - Transcribe the specific data points or values visible for each category/timeframe.\n"
-    "   - Explicitly state the trend (e.g., 'Rising from 10% to 50%').\n"
-    "2. **Diagrams & Flowcharts:**\n"
-    "   - Transcribe every text node/box in the image.\n"
-    "   - Describe the relationships using logical flow (e.g., 'The process starts at [A], which splits into [B] and [C].').\n"
-    "3. **Tables (as images):**\n"
-    "   - Convert the image data into a Markdown table format.\n"
-    "4. **Screenshots/UI:**\n"
-    "   - List all visible menu items, buttons, and active fields.\n"
-    "\n"
-    "Output format: specific, dense, and factual. Avoid filler words."
-)
 
 
 class DoclingLoader(DocumentLoader):
@@ -59,28 +41,44 @@ class DoclingLoader(DocumentLoader):
         output_dir = config.get("output_dir")
         self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
         
-        llm_api_key = self.config.get("llm_api_key") or os.getenv("LLM_API_KEY")
-        llm_endpoint = self.config.get("llm_endpoint") or os.getenv("LLM_ENDPOINT")
+        llm_api_key = self.config.get("llm_api_key")
+        if llm_api_key is None:
+            raise ValueError("LLM api key is required for docling")
+        llm_endpoint = self.config.get("llm_endpoint")
+        if llm_endpoint is None:
+            raise ValueError("LLM endpoint is required for docling")
+
         llm_model = self.config.get("llm_model") or os.getenv("LLM_MODEL")
+        if llm_model is None:
+            raise ValueError("LLM model is required for docling")
         
         prompt = self.config.get("image_description_prompt", DEFAULT_IMAGE_DESCRIPTION_PROMPT)
 
+        can_do_picture_description = (llm_api_key is not None and
+                                       llm_endpoint is not None and
+                                         llm_model is not None)
         # Configure Pipeline Options
-        pipeline_options = PdfPipelineOptions(
+        pdf_pipeline_options = PdfPipelineOptions(
             enable_remote_services=True,
             do_table_structure=True,
             allow_external_plugins=True,
-            do_ocr=self.config.get("do_ocr", False),
-            do_picture_description=True,
+            do_ocr=False,
+            do_picture_description=can_do_picture_description,
             table_structure_options=TableStructureOptions(
                 do_cell_matching=True,
                 table_former_mode=TableFormerMode.ACCURATE
             ),
         )
 
+        docx_pipeline_options = ConvertPipelineOptions(
+            allow_external_plugins=True,
+            enable_remote_services=True,
+            do_picture_description=can_do_picture_description,
+        )
+
         # Only configure picture description if credentials are available
-        if llm_api_key and llm_endpoint and llm_model:
-            pipeline_options.picture_description_options = PictureDescriptionApiOptions(
+        if can_do_picture_description:
+            picture_description_options = PictureDescriptionApiOptions(
                 url=llm_endpoint,
                 headers={
                     "Authorization": "Bearer " + llm_api_key,
@@ -91,10 +89,12 @@ class DoclingLoader(DocumentLoader):
                     "model": llm_model
                 }
             )
+            pdf_pipeline_options.picture_description_options = picture_description_options
+            docx_pipeline_options.picture_description_options = picture_description_options
 
         self.converter = DocumentConverter(format_options={
-            InputFormat.PDF: PdfFormatOption(pipeline_options=pipeline_options),
-            InputFormat.DOCX: WordFormatOption()
+            InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options),
+            InputFormat.DOCX: WordFormatOption(pipeline_options=docx_pipeline_options),
         })
 
     def _get_conversion_result(self):

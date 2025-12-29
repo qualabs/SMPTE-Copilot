@@ -14,6 +14,7 @@ services:
 
   # Service for querying documents
   query:
+    build: .
     image: rag-poc-v1
     container_name: rag-query
     volumes:
