@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
-from .protocol import Tokenizer
+from .base_tokenizer import Tokenizer
 
 class SimpleTokenizer(Tokenizer):
     """Simple tokenizer that uses character-based approximation for token counting.
@@ -15,7 +15,9 @@ class SimpleTokenizer(Tokenizer):
     of the embedding model. It uses a fast approximation (4 chars per token).
     """
 
-    def __init__(self, max_tokens: int = 2048):
+    model_config = ConfigDict(extra='allow')
+
+    def __init__(self, max_tokens: int = 2048, **kwargs):
         """Initialize the approximation tokenizer.
 
         Parameters
@@ -23,6 +25,7 @@ class SimpleTokenizer(Tokenizer):
         max_tokens
             Maximum number of tokens per chunk (default: 2048).
         """
+        super().__init__(**kwargs)
         self.max_tokens = max_tokens
 
     def count_tokens(self, text: str) -> int:

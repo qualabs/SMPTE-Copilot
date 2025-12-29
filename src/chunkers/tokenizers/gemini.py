@@ -6,11 +6,9 @@ import os
 
 from typing import Any, Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
-from .protocol import Tokenizer
-
-from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
+from .base_tokenizer import Tokenizer
 
 from google import genai
 
@@ -22,11 +20,14 @@ class GeminiTokenizer(Tokenizer):
     for text chunks, with a fast local fallback for performance.
     """
 
+    model_config = ConfigDict(extra='allow', arbitrary_types_allowed=True)
+
     def __init__(
         self,
         model: str = "gemini-embedding-001",
         max_tokens: int = 2048,
         google_api_key: Optional[str] = None,
+        **kwargs
     ):
         """Initialize the Gemini tokenizer.
 
@@ -43,7 +44,7 @@ class GeminiTokenizer(Tokenizer):
             Optional Google API key. Used only if client is not provided.
             If not provided, uses GOOGLE_API_KEY env var.
         """
-
+        super().__init__(**kwargs)
         self.client = genai.Client(api_key=google_api_key)
         self.model = model
         self.max_tokens = max_tokens
@@ -61,7 +62,8 @@ class GeminiTokenizer(Tokenizer):
         -------
         Number of tokens (from API or estimated).
         """
-        return self.client.models.count_tokens(model=self.model, contents=text)
+        response = self.client.models.count_tokens(model=self.model, contents=text)
+        return response.total_tokens
 
     def get_max_tokens(self) -> int:
         """Returns the maximum tokens allowed per chunk.
