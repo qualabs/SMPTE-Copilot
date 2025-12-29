@@ -1,6 +1,6 @@
 """Chunking configuration."""
 
-from typing import Any, Literal, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -24,6 +24,6 @@ class ChunkingConfig(BaseSettings):
         default=None,
         description="Chunker-specific configuration dictionary. "
         "For langchain: chunk_size, chunk_overlap, method. "
-        "For hybrid: max_tokens, merge_peers.",
+        "For hybrid: max_tokens, merge_peers, tokenizer, tokenizer_config.",
     )
     
