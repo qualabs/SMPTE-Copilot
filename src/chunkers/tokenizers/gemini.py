@@ -62,6 +62,7 @@ class GeminiTokenizer(Tokenizer):
         -------
         Number of tokens (from API or estimated).
         """
+        self.logger.info(f"Counting tokens for text: {text}")
         response = self.client.models.count_tokens(model=self.model, contents=text)
         return response.total_tokens
 
