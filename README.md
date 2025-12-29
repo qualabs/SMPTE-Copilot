@@ -558,6 +558,13 @@ loader:
     .pdf:
       loader_name: pymupdf
       loader_config: null
+    .docx:
+      loader_name: docling
+      loader_config: 
+        llm_api_key: # LLM key for used for image description
+        llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
+        llm_model: gemini-2.5-flash # LLM Model for image description
+        image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Prompt used to tailor the LLM image description on documents
     # When other loaders are added, you can configure them like:
     # .mp4:
     #   loader_name: video_loader
