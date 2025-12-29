@@ -1,37 +1,48 @@
 version: '3.8'
 
 services:
+  # Qdrant vector database service
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag-qdrant
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC API
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+
   # Service for ingesting documents
   ingest:
     build: .
     image: rag-poc-v1
-    container_name: rag-ingest
+    depends_on:
+      - qdrant
     volumes:
-      # Mount database directory to persist data
-      - ./chroma_db:/app/chroma_db
       # Mount data directory for PDFs
       - ./data:/app/data
+      # Mount role mapping configuration
+      - ./role_mapping.json:/app/role_mapping.json
     environment:
       - PYTHONUNBUFFERED=1
-      - CHROMA_DB_PATH=/app/chroma_db
+      - QDRANT_URL=http://qdrant:6333
       - COLLECTION_NAME=rag_collection
-    # Default command: show usage
-    command: python ingest.py --help
-    # Override when running: docker-compose run ingest python ingest.py /app/data/file.pdf
+    entrypoint: ["python", "ingest.py"]
+    # Usage: docker-compose run --rm ingest /app/data/file.pdf --tags "Finance,Public"
 
   # Service for querying documents
   query:
     build: .
     image: rag-poc-v1
-    container_name: rag-query
+    depends_on:
+      - qdrant
     volumes:
-      # Mount database directory (read-only for queries)
-      - ./chroma_db:/app/chroma_db
+      # Mount role mapping configuration
+      - ./role_mapping.json:/app/role_mapping.json
     environment:
       - PYTHONUNBUFFERED=1
-      - CHROMA_DB_PATH=/app/chroma_db
+      - QDRANT_URL=http://qdrant:6333
       - COLLECTION_NAME=rag_collection
-    # Default command: show usage
-    command: python query.py --help
-    # Override when running: docker-compose run query python query.py "your question"
-
+    entrypoint: ["python", "query.py"]
+    # Usage: docker-compose run --rm query "your question" --role "Finance_Manager"

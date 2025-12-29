@@ -94,34 +94,42 @@ class DocumentRetriever:
         config = strategy_config or {}
         self.strategy = RetrievalStrategyFactory.create(strategy, **config)
 
-    def retrieve(self, query: str) -> List[Document]:
+    def retrieve(self, query: str, filter: dict = None) -> List[Document]:
         """Retrieve relevant documents for a query.
 
         Parameters
         ----------
         query
             The search query.
+        filter
+            Optional metadata filter for access control.
 
         Returns
         -------
         List of Document objects, most relevant first.
         """
         k = self.strategy["k"]
+        if filter:
+            return self.vector_store.similarity_search(query, k=k, filter=filter)
         return self.vector_store.similarity_search(query, k=k)
 
-    def retrieve_with_scores(self, query: str) -> List[tuple]:
+    def retrieve_with_scores(self, query: str, filter: dict = None) -> List[tuple]:
         """Retrieve documents with similarity scores.
 
         Parameters
         ----------
         query
             The search query.
+        filter
+            Optional metadata filter for access control.
 
         Returns
         -------
         List of tuples: (Document, score), most relevant first.
         """
         k = self.strategy["k"]
+        if filter:
+            return self.vector_store.similarity_search_with_score(query, k=k, filter=filter)
         return self.vector_store.similarity_search_with_score(query, k=k)
 
 

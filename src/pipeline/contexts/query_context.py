@@ -1,7 +1,7 @@
 """Context for query pipeline."""
 from __future__ import annotations
 
-from typing import Optional
+from typing import List, Optional
 
 from langchain.schema import Document
 
@@ -20,3 +20,5 @@ class QueryContext(PipelineContext):
     retrieved_docs: list[tuple[Document, float]] = []
     prompt: Optional[str] = None
     llm_response: Optional[str] = None
+    citations: Optional[List[dict]] = None
+

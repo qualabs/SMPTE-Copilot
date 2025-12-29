@@ -10,7 +10,6 @@ services:
       - ./config.yaml:/app/config.yaml:ro
     environment:
       - PYTHONUNBUFFERED=1
-      #- GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
     command: python src/cli/ingest.py --help
 
   # Service for querying documents
@@ -23,8 +22,33 @@ services:
       - ./config.yaml:/app/config.yaml:ro
     environment:
       - PYTHONUNBUFFERED=1
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
     command: python src/cli/query.py --help
+
+  # API Server - OpenAI-compatible endpoint
+  api:
+    build: .
+    image: rag-poc-v1
+    container_name: smpte-api-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - vector_db:/app/vector_db
+      - ./config.yaml:/app/config.yaml:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: uvicorn src.api.server:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   vector_db:

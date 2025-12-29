@@ -44,14 +44,3 @@ class ChunkingConfig(BaseSettings):
         description="Whether to merge peer chunks (for hybrid chunker)",
     )
 
-    @model_validator(mode='after')
-    def validate_overlap_less_than_size(self) -> 'ChunkingConfig':
-        # Only validate chunk_size/chunk_overlap for langchain chunker
-        # Hybrid chunker uses max_tokens (token-based), not chunk_size/overlap
-        if self.chunker_name.value != "hybrid" and self.chunk_overlap >= self.chunk_size:
-            raise ValueError(
-                f"chunk_overlap ({self.chunk_overlap}) must be less than "
-                f"chunk_size ({self.chunk_size})"
-            )
-        return self
-

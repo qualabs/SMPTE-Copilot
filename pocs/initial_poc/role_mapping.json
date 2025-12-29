@@ -1,0 +1,45 @@
+{
+  "Admin": [
+    "Finance",
+    "HR",
+    "Legal",
+    "Technical",
+    "Confidential",
+    "Internal",
+    "Public",
+    "Strategy"
+  ],
+  "Executive": [
+    "Finance",
+    "HR",
+    "Strategy",
+    "Confidential",
+    "Internal",
+    "Public"
+  ],
+  "Finance_Manager": [
+    "Finance",
+    "Internal",
+    "Public",
+    "Reports"
+  ],
+  "HR_Manager": [
+    "HR",
+    "Internal",
+    "Public",
+    "Compliance"
+  ],
+  "Engineer": [
+    "Technical",
+    "Internal",
+    "Public"
+  ],
+  "Manager": [
+    "Internal",
+    "Public"
+  ],
+  "Employee": [
+    "Public",
+    "General"
+  ]
+}

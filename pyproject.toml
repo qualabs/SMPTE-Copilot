@@ -17,6 +17,10 @@ dependencies = [
   "sentence-transformers>=2.2.0",
   "numpy>=1.24.0,<2.0",
   "langchain-huggingface>=0.0.1",
+  "google-genai>=1.0.0",
+  "docling==2.64.0",
+  "fastapi>=0.104.0",
+  "uvicorn[standard]>=0.24.0"
 ]
 
 [project.optional-dependencies]
@@ -28,13 +32,6 @@ dev = [
 openai = [
   "openai>=1.0.0",  # For OpenAI embeddings
   "tiktoken>=0.5.0",  # Required by OpenAIEmbeddings for token counting
-]
-gemini = [
-  "langchain-google-genai>=0.1.0",  # For Gemini embeddings
-]
-docling = [
-  "docling>=1.0.0",  # For Docling document parsing and hybrid chunking
-  "google-genai>=0.2.0",  # For Gemini token counting API (new API, not deprecated)
 ]
 
 [build-system]

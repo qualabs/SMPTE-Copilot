@@ -5,7 +5,11 @@ pymupdf>=1.24.9
 pymupdf4llm>=0.0.17
 
 # Vector store - Required for vector database
-chromadb>=0.4.0
+qdrant-client>=1.7.0
+langchain-qdrant>=0.1.0
+
+# ChromaDB - Kept for reference but not used
+# chromadb>=0.4.0
 
 # Embeddings - HuggingFace (default, free, local)
 sentence-transformers>=2.2.0

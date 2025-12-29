@@ -88,6 +88,56 @@ def _create_chromadb(config: Dict[str, Any]) -> Any:
     )
 
 
+@VectorStoreFactory.register("qdrant")
+def _create_qdrant(config: Dict[str, Any]) -> Any:
+    """Create Qdrant vector store."""
+    try:
+        from langchain_qdrant import QdrantVectorStore
+        from qdrant_client import QdrantClient
+    except ImportError:
+        raise ImportError(
+            "Qdrant requires 'qdrant-client' and 'langchain-qdrant' packages. "
+            "Install with: pip install qdrant-client langchain-qdrant"
+        )
+    
+    # Get configuration
+    url = config.get("url", "http://localhost:6333")
+    collection_name = config.get("collection_name", "rag_documents")
+    embedding_function = config.get("embedding_function")
+    
+    if embedding_function is None:
+        raise ValueError(
+            "Qdrant requires an embedding_function. "
+            "Pass it via config: {'embedding_function': embedder.embedding_model}"
+        )
+    
+    # Create Qdrant client
+    client = QdrantClient(url=url)
+    
+    # Check if collection exists, if not create it manually
+    if not client.collection_exists(collection_name):
+        from qdrant_client.models import Distance, VectorParams
+        
+        # Get embedding dimension from the embedding function
+        # Create a test embedding to determine the dimension
+        test_embedding = embedding_function.embed_query("test")
+        embedding_dim = len(test_embedding)
+        
+        # Create collection with proper vector configuration
+        client.create_collection(
+            collection_name=collection_name,
+            vectors_config=VectorParams(size=embedding_dim, distance=Distance.COSINE),
+        )
+    
+    # Create Qdrant vector store using the new langchain-qdrant package
+    # Pass the client directly
+    return QdrantVectorStore(
+        client=client,
+        collection_name=collection_name,
+        embedding=embedding_function,
+    )
+
+
 class VectorStoreIngester:
     """Ingest documents with embeddings into vector stores. Store-agnostic interface."""
 
@@ -145,7 +195,7 @@ class VectorStoreIngester:
         """
         if not chunks:
             return
-
+        
         # Check if chunks have pre-computed embeddings
         has_embeddings = any("embedding" in chunk.metadata for chunk in chunks)
         
@@ -153,10 +203,19 @@ class VectorStoreIngester:
             # For ChromaDB, extract embeddings and texts separately
             texts = [chunk.page_content for chunk in chunks]
             embeddings = [chunk.metadata.get("embedding") for chunk in chunks]
-            metadatas = [
-                {k: v for k, v in chunk.metadata.items() if k != "embedding"}
-                for chunk in chunks
-            ]
+            
+            # ChromaDB doesn't support list values in metadata
+            # Convert access_tags list to comma-separated string
+            metadatas = []
+            for chunk in chunks:
+                metadata = {k: v for k, v in chunk.metadata.items() if k != "embedding"}
+                
+                # Convert access_tags list to string if present
+                if "access_tags" in metadata and isinstance(metadata["access_tags"], list):
+                    metadata["access_tags"] = ",".join(metadata["access_tags"])
+                
+                metadatas.append(metadata)
+            
             ids = [f"chunk_{i}" for i in range(len(chunks))]
             
             # Use add_texts with embeddings for ChromaDB
@@ -166,6 +225,16 @@ class VectorStoreIngester:
                 metadatas=metadatas,
                 ids=ids,
             )
+        elif has_embeddings and self.store_name == "qdrant":
+            # For Qdrant, keep native list support for access_tags
+            # Remove embeddings from metadata since Qdrant will compute them
+            cleaned_chunks = []
+            for chunk in chunks:
+                metadata = {k: v for k, v in chunk.metadata.items() if k != "embedding"}
+                cleaned_chunks.append(Document(page_content=chunk.page_content, metadata=metadata))
+            
+            # Use add_documents - Qdrant will compute embeddings using the embedding function
+            self.vector_store.add_documents(cleaned_chunks)
         else:
             # Let the vector store compute embeddings automatically
             self.vector_store.add_documents(chunks)
@@ -204,7 +273,10 @@ class VectorStoreIngester:
 
     def persist(self) -> None:
         """Persist the vector store to disk (if supported)."""
-        if hasattr(self.vector_store, "persist"):
+        if self.store_name == "qdrant":
+            # Qdrant persists automatically (client-server)
+            pass
+        elif hasattr(self.vector_store, "persist"):
             self.vector_store.persist()
         elif hasattr(self.vector_store, "_collection") and hasattr(self.vector_store._collection, "persist"):
             # For ChromaDB
@@ -212,7 +284,15 @@ class VectorStoreIngester:
 
     def delete_collection(self) -> None:
         """Delete the collection (if supported)."""
-        if hasattr(self.vector_store, "delete"):
+        if self.store_name == "qdrant":
+            # For Qdrant, use client to delete collection
+            try:
+                if hasattr(self.vector_store, "client"):
+                    collection_name = self.vector_store.collection_name
+                    self.vector_store.client.delete_collection(collection_name)
+            except Exception:
+                pass
+        elif hasattr(self.vector_store, "delete"):
             self.vector_store.delete()
         elif hasattr(self.vector_store, "_collection"):
             # For ChromaDB
