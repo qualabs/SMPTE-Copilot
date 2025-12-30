@@ -67,8 +67,9 @@ class WhisperLoader(DocumentLoader):
         self.model_name = config.get("model_name", "base")
         self.device = config.get("device", "cpu")
         self.language = config.get("language", "en")
+        self.include_timestamps = config.get("include_timestamps", True)
 
-        self._transcription_cache: Optional[str] = None
+        self._transcription_result_cache: Optional[dict[str, Any]] = None
         self._model: Optional[whisper.Whisper] = None
 
     def _load_model(self) -> whisper.Whisper:
@@ -83,15 +84,15 @@ class WhisperLoader(DocumentLoader):
             self._model = whisper.load_model(self.model_name, device=self.device)
         return self._model
 
-    def _transcribe(self) -> str:
-        """Transcribe the video/audio file using Whisper.
+    def _get_transcription_result(self) -> dict[str, Any]:
+        """Transcribe the video/audio file using Whisper and return full result.
 
         Returns
         -------
-        Transcribed text as a string.
+        Full transcription result dictionary with segments and text.
         """
-        if self._transcription_cache is not None:
-            return self._transcription_cache
+        if self._transcription_result_cache is not None:
+            return self._transcription_result_cache
 
         try:
             self.logger.info(f"Transcribing audio from: {self.input_path}")
@@ -102,16 +103,32 @@ class WhisperLoader(DocumentLoader):
                 transcribe_kwargs["language"] = self.language
 
             result = model.transcribe(str(self.input_path), **transcribe_kwargs)
-            transcription = result["text"].strip()
-
-            if not transcription:
+            
+            if not result.get("text", "").strip():
                 self.logger.warning(f"Empty transcription for {self.input_path}")
-                transcription = ""
 
-            self._transcription_cache = transcription
-            return transcription
+            self._transcription_result_cache = result
+            return result
         except Exception as e:
             raise RuntimeError(f"Failed to transcribe {self.input_path}: {e}") from e
+
+    def _format_timestamp(self, seconds: float) -> str:
+        """Format seconds as HH:MM:SS.mmm.
+
+        Parameters
+        ----------
+        seconds
+            Time in seconds.
+
+        Returns
+        -------
+        Formatted timestamp string.
+        """
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        millis = int((seconds % 1) * 1000)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}"
 
     def load_documents(self) -> list[Document]:
         """Load the video/audio file into LangChain Document objects.
@@ -120,7 +137,8 @@ class WhisperLoader(DocumentLoader):
         -------
         List of Document objects representing the transcription.
         """
-        transcription = self._transcribe()
+        result = self._get_transcription_result()
+        transcription = result["text"].strip()
 
         return [
             Document(
@@ -137,7 +155,7 @@ class WhisperLoader(DocumentLoader):
         ]
 
     def to_markdown_text(self, pages: PageSpecifier = None) -> str:
-        """Return the transcription as Markdown text.
+        """Return the transcription as Markdown text with timestamps.
 
         Parameters
         ----------
@@ -146,15 +164,34 @@ class WhisperLoader(DocumentLoader):
 
         Returns
         -------
-        Transcription as Markdown-formatted string.
+        Transcription as Markdown-formatted string with timestamps.
         """
-        transcription = self._transcribe()
-
-        if not transcription:
+        result = self._get_transcription_result()
+        
+        if not result.get("text", "").strip():
             return ""
 
-        markdown = f"# Transcription\n\n{transcription}"
-        return markdown
+        if not self.include_timestamps:
+            return f"# Transcription\n\n{result['text'].strip()}"
+
+        segments = result.get("segments", [])
+        if not segments:
+            return f"# Transcription\n\n{result['text'].strip()}"
+
+        markdown_lines = ["# Transcription\n"]
+        
+        for segment in segments:
+            start_time = segment.get("start", 0)
+            end_time = segment.get("end", 0)
+            text = segment.get("text", "").strip()
+            
+            if not text:
+                continue
+
+            timestamp_str = f"[{self._format_timestamp(start_time)} - {self._format_timestamp(end_time)}]"
+            markdown_lines.append(f"{timestamp_str}\n{text}\n")
+
+        return markdown_lines
 
     def _resolve_output_path(self, output_path: Optional[Path]) -> Path:
         """Resolve the output path for the markdown file.
@@ -188,7 +225,8 @@ def create_whisper_loader(config: dict[str, Any]) -> DocumentLoader:
         - output_dir (optional): Directory for output markdown files
         - model_name (optional): Whisper model name (default: "base")
         - device (optional): Device to run on (default: "cpu")
-        - language (optional): Language code for transcription
+        - language (optional): Language code for transcription (default: "en")
+        - include_timestamps (optional): Include timestamps in output (default: True)
 
     Returns
     -------

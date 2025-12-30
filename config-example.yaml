@@ -23,6 +23,7 @@ loader:
         model_name: base  # Whisper model: tiny, base, small, medium, large (default: base)
         device: cpu  # Device to run on: cpu or cuda (default: cpu)
         language: en  # Language code (e.g., "en", "es") or null for auto-detection (default: en)
+        include_timestamps: true  # Include timestamps in markdown output (default: true)
 
 chunking:
   chunker_name: langchain    # Chunker name (langchain, hybrid)
