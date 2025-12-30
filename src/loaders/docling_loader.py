@@ -34,10 +34,9 @@ class DoclingLoader(DocumentLoader):
         if not file_path:
             raise ValueError("'file_path' is required in loader configuration")
 
-        self.doc_path = Path(file_path).expanduser().resolve()
-        self.pdf_path = self.doc_path # Support for deprecated 'pdf_path' key
-        if not self.doc_path.exists():
-            raise FileNotFoundError(f"Doc not found: {self.doc_path}")
+        self.input_path = Path(file_path).expanduser().resolve()
+        if not self.input_path.exists():
+            raise FileNotFoundError(f"Doc not found: {self.input_path}")
 
         output_dir = self.config.get("output_dir")
         self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
@@ -94,10 +93,10 @@ class DoclingLoader(DocumentLoader):
 
     def _get_conversion_result(self):
         try:
-            return self.converter.convert(str(self.doc_path))
+            return self.converter.convert(str(self.input_path))
         except Exception as e:
             raise RuntimeError(
-                f"Docling conversion failed for {self.doc_path}: {e}"
+                f"Docling conversion failed for {self.input_path}: {e}"
             ) from e
 
     def load_documents(self) -> list[Document]:
@@ -109,10 +108,10 @@ class DoclingLoader(DocumentLoader):
             Document(
                 page_content=md_text,
                 metadata={
-                    "source": str(self.doc_path),
-                    "file_name": self.doc_path.name,
+                    "source": str(self.input_path),
+                    "file_name": self.input_path.name,
                     "loader": "DoclingLoader",
-                    "file_type": self.doc_path.suffix.lower()
+                    "file_type": self.input_path.suffix.lower()
                 }
             )
         ]

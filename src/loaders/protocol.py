@@ -71,11 +71,11 @@ class DocumentLoader(Protocol):
         ----------
         output_path
             Optional explicit output path. If None, generates a default path
-            based on the PDF file name in the output directory or PDF's parent directory.
+            based on the input file name in the output directory or input file's parent directory.
         """
         if output_path is not None:
             return Path(output_path).expanduser().resolve()
 
-        target_dir = self.output_dir or self.pdf_path.parent
-        return target_dir / f"{self.pdf_path.stem}.md"
+        target_dir = self.output_dir or self.input_path.parent
+        return target_dir / f"{self.input_path.stem}.md"
 

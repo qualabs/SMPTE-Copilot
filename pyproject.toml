@@ -21,6 +21,7 @@ dependencies = [
   "langchain-google-genai>=2.1.10",
   "docling==2.64.0",
   "fastapi>=0.104.0",
+  "openai-whisper>=20231117",
   "uvicorn[standard]>=0.24.0"
 ]
 
