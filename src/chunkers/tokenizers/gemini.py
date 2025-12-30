@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 """Gemini tokenizer implementation."""
-import logging
 import os
 
 from typing import Any, Optional
@@ -48,7 +47,6 @@ class GeminiTokenizer(Tokenizer):
         self.client = genai.Client(api_key=google_api_key)
         self.model = model
         self.max_tokens = max_tokens
-        self.logger = logging.getLogger()
                 
     def count_tokens(self, text: str) -> int:
         """Count tokens using Gemini's API with fallback to local estimation.
@@ -62,7 +60,6 @@ class GeminiTokenizer(Tokenizer):
         -------
         Number of tokens (from API or estimated).
         """
-        self.logger.info(f"Counting tokens for text: {text}")
         response = self.client.models.count_tokens(model=self.model, contents=text)
         return response.total_tokens
 

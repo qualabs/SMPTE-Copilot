@@ -25,7 +25,7 @@ def main():
     config = Config.get_config()
 
     Logger.setup(config)
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
 
     query = " ".join(sys.argv[1:])
 

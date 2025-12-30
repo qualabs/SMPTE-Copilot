@@ -20,7 +20,7 @@ from src.pipeline import PipelineStatus
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Initialize state attributes
-    app.state.logger = logging.getLogger()
+    app.state.logger = logging.getLogger(__name__)
     app.state.initialized = False
     
     # Startup

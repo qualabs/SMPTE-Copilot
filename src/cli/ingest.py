@@ -52,7 +52,7 @@ def ingest_file(
     vector_store
         Vector store instance.
     """
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Ingesting: {file_path}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
@@ -129,7 +129,7 @@ def main():
     config = Config.get_config()
 
     Logger.setup(config)
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
 
     input_path = config.paths.input_path
 
