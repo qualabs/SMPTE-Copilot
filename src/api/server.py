@@ -120,13 +120,14 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
 
         answer = context.llm_response or "I don't know based on the provided documents."
         usage = estimate_token_usage(context.prompt, answer)
-        logger.info("Query processed successfully")
-
-        return build_chat_response(
+        response=build_chat_response(
             answer=answer,
             model=request.model,
             usage=usage,
         )
+        logger.info("Query processed successfully")
+
+        return response
 
     except HTTPException:
         raise
