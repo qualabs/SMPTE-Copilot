@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     tesseract-ocr \
     tesseract-ocr-eng \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy project files

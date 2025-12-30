@@ -89,11 +89,6 @@ class WhisperLoader(DocumentLoader):
         Returns
         -------
         Transcribed text as a string.
-
-        Raises
-        ------
-        RuntimeError
-            If transcription fails.
         """
         if self._transcription_cache is not None:
             return self._transcription_cache
@@ -124,11 +119,6 @@ class WhisperLoader(DocumentLoader):
         Returns
         -------
         List of Document objects representing the transcription.
-
-        Raises
-        ------
-        RuntimeError
-            If transcription fails.
         """
         transcription = self._transcribe()
 
@@ -157,11 +147,6 @@ class WhisperLoader(DocumentLoader):
         Returns
         -------
         Transcription as Markdown-formatted string.
-
-        Raises
-        ------
-        RuntimeError
-            If transcription fails.
         """
         transcription = self._transcribe()
 
@@ -208,13 +193,6 @@ def create_whisper_loader(config: dict[str, Any]) -> DocumentLoader:
     Returns
     -------
     DocumentLoader instance.
-
-    Raises
-    ------
-    ValueError
-        If 'file_path' is missing or the file is not a video/audio file.
-    FileNotFoundError
-        If the file does not exist.
     """
     return WhisperLoader(config=config)
 
