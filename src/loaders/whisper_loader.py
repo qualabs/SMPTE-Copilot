@@ -98,10 +98,10 @@ class WhisperLoader(DocumentLoader):
             self.logger.info(f"Transcribing audio from: {self.input_path}")
             model = self._load_model()
 
-            transcribe_kwargs = {}
-            if self.language:
-                transcribe_kwargs["language"] = self.language
-
+            transcribe_kwargs = {
+                "language": self.language,
+            }
+            
             result = model.transcribe(str(self.input_path), **transcribe_kwargs)
             
             if not result.get("text", "").strip():
@@ -189,9 +189,9 @@ class WhisperLoader(DocumentLoader):
                 continue
 
             timestamp_str = f"[{self._format_timestamp(start_time)} - {self._format_timestamp(end_time)}]"
-            markdown_lines.append(f"{timestamp_str}\n{text}\n")
+            markdown_lines.append(f"{timestamp_str}\n{text}")
 
-        return markdown_lines
+        return "\n".join(markdown_lines)
 
     def _resolve_output_path(self, output_path: Optional[Path]) -> Path:
         """Resolve the output path for the markdown file.
