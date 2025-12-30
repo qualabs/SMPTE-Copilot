@@ -30,7 +30,7 @@ class LoadStep:
         context
             Ingestion context with file_path set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         logger.info(f"Loading document: {context.file_path}")
 
         markdown_path = self.loader.to_markdown_file()

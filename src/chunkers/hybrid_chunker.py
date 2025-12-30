@@ -42,7 +42,7 @@ class HybridChunker:
         tokenizer
             Optional tokenizer instance. If not provided, uses a simple approximation tokenizer.
         """
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger(__name__)
 
         self.logger.info(
             f"Initializing hybrid chunker (max_tokens: {max_tokens}, merge_peers: {merge_peers})..."
@@ -82,17 +82,14 @@ class HybridChunker:
             chunk_text = self.chunker.contextualize(chunk=chunk)
             chunk_tokens = self.tokenizer.count_tokens(chunk_text)
             
+            self.logger.info(f"Chunk {i} has {chunk_tokens} tokens, max_tokens: {self.max_tokens}")
+
             if chunk_tokens > self.max_tokens:
-                self.logger.warning(
-                    f"Chunk {i} exceeds max_tokens ({chunk_tokens} > {self.max_tokens}). "
-                    "Splitting into smaller chunks."
-                )
                 sub_chunks = self.tokenizer.split_text(chunk_text)
                 for j, sub_chunk_text in enumerate(sub_chunks):
                     sub_chunk_metadata = {
                         **metadata,
                         "chunk_index": len(documents),
-                        "total_chunks": len(chunks) + len(sub_chunks) - 1,
                         "chunking_method": "hybrid_split",
                         "original_chunk_index": i,
                         "sub_chunk_index": j,
@@ -101,8 +98,7 @@ class HybridChunker:
             else:
                 chunk_metadata = {
                     **metadata,
-                    "chunk_index": i,
-                    "total_chunks": len(chunks),
+                    "chunk_index": len(documents),
                     "chunking_method": "hybrid",
                 }
                 documents.append(Document(page_content=chunk_text, metadata=chunk_metadata))

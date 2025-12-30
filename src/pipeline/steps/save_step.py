@@ -32,7 +32,7 @@ class SaveStep:
         context
             Ingestion context with chunks and vectors set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         if not context.chunks:
             context.mark_failed("No chunks available. Embedding step must run first.")
             return

@@ -37,7 +37,7 @@ class GenerationStep(PipelineStep):
         context
             Query context with retrieved_docs set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
 
         if not context.retrieved_docs:
             context.mark_failed("No retrieved docs available. Retrieve step must run first.")

@@ -30,7 +30,7 @@ class QueryEmbeddingStep:
         context
             Query context with user_query set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         logger.info(f"Generating embedding for query: {context.user_query}")
 
         query_vector = self.embedding_model.embed_query(context.user_query)

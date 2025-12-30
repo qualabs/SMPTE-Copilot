@@ -54,7 +54,7 @@ class LangChainChunker:
             - "character": Simple character-based splitting
             - "token": Token-based splitting (requires tiktoken)
         """
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger(__name__)
 
         self.logger.info(
             f"Chunking markdown (size={chunk_size}, "

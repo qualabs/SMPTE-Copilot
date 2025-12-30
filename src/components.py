@@ -46,7 +46,7 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
     if config is None:
         config = Config.get_config()
 
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
 
     vector_db_path: Path = config.vector_store.persist_directory
     if not vector_db_path.exists():
@@ -109,7 +109,7 @@ def execute_query(components: RAGComponents, query: str) -> QueryContext:
     QueryContext
         Pipeline context containing the query results
     """
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     logger.info(f"Executing query: {query}")
 
     context = QueryContext(user_query=query)
