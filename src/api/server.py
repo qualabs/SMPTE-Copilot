@@ -3,6 +3,7 @@
 
 import logging
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,17 +28,15 @@ async def lifespan(app: FastAPI):
         config = Config.get_config()
         Logger.setup(config)
         app.state.logger.info("Initializing RAG components...")
-        
         app.state.components = initialize_rag_components(config)
         app.state.initialized = True
-        
         app.state.logger.info("Server startup complete")
     except Exception as e:
         app.state.logger.error(f"Failed to initialize components: {e}")
         app.state.initialized = False
-    
+
     yield
-    
+
     app.state.logger.info("Server shutting down")
 
 
@@ -63,6 +62,21 @@ async def health_check():
     return {
         "status": "healthy" if app.state.initialized else "initializing",
         "initialized": app.state.initialized,
+    }
+
+
+@app.get("/v1/models")
+async def list_models() -> dict[str, Any]:
+
+    return {
+        "object": "list",
+        "data": [
+            {
+                "id": "smpte-copilot",
+                "object": "model",
+                "owned_by": "smpte",
+            }
+        ],
     }
 
 
@@ -105,11 +119,14 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
             )
 
         answer = context.llm_response or "I don't know based on the provided documents."
-        
         usage = estimate_token_usage(context.prompt, answer)
-        response = build_chat_response(answer, request.model, usage)
-
+        response=build_chat_response(
+            answer=answer,
+            model=request.model,
+            usage=usage,
+        )
         logger.info("Query processed successfully")
+
         return response
 
     except HTTPException:
