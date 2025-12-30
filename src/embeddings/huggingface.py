@@ -1,5 +1,6 @@
-"""HuggingFace embedding model implementation."""
 from __future__ import annotations
+
+"""HuggingFace embedding model implementation."""
 
 from typing import Any
 

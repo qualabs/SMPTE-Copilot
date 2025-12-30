@@ -1,5 +1,6 @@
-"""PyMuPDF-based PDF loader implementation."""
 from __future__ import annotations
+
+"""PyMuPDF-based PDF loader implementation."""
 
 from collections.abc import Sequence
 from pathlib import Path
@@ -100,7 +101,6 @@ class PyMuPDFLoader(DocumentLoader):
             raise RuntimeError(
                 f"Failed to convert PDF to Markdown from {self.pdf_path}: {e}"
             ) from e
-
 
 def create_pymupdf_loader(config: dict[str, Any]) -> DocumentLoader:
     """Create a PyMuPDF loader from configuration.

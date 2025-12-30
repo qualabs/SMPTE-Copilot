@@ -1,5 +1,6 @@
-"""Protocol for chunker implementations."""
 from __future__ import annotations
+
+"""Protocol for chunker implementations."""
 
 from typing import Optional, Protocol
 

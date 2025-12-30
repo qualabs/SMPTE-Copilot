@@ -6,5 +6,7 @@ class ChunkerType(str, Enum):
     """Chunker type enumeration."""
 
     LANGCHAIN = "langchain"
+    HYBRID = "hybrid"
+
 
 

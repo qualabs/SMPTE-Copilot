@@ -1,5 +1,7 @@
-"""LangChain-based chunker implementation."""
 from __future__ import annotations
+
+"""LangChain-based chunker implementation."""
+import logging
 
 from pathlib import Path
 from typing import Any, Optional
@@ -52,6 +54,13 @@ class LangChainChunker:
             - "character": Simple character-based splitting
             - "token": Token-based splitting (requires tiktoken)
         """
+        self.logger = logging.getLogger()
+
+        self.logger.info(
+            f"Chunking markdown (size={chunk_size}, "
+            f"overlap={chunk_overlap})..."
+        )
+
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.method = method

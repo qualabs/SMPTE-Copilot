@@ -1,5 +1,6 @@
-"""Factory for creating LLM backends."""
 from __future__ import annotations
+
+"""Factory for creating LLM backends."""
 
 from typing import Any, Callable, ClassVar
 

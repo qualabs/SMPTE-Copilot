@@ -1,5 +1,6 @@
-"""Protocol for pipeline step implementations."""
 from __future__ import annotations
+
+"""Protocol for pipeline step implementations."""
 
 from typing import Protocol, TypeVar
 

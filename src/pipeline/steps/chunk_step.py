@@ -1,5 +1,6 @@
-"""Step that chunks the markdown text into smaller pieces."""
 from __future__ import annotations
+
+"""Step that chunks the markdown text into smaller pieces."""
 
 import logging
 

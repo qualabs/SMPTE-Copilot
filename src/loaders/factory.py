@@ -1,5 +1,6 @@
-"""Factory for creating document loader implementations."""
 from __future__ import annotations
+
+"""Factory for creating document loader implementations."""
 
 from typing import Any, Callable, ClassVar
 

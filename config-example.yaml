@@ -18,20 +18,35 @@ loader:
         llm_model: gemini-2.5-flash # LLM Model for image description
         # image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Optional prompt for image description if not present uses default
 
-  
 chunking:
-  chunker_name: langchain    # Chunker name (langchain)
-  chunk_size: 1000          # Size of text chunks in characters
-  chunk_overlap: 200         # Overlap between chunks in characters
-  method: recursive          # Options: recursive, character, token
-
+  chunker_name: langchain    # Chunker name (langchain, hybrid)
+  chunker_config:            # Chunker-specific configuration (recommended)
+    chunk_size: 1000         # Size of text chunks in characters (for langchain)
+    chunk_overlap: 200       # Overlap between chunks in characters (for langchain)
+    method: recursive         # Options: recursive, character, token (for langchain)
+  # For hybrid chunking (semantic + token-based):
+  # chunker_name: hybrid
+  # chunker_config:
+  #   max_tokens: 2000        # Maximum tokens per chunk (default: 2000)
+  #   merge_peers: false      # Whether to merge peer chunks (default: false)
+  #   tokenizer: simple       # Tokenizer type: simple (default) or gemini
+  #   tokenizer_config:       # Tokenizer-specific configuration
+  #     # For gemini tokenizer:
+  #     # llm_api_key: "${GOOGLE_API_KEY}"  # Google API key for accurate token counting
+  #     # llm_model: "gemini-embedding-001"        # Gemini model for token counting
+  #     # For simple tokenizer: no additional config needed
+  # Note: chunk_size and chunk_overlap are NOT used by hybrid chunker (it's token-based)
+  
 embedding:
-  embed_name: huggingface    # Options: huggingface, openai
+  embed_name: huggingface    # Options: huggingface, openai, gemini
   embed_config:              # Additional model-specific arguments (dict)
     # For HuggingFace models, you can specify the specific model name:
     model_name: "sentence-transformers/all-MiniLM-L6-v2"  # Default if not specified
     # For OpenAI, you would specify:
-    # model: "text-embedding-3-small"  # or other OpenAI embedding model
+    # model_name: "text-embedding-3-small"  # or other OpenAI embedding model
+    # For Gemini, you would specify:
+    # model_name: "embedding-001"  # or other Gemini embedding model
+    # google_api_key: 
 
 vector_store:
   store_name: chromadb        # Vector store name
@@ -49,7 +64,6 @@ llm:
   llm_config:
     model: gemini-2.5-flash
     api_key: 
-
 
 paths:
   input_path: ./data         # Default path for input media files (relative to current working directory)

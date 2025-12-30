@@ -1,5 +1,6 @@
-"""OpenAI embedding model implementation."""
 from __future__ import annotations
+
+"""OpenAI embedding model implementation."""
 
 from typing import Any
 

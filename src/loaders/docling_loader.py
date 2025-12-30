@@ -1,4 +1,6 @@
 import os
+import logging
+
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Union
@@ -24,12 +26,11 @@ from .protocol import DocumentLoader
 
 PageSpecifier = Union[Sequence[int], range, None]
 
-
 class DoclingLoader(DocumentLoader):
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
         
-        file_path = config.get("file_path")
+        file_path = self.config.get("file_path")
         if not file_path:
             raise ValueError("'file_path' is required in loader configuration")
 
@@ -38,22 +39,15 @@ class DoclingLoader(DocumentLoader):
         if not self.doc_path.exists():
             raise FileNotFoundError(f"Doc not found: {self.doc_path}")
 
-        output_dir = config.get("output_dir")
+        output_dir = self.config.get("output_dir")
         self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
-        
-        llm_api_key = self.config.get("llm_api_key")
-        if llm_api_key is None:
-            raise ValueError("LLM api key is required for docling")
-        llm_endpoint = self.config.get("llm_endpoint")
-        if llm_endpoint is None:
-            raise ValueError("LLM endpoint is required for docling")
-
-        llm_model = self.config.get("llm_model") or os.getenv("LLM_MODEL")
-        if llm_model is None:
-            raise ValueError("LLM model is required for docling")
         
         prompt = self.config.get("image_description_prompt", DEFAULT_IMAGE_DESCRIPTION_PROMPT)
 
+        llm_api_key = self.config.get("llm_api_key")
+        llm_endpoint = self.config.get("llm_endpoint")
+        llm_model = self.config.get("llm_model")
+        
         can_do_picture_description = (llm_api_key is not None and
                                        llm_endpoint is not None and
                                          llm_model is not None)
@@ -62,7 +56,7 @@ class DoclingLoader(DocumentLoader):
             enable_remote_services=True,
             do_table_structure=True,
             allow_external_plugins=True,
-            do_ocr=False,
+            do_ocr=not can_do_picture_description,
             do_picture_description=can_do_picture_description,
             table_structure_options=TableStructureOptions(
                 do_cell_matching=True,
@@ -74,6 +68,7 @@ class DoclingLoader(DocumentLoader):
             allow_external_plugins=True,
             enable_remote_services=True,
             do_picture_description=can_do_picture_description,
+            do_ocr=not can_do_picture_description,
         )
 
         # Only configure picture description if credentials are available
@@ -106,6 +101,7 @@ class DoclingLoader(DocumentLoader):
             ) from e
 
     def load_documents(self) -> list[Document]:
+
         result = self._get_conversion_result()
         md_text = result.document.export_to_markdown()
         
@@ -122,6 +118,7 @@ class DoclingLoader(DocumentLoader):
         ]
 
     def to_markdown_text(self, pages: PageSpecifier = None) -> str:
+
         result = self._get_conversion_result()
         return result.document.export_to_markdown()
 

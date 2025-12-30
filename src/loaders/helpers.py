@@ -1,5 +1,6 @@
-"""Helper class for working with loaders."""
 from __future__ import annotations
+
+"""Helper class for working with loaders."""
 
 from pathlib import Path
 from typing import Any

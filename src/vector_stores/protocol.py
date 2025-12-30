@@ -1,5 +1,6 @@
-"""Protocol for vector store implementations."""
 from __future__ import annotations
+
+"""Protocol for vector store implementations."""
 
 from typing import Any, Optional, Protocol
 

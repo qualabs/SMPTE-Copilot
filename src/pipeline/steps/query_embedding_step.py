@@ -1,5 +1,6 @@
-"""Step that generates an embedding for the user query."""
 from __future__ import annotations
+
+"""Step that generates an embedding for the user query."""
 
 import logging
 

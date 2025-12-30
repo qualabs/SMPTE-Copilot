@@ -122,7 +122,6 @@ Each Factory class maintains an internal `_registry` dictionary that maps compon
 ```python
 class EmbeddingModelFactory:
     """Factory for creating embedding models. Easily extensible."""
-
     # Class variable: shared registry across all instances
     _registry: ClassVar[dict[EmbeddingModelType, Callable[[dict[str, Any]], Embeddings]]] = {}
 ```
@@ -135,7 +134,6 @@ The Factory provides a `register` method that acts as a decorator, allowing impl
 @classmethod
 def register(cls, model_type: EmbeddingModelType):
     """Register a new embedding model factory.
-
     Parameters
     ----------
     model_type
@@ -192,7 +190,6 @@ class EmbeddingModelFactory:
             cls._registry[model_type] = factory_func
             return factory_func
         return decorator
-
     @classmethod
     def create(cls, model_type: EmbeddingModelType, **kwargs) -> Embeddings:
         """Create an embedding model by type."""
@@ -263,17 +260,14 @@ Load → Chunk → Embed → Save
 **Pipeline Flow:**
 
 1. **LoadStep**: Converts media files (PDF, images, videos, audio) to Markdown format
-
    - Input: `file_path` in `IngestionContext`
    - Output: Sets `markdown_path` and `raw_text` in context
 
 2. **ChunkStep**: Splits the Markdown text into smaller chunks
-
    - Input: `markdown_path` from LoadStep
    - Output: Sets `chunks` (list of Document objects) in context
 
 3. **EmbeddingGenerationStep**: Generates embeddings for each chunk
-
    - Input: `chunks` from ChunkStep
    - Output: Updates `chunks` with embeddings in metadata and sets `vectors`
 
@@ -311,7 +305,6 @@ QueryEmbedding → Retrieve → Generate
 **Pipeline Flow:**
 
 1. **QueryEmbeddingStep**: Generates an embedding vector for the user query
-
    - Input: `user_query` in `QueryContext`
    - Output: Sets `query_vector` in context
 
@@ -347,7 +340,6 @@ context = executor.execute(context)
 Each pipeline uses a context object that extends `PipelineContext`:
 
 - **`IngestionContext`**: Tracks document state through ingestion
-
   - `file_path`: Path to the source file
   - `markdown_path`: Path to generated Markdown file
   - `chunks`: List of document chunks
@@ -378,7 +370,6 @@ class RerankStep:
 
     def __init__(self, reranker):
         """Initialize the re-rank step.
-
         Parameters
         ----------
         reranker
@@ -388,7 +379,6 @@ class RerankStep:
 
     def run(self, context: QueryContext) -> None:
         """Re-rank retrieved documents.
-
         Parameters
         ----------
         context
@@ -428,7 +418,6 @@ context = executor.execute(context)
 ```
 
 That's it! The new step is seamlessly integrated into the pipeline. The executor will:
-
 1. Execute steps in order
 2. Stop if any step marks the context as failed
 3. Handle errors appropriately
@@ -475,9 +464,15 @@ loader:
 
 chunking:
   chunker_name: langchain # Maps to ChunkerType.LANGCHAIN
-  chunk_size: 1000 # Chunk size in characters
-  chunk_overlap: 200 # Overlap between chunks
-  method: recursive # Chunking method
+  chunker_config: # Chunker-specific configuration dictionary (recommended)
+    chunk_size: 1000 # Chunk size in characters (for langchain)
+    chunk_overlap: 200 # Overlap between chunks (for langchain)
+    method: recursive # Chunking method (for langchain)
+  # For hybrid chunker:
+  # chunker_name: hybrid
+  # chunker_config:
+  #   max_tokens: 2000 # Maximum tokens per chunk (default: 2000)
+  #   merge_peers: false # Whether to merge peer chunks (default: false)
 
 embedding:
   embed_name: huggingface # Maps to EmbeddingModelType.HUGGINGFACE
@@ -520,7 +515,6 @@ The configuration values directly map to the Enum types defined in each module:
 - **`searcher_strategy`** → `RetrieverType` enum (e.g., `"similarity"` → `RetrieverType.SIMILARITY`)
 
 The system uses these values to:
-
 1. Load the configuration from `config.yaml`
 2. Map the string values to the corresponding Enum types
 3. Use the Factory pattern to create instances of the selected components
@@ -531,7 +525,6 @@ The system uses these values to:
 ### Configuration Examples
 
 **Using HuggingFace embeddings:**
-
 ```yaml
 embedding:
   embed_name: huggingface
@@ -540,7 +533,6 @@ embedding:
 ```
 
 **Using OpenAI embeddings:**
-
 ```yaml
 embedding:
   embed_name: openai
@@ -554,9 +546,20 @@ embedding:
 ```yaml
 chunking:
   chunker_name: langchain
-  chunk_size: 1500
-  chunk_overlap: 300
-  method: character # Options: recursive, character, token
+  chunker_config:
+    chunk_size: 1500
+    chunk_overlap: 300
+    method: character # Options: recursive, character, token
+```
+
+**Using hybrid chunking (semantic + token-based):**
+
+```yaml
+chunking:
+  chunker_name: hybrid
+  chunker_config:
+    max_tokens: 2000  # Maximum tokens per chunk (default: 2000)
+    merge_peers: false # Whether to merge peer chunks (default: false)
 ```
 
 **Configuring loaders for different file types:**
@@ -613,7 +616,6 @@ from .protocol import Embeddings
 
 def create_cohere_embedding(config: Dict[str, Any]) -> Embeddings:
     """Create Cohere embedding model.
-
     Parameters
     ----------
     config
@@ -621,7 +623,6 @@ def create_cohere_embedding(config: Dict[str, Any]) -> Embeddings:
         - model: str (optional) - Model name
         - cohere_api_key: str (optional) - API key
         - Other parameters supported by CohereEmbeddings constructor.
-
     Returns
     -------
     Embeddings instance.
@@ -633,7 +634,6 @@ def create_cohere_embedding(config: Dict[str, Any]) -> Embeddings:
 ```
 
 **Important**: The function must:
-
 - Receive a `Dict[str, Any]` as parameter
 - Return an instance that implements the module's Protocol (`Embeddings` in this case)
 - Handle errors appropriately
@@ -675,7 +675,6 @@ embedding:
 4. Configure in `config.yaml` (if applicable)
 
 This same process applies to:
-
 - **`chunkers/`**: Add new chunking algorithms
 - **`loaders/`**: Add new loader types (DOCX, HTML, etc.)
 - **`retrievers/`**: Add new retrieval strategies
@@ -690,7 +689,6 @@ The project provides two main CLI commands for ingesting documents and querying 
 The `ingest.py` command processes media files and adds them to the vector database using the [ingestion pipeline](#ingestion-pipeline). It is designed to support multiple file types including PDFs, images, videos, and audio files (currently supports PDFs, with multimodal support planned).
 
 **Usage:**
-
 ```bash
 # Ingest a single file (currently supports PDF)
 python src/cli/ingest.py /path/to/document.pdf
@@ -703,7 +701,6 @@ python src/cli/ingest.py
 ```
 
 **What it does:**
-
 - Accepts media files or directories containing supported file types
 - Currently supports PDF files; future versions will support images, videos, and audio
 - Automatically selects the appropriate loader based on file extension using `loader.file_type_mapping` in `config.yaml`
@@ -713,7 +710,6 @@ python src/cli/ingest.py
 - Provides detailed logging of each step in the pipeline
 
 **Output:**
-
 - Processed content files saved to the configured output directory
 - Vector database populated with embedded document chunks
 - Summary of processed files, chunk counts, and database location
@@ -723,7 +719,6 @@ python src/cli/ingest.py
 The `query.py` command searches the vector database for documents similar to a given query using the [query pipeline](#query-pipeline).
 
 **Usage:**
-
 ```bash
 # Query with a question
 python src/cli/query.py "What is the main topic of the document?"
@@ -733,14 +728,12 @@ python src/cli/query.py your question here
 ```
 
 **What it does:**
-
 1. Validates that the vector database exists (must run `ingest.py` first)
 2. Creates the embedding model, vector store, and retriever using `config.yaml` settings
 3. Executes the query pipeline: QueryEmbedding → Retrieve (see [Query Pipeline](#query-pipeline) for details)
 4. Displays results with similarity scores and document content
 
 **Output:**
-
 - List of relevant documents ranked by similarity score
 - Each result includes:
   - Similarity score (higher = more similar)

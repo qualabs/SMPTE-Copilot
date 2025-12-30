@@ -1,5 +1,6 @@
-"""Step that saves chunks with embeddings to the vector store."""
 from __future__ import annotations
+
+"""Step that saves chunks with embeddings to the vector store."""
 
 import logging
 

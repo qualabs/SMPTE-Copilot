@@ -1,5 +1,6 @@
-"""Step that loads a document and converts it to markdown."""
 from __future__ import annotations
+
+"""Step that loads a document and converts it to markdown."""
 
 import logging
 

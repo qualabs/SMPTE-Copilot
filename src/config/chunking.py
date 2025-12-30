@@ -1,8 +1,8 @@
 """Chunking configuration."""
 
-from typing import Literal
+from typing import Any, Optional
 
-from pydantic import Field, model_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings
 
 from src.chunkers.constants import (
@@ -20,27 +20,10 @@ class ChunkingConfig(BaseSettings):
         default=ChunkerType.LANGCHAIN,
         description="Chunker type",
     )
-    chunk_size: int = Field(
-        default=DEFAULT_CHUNK_SIZE,
-        description="Size of text chunks in characters",
-        gt=0,
+    chunker_config: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Chunker-specific configuration dictionary. "
+        "For langchain: chunk_size, chunk_overlap, method. "
+        "For hybrid: max_tokens, merge_peers, tokenizer, tokenizer_config.",
     )
-    chunk_overlap: int = Field(
-        default=DEFAULT_CHUNK_OVERLAP,
-        description="Overlap between chunks in characters",
-        ge=0,
-    )
-    method: Literal["recursive", "character", "token"] = Field(
-        default=CHUNKING_METHOD_RECURSIVE,
-        description="Chunking method to use",
-    )
-
-    @model_validator(mode='after')
-    def validate_overlap_less_than_size(self) -> 'ChunkingConfig':
-        if self.chunk_overlap >= self.chunk_size:
-            raise ValueError(
-                f"chunk_overlap ({self.chunk_overlap}) must be less than "
-                f"chunk_size ({self.chunk_size})"
-            )
-        return self
-
+    

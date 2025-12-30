@@ -1,5 +1,6 @@
-"""Utility module for initializing RAG pipeline components from configuration."""
 from __future__ import annotations
+
+"""Utility module for initializing RAG pipeline components from configuration."""
 
 import logging
 from pathlib import Path
