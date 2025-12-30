@@ -82,11 +82,9 @@ class HybridChunker:
             chunk_text = self.chunker.contextualize(chunk=chunk)
             chunk_tokens = self.tokenizer.count_tokens(chunk_text)
             
+            self.logger.info(f"Chunk {i} has {chunk_tokens} tokens, max_tokens: {self.max_tokens}")
+
             if chunk_tokens > self.max_tokens:
-                self.logger.warning(
-                    f"Chunk {i} exceeds max_tokens ({chunk_tokens} > {self.max_tokens}). "
-                    "Splitting into smaller chunks."
-                )
                 sub_chunks = self.tokenizer.split_text(chunk_text)
                 for j, sub_chunk_text in enumerate(sub_chunks):
                     sub_chunk_metadata = {
