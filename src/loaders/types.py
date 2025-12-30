@@ -7,5 +7,6 @@ class LoaderType(str, Enum):
 
     PYMUPDF = "pymupdf"
     DOCLING = "docling"
+    WHISPER = "whisper"
 
 

@@ -17,6 +17,13 @@ loader:
         llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
         llm_model: gemini-2.5-flash # LLM Model for image description
         # image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Optional prompt for image description if not present uses default
+    .mp4:
+      loader_name: whisper
+      loader_config:
+        model_name: base  # Whisper model: tiny, base, small, medium, large (default: base)
+        device: cpu  # Device to run on: cpu or cuda (default: cpu)
+        language: en  # Language code (e.g., "en", "es") or null for auto-detection (default: en)
+        include_timestamps: true  # Include timestamps in markdown output (default: true)
 
 chunking:
   chunker_name: langchain    # Chunker name (langchain, hybrid)

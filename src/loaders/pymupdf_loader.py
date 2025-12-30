@@ -50,13 +50,13 @@ class PyMuPDFLoader(DocumentLoader):
         if not file_path:
             raise ValueError("'file_path' is required in loader configuration")
 
-        self.pdf_path = Path(file_path).expanduser().resolve()
-        if not self.pdf_path.exists():
-            raise FileNotFoundError(f"PDF not found: {self.pdf_path}")
+        self.input_path = Path(file_path).expanduser().resolve()
+        if not self.input_path.exists():
+            raise FileNotFoundError(f"PDF not found: {self.input_path}")
 
-        if self.pdf_path.suffix.lower() != ".pdf":
+        if self.input_path.suffix.lower() != ".pdf":
             raise ValueError(
-                f"Expected PDF file, got file with extension: {self.pdf_path.suffix}"
+                f"Expected PDF file, got file with extension: {self.input_path.suffix}"
             )
 
         output_dir = config.get("output_dir")
@@ -75,11 +75,11 @@ class PyMuPDFLoader(DocumentLoader):
             If the PDF cannot be loaded (e.g., corrupted file, permission issues).
         """
         try:
-            loader = LangChainPyMuPDFLoader(str(self.pdf_path))
+            loader = LangChainPyMuPDFLoader(str(self.input_path))
             return loader.load()
         except Exception as e:
             raise RuntimeError(
-                f"Failed to load PDF from {self.pdf_path}: {e}"
+                f"Failed to load PDF from {self.input_path}: {e}"
             ) from e
 
     def to_markdown_text(self, pages: PageSpecifier = None) -> str:
@@ -96,10 +96,10 @@ class PyMuPDFLoader(DocumentLoader):
             If the PDF cannot be converted to Markdown (e.g., corrupted file).
         """
         try:
-            return pymupdf4llm.to_markdown(str(self.pdf_path), pages=pages)
+            return pymupdf4llm.to_markdown(str(self.input_path), pages=pages)
         except Exception as e:
             raise RuntimeError(
-                f"Failed to convert PDF to Markdown from {self.pdf_path}: {e}"
+                f"Failed to convert PDF to Markdown from {self.input_path}: {e}"
             ) from e
 
 def create_pymupdf_loader(config: dict[str, Any]) -> DocumentLoader:
