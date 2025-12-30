@@ -30,7 +30,7 @@ class RetrieveStep:
         context
             Query context with user_query set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         logger.info(f"Retrieving documents for query: {context.user_query}")
 
         results_with_scores = self.retriever.retrieve_with_scores(context.user_query)

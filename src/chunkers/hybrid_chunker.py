@@ -42,7 +42,7 @@ class HybridChunker:
         tokenizer
             Optional tokenizer instance. If not provided, uses a simple approximation tokenizer.
         """
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger(__name__)
 
         self.logger.info(
             f"Initializing hybrid chunker (max_tokens: {max_tokens}, merge_peers: {merge_peers})..."

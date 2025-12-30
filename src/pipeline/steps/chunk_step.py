@@ -30,7 +30,7 @@ class ChunkStep:
         context
             Ingestion context with markdown_path set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         if not context.markdown_path:
             context.mark_failed("Markdown path not set. Load step must run first.")
             return

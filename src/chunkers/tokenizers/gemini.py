@@ -48,7 +48,7 @@ class GeminiTokenizer(Tokenizer):
         self.client = genai.Client(api_key=google_api_key)
         self.model = model
         self.max_tokens = max_tokens
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger(__name__)
                 
     def count_tokens(self, text: str) -> int:
         """Count tokens using Gemini's API with fallback to local estimation.

@@ -11,7 +11,7 @@ class Logger:
     def setup(config) -> None:
         logging.basicConfig(
             level=config.logging.get_level(),
-            format="%(message)s",
+            format="%(name)s - %(message)s",
             stream=sys.stdout,
             force=True,  # Override any existing configuration
         )
