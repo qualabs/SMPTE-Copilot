@@ -22,7 +22,10 @@ def create_gemini_embedding(config: dict[str, Any]) -> Embeddings:
         Invalid parameters will be caught by GoogleGenerativeAIEmbeddings and raise clear errors.
     """
     try:
-        return GoogleGenerativeAIEmbeddings(**config)
+        return GoogleGenerativeAIEmbeddings(
+            model=config.get("model_name"),
+            google_api_key=config.get("google_api_key")
+        )
     except TypeError as e:
         raise ValueError(
             f"Invalid parameter for Gemini embedding model: {e}. "

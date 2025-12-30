@@ -53,13 +53,13 @@ class HybridChunker:
 
         self.tokenizer = tokenizer
         
-        self._chunker = DoclingHybridChunker(
+        self.chunker = DoclingHybridChunker(
             tokenizer=self.tokenizer,
             max_tokens=max_tokens,
             merge_peers=merge_peers,
         )
         
-        self._doc_converter = DocumentConverter()
+        self.doc_converter = DocumentConverter()
     
     def _process_chunks(self, dl_doc: Any, metadata: dict) -> list[Document]:
         """Process Docling chunks into LangChain Documents.
@@ -75,11 +75,11 @@ class HybridChunker:
         -------
         List of chunked Document objects.
         """
-        chunks = list(self._chunker.chunk(dl_doc=dl_doc))
+        chunks = list(self.chunker.chunk(dl_doc=dl_doc))
         documents = []
         
         for i, chunk in enumerate(chunks):
-            chunk_text = self._chunker.contextualize(chunk=chunk)
+            chunk_text = self.chunker.contextualize(chunk=chunk)
             chunk_tokens = self.tokenizer.count_tokens(chunk_text)
             
             if chunk_tokens > self.max_tokens:
@@ -138,7 +138,7 @@ class HybridChunker:
             tmp_path = tmp_file.name
         
         try:
-            result = self._doc_converter.convert(source=tmp_path)
+            result = self.doc_converter.convert(source=tmp_path)
             dl_doc = result.document
         finally:
             Path(tmp_path).unlink()
@@ -194,7 +194,7 @@ class HybridChunker:
             "file_name": path.name,
         }
 
-        result = self._doc_converter.convert(source=str(path))
+        result = self.doc_converter.convert(source=str(path))
         dl_doc = result.document
         
         return self._process_chunks(dl_doc, metadata)
