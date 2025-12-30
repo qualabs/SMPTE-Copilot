@@ -41,6 +41,7 @@ class DocumentLoader(Protocol):
         pages: PageSpecifier = None,
         output_path: Optional[Path] = None,
         overwrite: bool = True,
+        md_text: str = None,
     ) -> Path:
         """Save the document as a Markdown file.
 
@@ -54,7 +55,6 @@ class DocumentLoader(Protocol):
         overwrite
             Whether to overwrite existing files.
         """
-        md_text = self.to_markdown_text(pages=pages)
         destination = self._resolve_output_path(output_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
 

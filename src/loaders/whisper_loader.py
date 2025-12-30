@@ -62,7 +62,6 @@ class WhisperLoader(DocumentLoader):
         self.language = config.get("language", "en")
         self.include_timestamps = config.get("include_timestamps", True)
 
-        self._transcription_result_cache: Optional[dict[str, Any]] = None
         self._model: Optional[whisper.Whisper] = None
 
     def _load_model(self) -> whisper.Whisper:
@@ -84,9 +83,6 @@ class WhisperLoader(DocumentLoader):
         -------
         Full transcription result dictionary with segments and text.
         """
-        if self._transcription_result_cache is not None:
-            return self._transcription_result_cache
-
         try:
             self.logger.info(f"Transcribing audio from: {self.input_path}")
             model = self._load_model()
@@ -100,7 +96,6 @@ class WhisperLoader(DocumentLoader):
             if not result.get("text", "").strip():
                 self.logger.warning(f"Empty transcription for {self.input_path}")
 
-            self._transcription_result_cache = result
             return result
         except Exception as e:
             raise RuntimeError(f"Failed to transcribe {self.input_path}: {e}") from e
@@ -185,25 +180,6 @@ class WhisperLoader(DocumentLoader):
             markdown_lines.append(f"{timestamp_str}\n{text}")
 
         return "\n".join(markdown_lines)
-
-    def _resolve_output_path(self, output_path: Optional[Path]) -> Path:
-        """Resolve the output path for the markdown file.
-
-        Parameters
-        ----------
-        output_path
-            Optional explicit output path. If None, generates a default path
-            based on the video file name in the output directory.
-
-        Returns
-        -------
-        Resolved output path.
-        """
-        if output_path is not None:
-            return Path(output_path).expanduser().resolve()
-
-        target_dir = self.output_dir or self.input_path.parent
-        return target_dir / f"{self.input_path.stem}.md"
 
 
 def create_whisper_loader(config: dict[str, Any]) -> DocumentLoader:
