@@ -36,13 +36,6 @@ class WhisperLoader(DocumentLoader):
             - device: Device to run on ("cpu" or "cuda", default: "cpu")
             - language: Language code (e.g., "en", "es"). If None, auto-detects.
             - Any other keys are stored and can be accessed via self.config
-
-        Raises
-        ------
-        ValueError
-            If 'file_path' is missing or the file is not a video/audio file.
-        FileNotFoundError
-            If the file does not exist.
         """
         self.logger = logging.getLogger(__name__)
         
