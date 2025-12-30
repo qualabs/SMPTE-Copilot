@@ -92,7 +92,6 @@ class HybridChunker:
                     sub_chunk_metadata = {
                         **metadata,
                         "chunk_index": len(documents),
-                        "total_chunks": len(chunks) + len(sub_chunks) - 1,
                         "chunking_method": "hybrid_split",
                         "original_chunk_index": i,
                         "sub_chunk_index": j,
@@ -101,8 +100,7 @@ class HybridChunker:
             else:
                 chunk_metadata = {
                     **metadata,
-                    "chunk_index": i,
-                    "total_chunks": len(chunks),
+                    "chunk_index": len(documents),
                     "chunking_method": "hybrid",
                 }
                 documents.append(Document(page_content=chunk_text, metadata=chunk_metadata))
