@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Main script to ingest media files into the vector database."""
 
+import argparse
 import logging
 import sys
 from pathlib import Path
@@ -37,6 +38,8 @@ def ingest_file(
     config: Config,
     embedding_model: Embeddings,
     vector_store: VectorStore,
+    access_tags: list[str] = None,
+    required_role: str = None,
 ) -> None:
     """Ingest a media file into the vector database using the pipeline pattern.
 
@@ -50,10 +53,18 @@ def ingest_file(
         Embedding model instance.
     vector_store
         Vector store instance.
+    access_tags
+        Optional list of access control tags for the document.
+    required_role
+        Optional required role for strict access control.
     """
     logger = logging.getLogger()
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Ingesting: {file_path}")
+    if access_tags:
+        logger.info(f"Access tags: {access_tags}")
+    if required_role:
+        logger.info(f"Required role: {required_role}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
     loader_name_str, loader_config_from_mapping = (
@@ -102,6 +113,12 @@ def ingest_file(
     logger.info(f"  Collection: {config.vector_store.collection_name}")
 
     context = IngestionContext(file_path=file_path)
+    
+    # Set role-aware access control fields if provided
+    if access_tags:
+        context.access_tags = access_tags
+    if required_role:
+        context.required_role_strict = required_role
 
     steps = [
         LoadStep(loader),
@@ -130,12 +147,33 @@ def ingest_file(
 
 def main():
     """Run the ingestion pipeline for one or more media files."""
+    parser = argparse.ArgumentParser(
+        description="Ingest media files into the vector database with optional access control"
+    )
+    parser.add_argument(
+        "--tags",
+        type=str,
+        default="",
+        help="Comma-separated access control tags (e.g., 'Finance,Public')",
+    )
+    parser.add_argument(
+        "--required-role",
+        type=str,
+        default="",
+        help="Required role for strict access control (e.g., 'Finance_Manager')",
+    )
+    args = parser.parse_args()
+
     config = Config.get_config()
 
     Logger.setup(config)
     logger = logging.getLogger()
 
     input_path = config.paths.input_path
+    
+    # Parse access control arguments
+    access_tags = [tag.strip() for tag in args.tags.split(",") if tag.strip()]
+    required_role = args.required_role.strip() if args.required_role else None
 
     try:
         media_files = LoaderHelper.resolve_media_inputs(input_path)
@@ -162,6 +200,10 @@ def main():
         f"overlap: {config.chunking.chunk_overlap}"
     )
     logger.info(f"Embedding model: {config.embedding.embed_name}")
+    if access_tags:
+        logger.info(f"Access tags: {access_tags}")
+    if required_role:
+        logger.info(f"Required role: {required_role}")
     logger.info("")
 
     try:
@@ -179,7 +221,14 @@ def main():
         )
 
         for media_file in media_files:
-            ingest_file(media_file, config, embedding_model, vector_store)
+            ingest_file(
+                media_file,
+                config,
+                embedding_model,
+                vector_store,
+                access_tags=access_tags if access_tags else None,
+                required_role=required_role,
+            )
 
         logger.info("✓ All files processed successfully.")
 

@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import Any, Callable, ClassVar
 
 from .chromadb import create_chromadb_store
+from .qdrant import create_qdrant_store
 from .protocol import VectorStore
 from .types import VectorStoreType
 
@@ -66,3 +67,4 @@ class VectorStoreFactory:
         return cls._registry[store_type](kwargs)
 
 VectorStoreFactory.register(VectorStoreType.CHROMADB)(create_chromadb_store)
+VectorStoreFactory.register(VectorStoreType.QDRANT)(create_qdrant_store)

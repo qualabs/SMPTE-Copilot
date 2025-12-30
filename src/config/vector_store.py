@@ -28,6 +28,13 @@ class VectorStoreConfig(BaseSettings):
         default=DEFAULT_COLLECTION_NAME,
         description="Collection name in the vector store",
     )
+    url: Optional[str] = Field(
+        default="http://localhost:6333",
+        description=(
+            "URL for Qdrant server "
+            "(only used when store_name is 'qdrant')"
+        ),
+    )
     store_config: Optional[dict] = Field(
         default=None,
         description="Additional store-specific configuration",

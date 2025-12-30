@@ -51,6 +51,17 @@ class SaveStep:
                 {k: v for k, v in chunk.metadata.items() if k != EMBEDDING_METADATA_KEY}
                 for chunk in context.chunks
             ]
+            
+            # Inject role-aware access control metadata if provided
+            if context.access_tags or context.required_role_strict or context.access_metadata:
+                for metadata in metadatas:
+                    if context.access_tags:
+                        metadata["access_tags"] = context.access_tags
+                    if context.required_role_strict:
+                        metadata["required_role_strict"] = context.required_role_strict
+                    if context.access_metadata:
+                        metadata.update(context.access_metadata)
+            
             ids = [f"{CHUNK_ID_PREFIX}{i}" for i in range(len(context.chunks))]
 
             self.vector_store.add_texts(
@@ -60,6 +71,16 @@ class SaveStep:
                 ids=ids,
             )
         else:
+            # For documents without embeddings, inject access control metadata
+            if context.access_tags or context.required_role_strict or context.access_metadata:
+                for chunk in context.chunks:
+                    if context.access_tags:
+                        chunk.metadata["access_tags"] = context.access_tags
+                    if context.required_role_strict:
+                        chunk.metadata["required_role_strict"] = context.required_role_strict
+                    if context.access_metadata:
+                        chunk.metadata.update(context.access_metadata)
+            
             self.vector_store.add_documents(context.chunks)
 
         self.vector_store.persist()

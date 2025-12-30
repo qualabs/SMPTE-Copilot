@@ -34,10 +34,17 @@ embedding:
     # model: "text-embedding-3-small"  # or other OpenAI embedding model
 
 vector_store:
-  store_name: chromadb        # Vector store name
+  store_name: chromadb        # Vector store name (options: chromadb, qdrant)
   persist_directory: ./vector_db  # Directory to persist vector store data (relative to current working directory)
   collection_name: rag_collection    # Collection name in the vector store
   store_config: null         # Additional store-specific configuration (dict)
+  # url: http://localhost:6333  # Qdrant server URL (only used when store_name is 'qdrant')
+  
+  # Example configuration for Qdrant (with native list support for access control):
+  # store_name: qdrant
+  # url: http://localhost:6333
+  # collection_name: rag_collection
+  # store_config: null
 
 retrieval:
   searcher_strategy: similarity  # Retrieval strategy

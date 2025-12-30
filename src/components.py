@@ -93,7 +93,13 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
     )
 
 
-def execute_query(components: RAGComponents, query: str) -> QueryContext:
+def execute_query(
+    components: RAGComponents,
+    query: str,
+    user_role: str = None,
+    user_tags: list[str] = None,
+    role_mapping: dict[str, list[str]] = None,
+) -> QueryContext:
     """Execute a RAG query using the provided components
 
     Parameters
@@ -102,6 +108,12 @@ def execute_query(components: RAGComponents, query: str) -> QueryContext:
         Initialized RAG components
     query : str
         User's question or query text
+    user_role : str, optional
+        User's role for access control
+    user_tags : list[str], optional
+        User's access tags for access control
+    role_mapping : dict[str, list[str]], optional
+        Role-to-tags mapping for access control
 
     Returns
     -------
@@ -112,6 +124,14 @@ def execute_query(components: RAGComponents, query: str) -> QueryContext:
     logger.info(f"Executing query: {query}")
 
     context = QueryContext(user_query=query)
+    
+    # Set role-aware access control fields if provided
+    if user_role:
+        context.user_role = user_role
+    if user_tags:
+        context.user_tags = user_tags
+    if role_mapping:
+        context.role_mapping = role_mapping
 
     steps = [
         QueryEmbeddingStep(components.embedding_model),
