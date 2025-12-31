@@ -110,12 +110,13 @@ class RapidFuzzPreprocessor:
         candidate_groups = self._group_by_characteristics(normalized_lines)
         indices_to_remove = set()
 
-        for candidate_group in candidate_groups.values():
-            if len(candidate_group) < self.min_repetitions:
+        for candidate_group_indices in candidate_groups.values():
+            if len(candidate_group_indices) < self.min_repetitions:
                 continue
 
             clusters: list[list] = []
-            for i, line in candidate_group:
+            for i in candidate_group_indices:
+                line = normalized_lines[i]
                 matched_cluster_idx = None
                 for cluster_idx, cluster in enumerate(clusters):
                     representative = cluster[0]
@@ -139,12 +140,15 @@ class RapidFuzzPreprocessor:
 
         return indices_to_remove
 
-    def _group_by_characteristics(self, normalized_lines: list[str | None]) -> dict[tuple, list[tuple[int, str]]]:
+    def _group_by_characteristics(self, normalized_lines: list[str | None]) -> dict[tuple, list[int]]:
         """Group lines by characteristics to reduce fuzzy matching comparisons.
 
         Groups lines by (length_category, prefix) where:
         - length_category: rounded length to reduce groups
         - prefix: first few characters for quick filtering
+
+        Only stores indices to minimize memory usage. Lines are accessed from
+        normalized_lines when needed.
 
         Parameters
         ----------
@@ -153,7 +157,7 @@ class RapidFuzzPreprocessor:
 
         Returns
         -------
-        Dictionary mapping (length_category, prefix) to list of (index, line) tuples.
+        Dictionary mapping (length_category, prefix) to list of line indices.
         """
         groups = defaultdict(list)
         prefix_len = 10
@@ -166,7 +170,7 @@ class RapidFuzzPreprocessor:
             length_category = length // 20
             prefix = line[:prefix_len] if length >= prefix_len else line
 
-            groups[(length_category, prefix)].append((i, line))
+            groups[(length_category, prefix)].append(i)
 
         return groups
 
