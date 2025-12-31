@@ -469,7 +469,7 @@ The `config.yaml` file is organized into sections that map to each module:
 ```yaml
 loader:
   file_type_mapping: # Map file extensions to loader types
-    .pdf:
+    - extensions: [.pdf] # List of extensions that use the same loader
       loader_name: pymupdf # PDF files use pymupdf loader
       loader_config: null # Optional loader-specific configuration
 
@@ -525,7 +525,7 @@ logging:
 
 The configuration values directly map to the Enum types defined in each module:
 
-- **`loader.file_type_mapping`** → Maps file extensions (e.g., `.pdf`) to loader configurations. Each entry contains `loader_name` (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`) and optional `loader_config`
+- **`loader.file_type_mapping`** → List of loader configurations. Each entry contains `extensions` (list of file extensions like `[.pdf, .docx]`), `loader_name` (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`), and optional `loader_config`. Multiple extensions can share the same loader configuration to avoid repetition.
 - **`preprocessing_name`** → `PreprocessorType` enum (e.g., `"rapidfuzz"` → `PreprocessorType.RAPIDFUZZ`)
 - **`chunker_name`** → `ChunkerType` enum (e.g., `"langchain"` → `ChunkerType.LANGCHAIN`)
 - **`embed_name`** → `EmbeddingModelType` enum (e.g., `"huggingface"` → `EmbeddingModelType.HUGGINGFACE`)
@@ -538,7 +538,7 @@ The system uses these values to:
 3. Use the Factory pattern to create instances of the selected components
 4. Pass additional configuration parameters to the component constructors
 
-**Note on Loader Configuration**: The `loader.file_type_mapping` allows you to configure different loaders for different file types. This enables the system to support multiple file formats (PDF, images, videos, audio) with appropriate loaders for each type. When adding support for a new file type, add an entry to `file_type_mapping` with the file extension as the key.
+**Note on Loader Configuration**: The `loader.file_type_mapping` allows you to configure different loaders for different file types. This enables the system to support multiple file formats (PDF, images, videos, audio) with appropriate loaders for each type. The format uses a list where each entry has an `extensions` list, allowing multiple extensions to share the same loader configuration. When adding support for a new file type, add the extension to an existing entry's `extensions` list (if it uses the same loader) or create a new entry.
 
 ### Configuration Examples
 
@@ -585,10 +585,10 @@ chunking:
 ```yaml
 loader:
   file_type_mapping:
-    .pdf:
+    - extensions: [.pdf]  # Single extension entry
       loader_name: pymupdf
       loader_config: null
-    .docx:
+    - extensions: [.docx]  # Multiple extensions can share the same loader config
       loader_name: docling
       loader_config: 
         llm_api_key: # LLM key for used for image description
@@ -596,10 +596,11 @@ loader:
         llm_model: gemini-2.5-flash # LLM Model for image description
         image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Prompt used to tailor the LLM image description on documents
     # When other loaders are added, you can configure them like:
-    # .mp4:
-    #   loader_name: video_loader
+    # - extensions: [.mp4, .avi, .mov]  # Multiple video formats can share the same loader
+    #   loader_name: whisper
     #   loader_config:
-    #     extract_audio: true
+    #     model_name: base
+    #     device: cpu
 ```
 
 **Note**: When adding a new component, the value you use in `config.yaml` must match the Enum value (the string value, not the Enum name). For example, if you add `COHERE = "cohere"` to the Enum, use `embed_name: cohere` in the config file.
