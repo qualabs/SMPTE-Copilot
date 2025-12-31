@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
+from collections import defaultdict
 
 import logging
 from rapidfuzz import fuzz
@@ -62,21 +63,31 @@ class RapidFuzzPreprocessor:
 
         lines_to_remove = self._detect_repeated_lines(lines)
 
-        cleaned_lines = [
-            line for i, line in enumerate(lines) if i not in lines_to_remove
-        ]
-
         removed_count = len(lines_to_remove)
         if removed_count > 0:
             logger.info(
                 f"Removed {removed_count} lines of repeated content "
                 f"({removed_count / len(lines) * 100:.1f}% of total lines)"
             )
+            for line_idx in sorted(lines_to_remove):
+                line_content = lines[line_idx].strip()[:100]  # Limit to 100 chars for readability
+                logger.warning(f"Deleted line {line_idx + 1}: {line_content}")
+
+        cleaned_lines = [
+            line for i, line in enumerate(lines) if i not in lines_to_remove
+        ]
 
         return "\n".join(cleaned_lines)
 
     def _detect_repeated_lines(self, lines: list[str]) -> set[int]:
         """Detect lines that appear multiple times using fuzzy matching.
+
+        Uses a two-phase optimization:
+        1. Pre-filter by line characteristics (length, prefix) to group candidates
+        2. Fuzzy matching only within candidate groups
+
+        This reduces complexity from O(n²) to O(n*k) where k is typically much
+        smaller than n, even in worst-case scenarios.
 
         Parameters
         ----------
@@ -92,36 +103,72 @@ class RapidFuzzPreprocessor:
             for line in lines
         ]
 
-        if len([n for n in normalized_lines if n is not None]) < self.min_repetitions:
+        non_empty_count = sum(1 for n in normalized_lines if n is not None)
+        if non_empty_count < self.min_repetitions:
             return set()
 
+        candidate_groups = self._group_by_characteristics(normalized_lines)
         indices_to_remove = set()
-        processed = set()
 
-        for i, line in enumerate(normalized_lines):
-            if line is None or i in processed:
+        for candidate_group in candidate_groups.values():
+            if len(candidate_group) < self.min_repetitions:
                 continue
 
-            similar_indices = [i]
-            
-            for j in range(i + 1, len(normalized_lines)):
-                if normalized_lines[j] is None or j in processed:
-                    continue
-                    
-                similarity = fuzz.ratio(
-                    line, normalized_lines[j],
-                    score_cutoff=int(self.similarity_threshold * 100)
-                )
-                if similarity >= self.similarity_threshold * 100:
-                    similar_indices.append(j)
-                    processed.add(j)
+            clusters: list[list] = []
+            for i, line in candidate_group:
+                matched_cluster_idx = None
+                for cluster_idx, cluster in enumerate(clusters):
+                    representative = cluster[0]
+                    similarity = fuzz.ratio(
+                        line, representative,
+                        score_cutoff=int(self.similarity_threshold * 100)
+                    )
+                    if similarity >= self.similarity_threshold * 100:
+                        matched_cluster_idx = cluster_idx
+                        break
 
-            if len(similar_indices) >= self.min_repetitions:
-                indices_to_remove.update(similar_indices)
-            
-            processed.add(i)
+                if matched_cluster_idx is not None:
+                    clusters[matched_cluster_idx][1].append(i)
+                else:
+                    clusters.append([line, [i]])
+
+            for cluster in clusters:
+                indices = cluster[1]
+                if len(indices) >= self.min_repetitions:
+                    indices_to_remove.update(indices)
 
         return indices_to_remove
+
+    def _group_by_characteristics(self, normalized_lines: list[str | None]) -> dict[tuple, list[tuple[int, str]]]:
+        """Group lines by characteristics to reduce fuzzy matching comparisons.
+
+        Groups lines by (length_category, prefix) where:
+        - length_category: rounded length to reduce groups
+        - prefix: first few characters for quick filtering
+
+        Parameters
+        ----------
+        normalized_lines
+            List of normalized lines (may contain None).
+
+        Returns
+        -------
+        Dictionary mapping (length_category, prefix) to list of (index, line) tuples.
+        """
+        groups = defaultdict(list)
+        prefix_len = 10
+
+        for i, line in enumerate(normalized_lines):
+            if line is None:
+                continue
+
+            length = len(line)
+            length_category = length // 20
+            prefix = line[:prefix_len] if length >= prefix_len else line
+
+            groups[(length_category, prefix)].append((i, line))
+
+        return groups
 
     @staticmethod
     def _normalize_line(line: str) -> str:
