@@ -11,9 +11,6 @@ from rapidfuzz import fuzz
 
 from .protocol import Preprocessor
 
-logger = logging.getLogger(__name__)
-
-
 class RapidFuzzPreprocessor:
     """Preprocessor using RapidFuzz for fuzzy matching to remove repeated content.
 
@@ -39,6 +36,7 @@ class RapidFuzzPreprocessor:
             Minimum similarity ratio (0.0 to 1.0) for considering lines as similar.
             Uses rapidfuzz for fuzzy matching. Default is 0.85 (85% similarity).
         """
+        self.logger = logging.getLogger(__name__)
         self.min_repetitions = min_repetitions
         self.similarity_threshold = similarity_threshold
 
@@ -65,13 +63,13 @@ class RapidFuzzPreprocessor:
 
         removed_count = len(lines_to_remove)
         if removed_count > 0:
-            logger.info(
+            self.logger.info(
                 f"Removed {removed_count} lines of repeated content "
                 f"({removed_count / len(lines) * 100:.1f}% of total lines)"
             )
             for line_idx in sorted(lines_to_remove):
                 line_content = lines[line_idx].strip()[:100]  # Limit to 100 chars for readability
-                logger.warning(f"Deleted line {line_idx + 1}: {line_content}")
+                self.logger.warning(f"Deleted line {line_idx + 1}: {line_content}")
 
         cleaned_lines = [
             line for i, line in enumerate(lines) if i not in lines_to_remove
