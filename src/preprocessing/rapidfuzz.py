@@ -69,7 +69,7 @@ class RapidFuzzPreprocessor:
             )
             for line_idx in sorted(lines_to_remove):
                 line_content = lines[line_idx].strip()[:100]  # Limit to 100 chars for readability
-                self.logger.debug(f"Deleted line {line_idx + 1}: {line_content}")
+                self.logger.info(f"Deleted line {line_idx + 1}: {line_content}")
 
         cleaned_lines = [
             line for i, line in enumerate(lines) if i not in lines_to_remove
@@ -108,12 +108,19 @@ class RapidFuzzPreprocessor:
         candidate_groups = self._group_by_characteristics(normalized_lines)
         indices_to_remove = set()
 
+        numeric_lines_indices = self._group_numeric_lines(normalized_lines)
+        if len(numeric_lines_indices) >= self.min_repetitions:
+            indices_to_remove.update(numeric_lines_indices)
+
         for candidate_group_indices in candidate_groups.values():
             if len(candidate_group_indices) < self.min_repetitions:
                 continue
 
             clusters: list[list] = []
             for i in candidate_group_indices:
+                if i in indices_to_remove:
+                    continue
+                    
                 line = normalized_lines[i]
                 matched_cluster_idx = None
                 for cluster_idx, cluster in enumerate(clusters):
@@ -137,6 +144,32 @@ class RapidFuzzPreprocessor:
                     indices_to_remove.update(indices)
 
         return indices_to_remove
+
+    def _group_numeric_lines(self, normalized_lines: list[str | None]) -> set[int]:
+        """Group lines that contain only numbers.
+
+        This handles cases like page numbers "1", "2", "3" that should be
+        removed as repetitive content even though they have low similarity.
+
+        Parameters
+        ----------
+        normalized_lines
+            List of normalized lines (may contain None).
+
+        Returns
+        -------
+        Set of line indices that are numeric-only and should be removed.
+        """
+        numeric_indices = []
+        for i, line in enumerate(normalized_lines):
+            if line is None:
+                continue
+            if re.match(r"^\d+$", line.strip()):
+                numeric_indices.append(i)
+
+        if len(numeric_indices) >= self.min_repetitions:
+            return set(numeric_indices)
+        return set()
 
     def _group_by_characteristics(self, normalized_lines: list[str | None]) -> dict[tuple, list[int]]:
         """Group lines by characteristics to reduce fuzzy matching comparisons.
