@@ -69,7 +69,7 @@ class RapidFuzzPreprocessor:
             )
             for line_idx in sorted(lines_to_remove):
                 line_content = lines[line_idx].strip()[:100]  # Limit to 100 chars for readability
-                self.logger.warning(f"Deleted line {line_idx + 1}: {line_content}")
+                self.logger.debug(f"Deleted line {line_idx + 1}: {line_content}")
 
         cleaned_lines = [
             line for i, line in enumerate(lines) if i not in lines_to_remove
