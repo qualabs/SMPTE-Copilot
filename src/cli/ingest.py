@@ -11,6 +11,7 @@ from src import (
     EmbeddingModelFactory,
     Embeddings,
     LoaderFactory,
+    PreprocessorFactory,
     VectorStore,
     VectorStoreFactory,
 )
@@ -29,6 +30,7 @@ from src.pipeline.steps import (
     ChunkStep,
     EmbeddingGenerationStep,
     LoadStep,
+    PreprocessStep,
     SaveStep,
 )
 
@@ -99,8 +101,15 @@ def ingest_file(
 
     context = IngestionContext(file_path=file_path)
 
+    preprocessing_config = config.preprocessing.preprocessing_config or {}
+    preprocessor = PreprocessorFactory.create(
+        config.preprocessing.preprocessing_name,
+        **preprocessing_config,
+    )
+
     steps = [
         LoadStep(loader),
+        PreprocessStep(preprocessor),
         ChunkStep(chunker),
         EmbeddingGenerationStep(embedding_model, config.embedding.embed_name),
         SaveStep(vector_store),

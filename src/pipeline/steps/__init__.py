@@ -5,6 +5,7 @@ from __future__ import annotations
 from .chunk_step import ChunkStep
 from .embedding_generation_step import EmbeddingGenerationStep
 from .load_step import LoadStep
+from .preprocess_step import PreprocessStep
 from .query_embedding_step import QueryEmbeddingStep
 from .answer_generation_step import GenerationStep
 from .retrieve_step import RetrieveStep
@@ -12,6 +13,7 @@ from .save_step import SaveStep
 
 __all__ = [
     "LoadStep",
+    "PreprocessStep",
     "ChunkStep",
     "EmbeddingGenerationStep",
     "SaveStep",

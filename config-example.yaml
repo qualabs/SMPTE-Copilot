@@ -25,6 +25,12 @@ loader:
         language: en  # Language code (e.g., "en", "es") or null for auto-detection (default: en)
         include_timestamps: true  # Include timestamps in markdown output (default: true)
 
+preprocessing:
+  preprocessing_name: rapidfuzz  # Preprocessor type (rapidfuzz)
+  preprocessing_config:      # Preprocessor-specific configuration
+    min_repetitions: 3       # Minimum number of times a line must appear (or be similar) to be considered repeated (default: 3)
+    similarity_threshold: 0.85  # Minimum similarity ratio for fuzzy matching (0.0 to 1.0, default: 0.85)
+
 chunking:
   chunker_name: langchain    # Chunker name (langchain, hybrid)
   chunker_config:            # Chunker-specific configuration (recommended)
