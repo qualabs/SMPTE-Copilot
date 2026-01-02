@@ -116,7 +116,7 @@ class RapidFuzzPreprocessor:
             if len(candidate_group_indices) < self.min_repetitions:
                 continue
 
-            clusters: list[list] = []
+            clusters: list[tuple[str, list[int]]] = []
             for i in candidate_group_indices:
                 if i in indices_to_remove:
                     continue
@@ -136,7 +136,7 @@ class RapidFuzzPreprocessor:
                 if matched_cluster_idx is not None:
                     clusters[matched_cluster_idx][1].append(i)
                 else:
-                    clusters.append([line, [i]])
+                    clusters.append((line, [i]))
 
             for cluster in clusters:
                 indices = cluster[1]
