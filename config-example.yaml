@@ -11,6 +11,7 @@ loader:
         llm_api_key: # LLM key for used for image description
         llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
         llm_model: gemini-2.5-flash # Model for image description
+        image_description_timeout: 60  # Timeout in seconds for image description generation
         # image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Optional prompt for image description if not present uses default
     - extensions: [.mp4]
       loader_name: whisper

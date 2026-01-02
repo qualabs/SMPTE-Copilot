@@ -20,7 +20,7 @@ from docling.document_converter import (
 )
 from langchain.schema import Document
 
-from src.constants import DEFAULT_IMAGE_DESCRIPTION_PROMPT
+from src.constants import DEFAULT_IMAGE_DESCRIPTION_PROMPT, DEFAULT_IMAGE_DESCRIPTION_TIMEOUT
 
 from .protocol import DocumentLoader
 
@@ -72,6 +72,7 @@ class DoclingLoader(DocumentLoader):
 
         # Only configure picture description if credentials are available
         if can_do_picture_description:
+            image_description_timeout = self.config.get("image_description_timeout", DEFAULT_IMAGE_DESCRIPTION_TIMEOUT)
             picture_description_options = PictureDescriptionApiOptions(
                 url=llm_endpoint,
                 headers={
@@ -81,7 +82,8 @@ class DoclingLoader(DocumentLoader):
                 prompt=prompt,
                 params={
                     "model": llm_model
-                }
+                },
+                timeout=image_description_timeout
             )
             pdf_pipeline_options.picture_description_options = picture_description_options
             docx_pipeline_options.picture_description_options = picture_description_options
