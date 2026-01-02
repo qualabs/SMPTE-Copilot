@@ -30,11 +30,6 @@ class LoaderHelper:
         -------
         Tuple of (loader_name, loader_config_dict).
 
-        Raises
-        ------
-        ValueError
-            If the file type is not supported, no loader is configured for it,
-            or the loader configuration is invalid.
         """
         if not isinstance(file_path, Path):
             raise TypeError(f"file_path must be a Path object, got {type(file_path)}")
@@ -48,19 +43,36 @@ class LoaderHelper:
                 f"Supported types: {supported}"
             )
 
-        if suffix not in config.loader.file_type_mapping:
+        # Find the loader entry that contains this extension
+        loader_entry = None
+        for entry in config.loader.file_type_mapping:
+            if not isinstance(entry, dict):
+                raise TypeError(
+                    f"Each entry in file_type_mapping must be a dictionary. "
+                    f"Received: {type(entry)}"
+                )
+            
+            extensions = entry.get("extensions")
+            if not extensions:
+                raise ValueError(
+                    "Each entry in file_type_mapping must have 'extensions' key "
+                    "containing a list of file extensions."
+                )
+            
+            if not isinstance(extensions, list):
+                raise ValueError(
+                    f"'extensions' must be a list. Received: {type(extensions)}"
+                )
+            
+            if suffix in extensions:
+                loader_entry = entry
+                break
+        
+        if loader_entry is None:
             raise ValueError(
                 f"No loader configured for file type: {suffix}. "
-                f"Please add '{suffix}: {{loader_name: ..., loader_config: ...}}' "
+                f"Please add an entry with '{suffix}' in the 'extensions' list "
                 f"to loader.file_type_mapping in config.yaml"
-            )
-
-        loader_entry = config.loader.file_type_mapping[suffix]
-
-        if not isinstance(loader_entry, dict):
-            raise TypeError(
-                f"Loader entry for '{suffix}' must be a dictionary with 'loader_name' key. "
-                f"Received: {type(loader_entry)}"
             )
 
         loader_name = loader_entry.get("loader_name")

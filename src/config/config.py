@@ -14,6 +14,7 @@ from .embedding import EmbeddingConfig
 from .loader import LoaderConfig
 from .logging import LoggingConfig
 from .paths import PathsConfig
+from .preprocessing import PreprocessingConfig
 from .retrieval import RetrievalConfig
 from .vector_store import VectorStoreConfig
 from .llm import LLMConfig
@@ -23,6 +24,7 @@ class Config(BaseSettings):
     """Main configuration class combining all sub-configurations."""
 
     loader: LoaderConfig = Field(default_factory=LoaderConfig)
+    preprocessing: PreprocessingConfig = Field(default_factory=PreprocessingConfig)
     chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
     embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
     vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)

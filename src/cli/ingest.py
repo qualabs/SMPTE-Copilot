@@ -11,6 +11,7 @@ from src import (
     EmbeddingModelFactory,
     Embeddings,
     LoaderFactory,
+    PreprocessorFactory,
     VectorStore,
     VectorStoreFactory,
 )
@@ -29,6 +30,7 @@ from src.pipeline.steps import (
     ChunkStep,
     EmbeddingGenerationStep,
     LoadStep,
+    PreprocessStep,
     SaveStep,
 )
 
@@ -57,31 +59,23 @@ def ingest_file(
     logger.info(f"Ingesting: {file_path}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
-    loader_name_str, loader_config_from_mapping = (
+    loader_name, loader_config_from_mapping = (
         LoaderHelper.get_loader_config_for_file(file_path, config)
     )
     file_extension = file_path.suffix.lower()
 
-    try:
-        loader_type = LoaderType(loader_name_str)
-    except ValueError as exc:
-        available = ", ".join(t.value for t in LoaderType)
-        raise ValueError(
-            f"Unknown loader type '{loader_name_str}' for file {file_path}. "
-            f"Available loaders: {available}"
-        ) from exc
-
     logger.info(
         f"Converting {file_extension} file to Markdown "
-        f"(loader: {loader_name_str})..."
+        f"(loader: {loader_name})..."
     )
+    
     loader_config = LoaderHelper.create_loader_config(
         file_path,
-        loader_name_str,
+        loader_name,
         loader_config_from_mapping,
         config,
     )
-    loader = LoaderFactory.create(loader_type, **loader_config)
+    loader = LoaderFactory.create(loader_name, **loader_config)
 
     chunker_config = config.chunking.chunker_config or {}
     embedding_config = config.embedding.embed_config or {}
@@ -99,8 +93,15 @@ def ingest_file(
 
     context = IngestionContext(file_path=file_path)
 
+    preprocessing_config = config.preprocessing.preprocessing_config or {}
+    preprocessor = PreprocessorFactory.create(
+        config.preprocessing.preprocessing_name,
+        **preprocessing_config,
+    )
+
     steps = [
         LoadStep(loader),
+        PreprocessStep(preprocessor),
         ChunkStep(chunker),
         EmbeddingGenerationStep(embedding_model, config.embedding.embed_name),
         SaveStep(vector_store),

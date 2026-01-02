@@ -251,10 +251,10 @@ The pipeline pattern consists of three main components:
 
 ### Ingestion Pipeline
 
-The ingestion pipeline (`ingest.py`) processes documents through four sequential steps:
+The ingestion pipeline (`ingest.py`) processes documents through sequential steps:
 
 ```
-Load → Chunk → Embed → Save
+Load → Preprocess → Chunk → Embed → Save
 ```
 
 **Pipeline Flow:**
@@ -263,15 +263,20 @@ Load → Chunk → Embed → Save
    - Input: `file_path` in `IngestionContext`
    - Output: Sets `markdown_path` and `raw_text` in context
 
-2. **ChunkStep**: Splits the Markdown text into smaller chunks
-   - Input: `markdown_path` from LoadStep
+2. **PreprocessStep**: Removes repeated headers, footers, and page numbers
+   - Input: `raw_text` from LoadStep
+   - Output: Updates `raw_text` and `markdown_path` with cleaned content
+   - Configurable via `preprocessing` section in `config.yaml`
+
+3. **ChunkStep**: Splits the Markdown text into smaller chunks
+   - Input: `markdown_path` from LoadStep/PreprocessStep
    - Output: Sets `chunks` (list of Document objects) in context
 
-3. **EmbeddingGenerationStep**: Generates embeddings for each chunk
+4. **EmbeddingGenerationStep**: Generates embeddings for each chunk
    - Input: `chunks` from ChunkStep
    - Output: Updates `chunks` with embeddings in metadata and sets `vectors`
 
-4. **SaveStep**: Stores chunks with embeddings in the vector database
+5. **SaveStep**: Stores chunks with embeddings in the vector database
    - Input: `chunks` with embeddings from EmbeddingGenerationStep
    - Output: Persists data to vector store
 
@@ -279,12 +284,18 @@ Load → Chunk → Embed → Save
 
 ```python
 from src.pipeline import IngestionContext, PipelineExecutor
-from src.pipeline.steps import LoadStep, ChunkStep, EmbeddingGenerationStep, SaveStep
-
+from src.pipeline.steps import (
+    LoadStep,
+    PreprocessStep,
+    ChunkStep,
+    EmbeddingGenerationStep,
+    SaveStep,
+)
 context = IngestionContext(file_path=file_path)
 
 steps = [
     LoadStep(loader),
+    PreprocessStep(preprocessor),
     ChunkStep(chunker),
     EmbeddingGenerationStep(embedding_model, model_name),
     SaveStep(vector_store),
@@ -458,9 +469,15 @@ The `config.yaml` file is organized into sections that map to each module:
 ```yaml
 loader:
   file_type_mapping: # Map file extensions to loader types
-    .pdf:
+    - extensions: [.pdf] # List of extensions that use the same loader
       loader_name: pymupdf # PDF files use pymupdf loader
       loader_config: null # Optional loader-specific configuration
+
+preprocessing:
+  preprocessing_name: rapidfuzz # Preprocessor type (rapidfuzz)
+  preprocessing_config: # Preprocessor-specific configuration
+    min_repetitions: 3 # Minimum number of times a line must appear (or be similar) to be considered repeated (default: 3)
+    similarity_threshold: 0.85 # Minimum similarity ratio for fuzzy matching (0.0 to 1.0, default: 0.85)
 
 chunking:
   chunker_name: langchain # Maps to ChunkerType.LANGCHAIN
@@ -508,7 +525,8 @@ logging:
 
 The configuration values directly map to the Enum types defined in each module:
 
-- **`loader.file_type_mapping`** → Maps file extensions (e.g., `.pdf`) to loader configurations. Each entry contains `loader_name` (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`) and optional `loader_config`
+- **`loader.file_type_mapping`** → List of loader configurations. Each entry contains `extensions` (list of file extensions like `[.pdf, .docx]`), `loader_name` (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`), and optional `loader_config`. Multiple extensions can share the same loader configuration to avoid repetition.
+- **`preprocessing_name`** → `PreprocessorType` enum (e.g., `"rapidfuzz"` → `PreprocessorType.RAPIDFUZZ`)
 - **`chunker_name`** → `ChunkerType` enum (e.g., `"langchain"` → `ChunkerType.LANGCHAIN`)
 - **`embed_name`** → `EmbeddingModelType` enum (e.g., `"huggingface"` → `EmbeddingModelType.HUGGINGFACE`)
 - **`store_name`** → `VectorStoreType` enum (e.g., `"chromadb"` → `VectorStoreType.CHROMADB`)
@@ -520,7 +538,7 @@ The system uses these values to:
 3. Use the Factory pattern to create instances of the selected components
 4. Pass additional configuration parameters to the component constructors
 
-**Note on Loader Configuration**: The `loader.file_type_mapping` allows you to configure different loaders for different file types. This enables the system to support multiple file formats (PDF, images, videos, audio) with appropriate loaders for each type. When adding support for a new file type, add an entry to `file_type_mapping` with the file extension as the key.
+**Note on Loader Configuration**: The `loader.file_type_mapping` allows you to configure different loaders for different file types. This enables the system to support multiple file formats (PDF, images, videos, audio) with appropriate loaders for each type. The format uses a list where each entry has an `extensions` list, allowing multiple extensions to share the same loader configuration. When adding support for a new file type, add the extension to an existing entry's `extensions` list (if it uses the same loader) or create a new entry.
 
 ### Configuration Examples
 
@@ -567,10 +585,10 @@ chunking:
 ```yaml
 loader:
   file_type_mapping:
-    .pdf:
+    - extensions: [.pdf]  # Single extension entry
       loader_name: pymupdf
       loader_config: null
-    .docx:
+    - extensions: [.docx]  # Multiple extensions can share the same loader config
       loader_name: docling
       loader_config: 
         llm_api_key: # LLM key for used for image description
@@ -578,10 +596,11 @@ loader:
         llm_model: gemini-2.5-flash # LLM Model for image description
         image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Prompt used to tailor the LLM image description on documents
     # When other loaders are added, you can configure them like:
-    # .mp4:
-    #   loader_name: video_loader
+    # - extensions: [.mp4, .avi, .mov]  # Multiple video formats can share the same loader
+    #   loader_name: whisper
     #   loader_config:
-    #     extract_audio: true
+    #     model_name: base
+    #     device: cpu
 ```
 
 **Note**: When adding a new component, the value you use in `config.yaml` must match the Enum value (the string value, not the Enum name). For example, if you add `COHERE = "cohere"` to the Enum, use `embed_name: cohere` in the config file.
@@ -705,7 +724,7 @@ python src/cli/ingest.py
 - Currently supports PDF files; future versions will support images, videos, and audio
 - Automatically selects the appropriate loader based on file extension using `loader.file_type_mapping` in `config.yaml`
 - Uses components configured in `config.yaml` (loader, chunker, embedding model, vector store)
-- Executes the ingestion pipeline: Load → Chunk → Embed → Save (see [Ingestion Pipeline](#ingestion-pipeline) for details)
+- Executes the ingestion pipeline: Load → Preprocess → Chunk → Embed → Save (see [Ingestion Pipeline](#ingestion-pipeline) for details)
 - Saves processed content (e.g., Markdown files) to the configured output directory (`paths.markdown_dir`)
 - Provides detailed logging of each step in the pipeline
 

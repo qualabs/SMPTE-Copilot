@@ -22,7 +22,8 @@ dependencies = [
   "docling==2.64.0",
   "fastapi>=0.104.0",
   "openai-whisper>=20231117",
-  "uvicorn[standard]>=0.24.0"
+  "uvicorn[standard]>=0.24.0",
+  "rapidfuzz>=3.0.0"
 ]
 
 [project.optional-dependencies]

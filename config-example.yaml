@@ -3,27 +3,28 @@
 
 loader:
   file_type_mapping:         # Map file extensions to loader types (required)
-    .pdf: 
+    # Format: list of entries, each with a list of extensions that use the same loader
+    # This avoids repeating loader configurations for multiple file types
+    - extensions: [.pdf, .docx]  # Multiple extensions can share the same loader config
       loader_name: docling
       loader_config: 
         llm_api_key: # LLM key for used for image description
         llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
         llm_model: gemini-2.5-flash # Model for image description
         # image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Optional prompt for image description if not present uses default
-    .docx:
-      loader_name: docling
-      loader_config: 
-        llm_api_key: # LLM key for used for image description
-        llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
-        llm_model: gemini-2.5-flash # LLM Model for image description
-        # image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Optional prompt for image description if not present uses default
-    .mp4:
+    - extensions: [.mp4]
       loader_name: whisper
       loader_config:
         model_name: base  # Whisper model: tiny, base, small, medium, large (default: base)
         device: cpu  # Device to run on: cpu or cuda (default: cpu)
         language: en  # Language code (e.g., "en", "es") or null for auto-detection (default: en)
         include_timestamps: true  # Include timestamps in markdown output (default: true)
+
+preprocessing:
+  preprocessing_name: rapidfuzz  # Preprocessor type (rapidfuzz)
+  preprocessing_config:      # Preprocessor-specific configuration
+    min_repetitions: 3       # Minimum number of times a line must appear (or be similar) to be considered repeated (default: 3)
+    similarity_threshold: 0.85  # Minimum similarity ratio for fuzzy matching (0.0 to 1.0, default: 0.85)
 
 chunking:
   chunker_name: langchain    # Chunker name (langchain, hybrid)
