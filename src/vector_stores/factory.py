@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Factory for creating vector store implementations.
 
 This module provides VectorStoreFactory, which creates instances of different
@@ -15,7 +17,6 @@ Usage:
     >>> # Use store directly in pipeline steps or with add_documents/add_texts
     >>> store.add_documents(chunks)
 """
-from __future__ import annotations
 
 from typing import Any, Callable, ClassVar
 

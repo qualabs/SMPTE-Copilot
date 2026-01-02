@@ -1,5 +1,6 @@
-"""Step that generates embeddings for document chunks."""
 from __future__ import annotations
+
+"""Step that generates embeddings for document chunks."""
 
 import logging
 
@@ -36,7 +37,7 @@ class EmbeddingGenerationStep:
         context
             Ingestion context with chunks set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         if not context.chunks:
             context.mark_failed("No chunks available. Chunk step must run first.")
             return

@@ -1,5 +1,6 @@
-"""Step that chunks the markdown text into smaller pieces."""
 from __future__ import annotations
+
+"""Step that chunks the markdown text into smaller pieces."""
 
 import logging
 
@@ -29,7 +30,7 @@ class ChunkStep:
         context
             Ingestion context with markdown_path set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         if not context.markdown_path:
             context.mark_failed("Markdown path not set. Load step must run first.")
             return

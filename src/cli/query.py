@@ -82,7 +82,7 @@ def main():
     config = Config.get_config()
 
     Logger.setup(config)
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
 
     query = " ".join(args.query)
     
@@ -160,7 +160,6 @@ def main():
     except Exception as e:
         logger.error(f"✗ Error: {e}", exc_info=True)
         sys.exit(EXIT_CODE_ERROR)
-
 
 if __name__ == "__main__":
     main()

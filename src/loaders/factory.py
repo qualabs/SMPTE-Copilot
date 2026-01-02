@@ -1,5 +1,6 @@
-"""Factory for creating document loader implementations."""
 from __future__ import annotations
+
+"""Factory for creating document loader implementations."""
 
 from typing import Any, Callable, ClassVar
 
@@ -7,6 +8,7 @@ from typing import Any, Callable, ClassVar
 from .protocol import DocumentLoader
 from .pymupdf_loader import create_pymupdf_loader
 from .docling_loader import create_docling_loader
+from .whisper_loader import create_whisper_loader
 from .types import LoaderType
 
 
@@ -54,4 +56,5 @@ class LoaderFactory:
 
 LoaderFactory.register(LoaderType.PYMUPDF)(create_pymupdf_loader)
 LoaderFactory.register(LoaderType.DOCLING)(create_docling_loader)
+LoaderFactory.register(LoaderType.WHISPER)(create_whisper_loader)
 

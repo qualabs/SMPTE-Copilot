@@ -1,5 +1,6 @@
-"""Retriever factory for creating retriever implementations."""
 from __future__ import annotations
+
+"""Retriever factory for creating retriever implementations."""
 
 from typing import Any, Callable, ClassVar
 

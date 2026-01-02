@@ -1,8 +1,10 @@
-"""Factory for creating chunker implementations."""
 from __future__ import annotations
+
+"""Factory for creating chunker implementations."""
 
 from typing import Any, Callable, ClassVar
 
+from .hybrid_chunker import create_hybrid_chunker
 from .langchain_chunker import create_langchain_chunker
 from .protocol import Chunker
 from .types import ChunkerType
@@ -51,3 +53,4 @@ class ChunkerFactory:
         return cls._registry[chunker_type](kwargs)
 
 ChunkerFactory.register(ChunkerType.LANGCHAIN)(create_langchain_chunker)
+ChunkerFactory.register(ChunkerType.HYBRID)(create_hybrid_chunker)

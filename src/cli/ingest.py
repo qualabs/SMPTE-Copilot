@@ -12,6 +12,7 @@ from src import (
     EmbeddingModelFactory,
     Embeddings,
     LoaderFactory,
+    PreprocessorFactory,
     VectorStore,
     VectorStoreFactory,
 )
@@ -23,12 +24,14 @@ from src.cli.constants import (
 from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
 from src.loaders.helpers import LoaderHelper
 from src.loaders.types import LoaderType
+from src.chunkers.types import ChunkerType
 from src.logger import Logger
 from src.pipeline import IngestionContext, PipelineExecutor, PipelineStatus
 from src.pipeline.steps import (
     ChunkStep,
     EmbeddingGenerationStep,
     LoadStep,
+    PreprocessStep,
     SaveStep,
 )
 
@@ -58,7 +61,7 @@ def ingest_file(
     required_role
         Optional required role for strict access control.
     """
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Ingesting: {file_path}")
     if access_tags:
@@ -67,46 +70,33 @@ def ingest_file(
         logger.info(f"Required role: {required_role}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
-    loader_name_str, loader_config_from_mapping = (
+    loader_name, loader_config_from_mapping = (
         LoaderHelper.get_loader_config_for_file(file_path, config)
     )
     file_extension = file_path.suffix.lower()
 
-    try:
-        loader_type = LoaderType(loader_name_str)
-    except ValueError as exc:
-        available = ", ".join(t.value for t in LoaderType)
-        raise ValueError(
-            f"Unknown loader type '{loader_name_str}' for file {file_path}. "
-            f"Available loaders: {available}"
-        ) from exc
-
     logger.info(
         f"Converting {file_extension} file to Markdown "
-        f"(loader: {loader_name_str})..."
+        f"(loader: {loader_name})..."
     )
+    
     loader_config = LoaderHelper.create_loader_config(
         file_path,
-        loader_name_str,
+        loader_name,
         loader_config_from_mapping,
         config,
     )
-    loader = LoaderFactory.create(loader_type, **loader_config)
+    loader = LoaderFactory.create(loader_name, **loader_config)
 
-    chunker_config = {
-        "chunk_size": config.chunking.chunk_size,
-        "chunk_overlap": config.chunking.chunk_overlap,
-        "method": config.chunking.method,
-    }
+    chunker_config = config.chunking.chunker_config or {}
+    embedding_config = config.embedding.embed_config or {}
+    
     chunker = ChunkerFactory.create(
         config.chunking.chunker_name,
         **chunker_config,
+        **embedding_config,
     )
 
-    logger.info(
-        f"Chunking markdown (size={config.chunking.chunk_size}, "
-        f"overlap={config.chunking.chunk_overlap})..."
-    )
     logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
     logger.info("Storing in vector database...")
     logger.info(f"  Database location: {config.vector_store.persist_directory}")
@@ -120,8 +110,15 @@ def ingest_file(
     if required_role:
         context.required_role_strict = required_role
 
+    preprocessing_config = config.preprocessing.preprocessing_config or {}
+    preprocessor = PreprocessorFactory.create(
+        config.preprocessing.preprocessing_name,
+        **preprocessing_config,
+    )
+
     steps = [
         LoadStep(loader),
+        PreprocessStep(preprocessor),
         ChunkStep(chunker),
         EmbeddingGenerationStep(embedding_model, config.embedding.embed_name),
         SaveStep(vector_store),
@@ -167,7 +164,7 @@ def main():
     config = Config.get_config()
 
     Logger.setup(config)
-    logger = logging.getLogger()
+    logger = logging.getLogger(__name__)
 
     input_path = config.paths.input_path
     
@@ -195,10 +192,7 @@ def main():
     logger.info(f"Inputs: {len(media_files)} file(s)")
     logger.info(f"Database: {config.vector_store.persist_directory}")
     logger.info(f"Collection: {config.vector_store.collection_name}")
-    logger.info(
-        f"Chunk size: {config.chunking.chunk_size}, "
-        f"overlap: {config.chunking.chunk_overlap}"
-    )
+    logger.info(f"Chunker: {config.chunking.chunker_name}")
     logger.info(f"Embedding model: {config.embedding.embed_name}")
     if access_tags:
         logger.info(f"Access tags: {access_tags}")

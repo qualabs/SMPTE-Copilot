@@ -3,5 +3,5 @@
 SUPPORTED_FILE_EXTENSIONS = [
     ".pdf",
     ".docx",
-    # Future: Add more file types here
+    ".mp4", ".mp3", ".wav", ".m4a", ".avi", ".mov", ".mkv", #whisper supported file types
 ]

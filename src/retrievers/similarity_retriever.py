@@ -1,5 +1,6 @@
-"""Similarity search retriever implementation."""
 from __future__ import annotations
+
+"""Similarity search retriever implementation."""
 
 from typing import Any
 

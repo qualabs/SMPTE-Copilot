@@ -1,5 +1,6 @@
-"""Protocol for document loader implementations."""
 from __future__ import annotations
+
+"""Protocol for document loader implementations."""
 
 from collections.abc import Sequence
 from pathlib import Path
@@ -40,6 +41,7 @@ class DocumentLoader(Protocol):
         pages: PageSpecifier = None,
         output_path: Optional[Path] = None,
         overwrite: bool = True,
+        md_text: str = None,
     ) -> Path:
         """Save the document as a Markdown file.
 
@@ -53,7 +55,6 @@ class DocumentLoader(Protocol):
         overwrite
             Whether to overwrite existing files.
         """
-        md_text = self.to_markdown_text(pages=pages)
         destination = self._resolve_output_path(output_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
 
@@ -70,11 +71,11 @@ class DocumentLoader(Protocol):
         ----------
         output_path
             Optional explicit output path. If None, generates a default path
-            based on the PDF file name in the output directory or PDF's parent directory.
+            based on the input file name in the output directory or input file's parent directory.
         """
         if output_path is not None:
             return Path(output_path).expanduser().resolve()
 
-        target_dir = self.output_dir or self.pdf_path.parent
-        return target_dir / f"{self.pdf_path.stem}.md"
+        target_dir = self.output_dir or self.input_path.parent
+        return target_dir / f"{self.input_path.stem}.md"
 

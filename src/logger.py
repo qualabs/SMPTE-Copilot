@@ -11,7 +11,9 @@ class Logger:
     def setup(config) -> None:
         logging.basicConfig(
             level=config.logging.get_level(),
-            format="%(message)s",
+            format="%(asctime)s - %(name)s - %(message)s",
+            datefmt="%H:%M:%S",
             stream=sys.stdout,
             force=True,  # Override any existing configuration
         )
+        logging.getLogger("httpx").setLevel(logging.WARNING)

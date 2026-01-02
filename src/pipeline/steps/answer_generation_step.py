@@ -1,5 +1,6 @@
-"""Step that generates the final answer from retrieved documents."""
 from __future__ import annotations
+
+"""Step that generates the final answer from retrieved documents."""
 
 import logging
 from typing import List, Tuple
@@ -36,7 +37,7 @@ class GenerationStep(PipelineStep):
         context
             Query context with retrieved_docs set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
 
         if not context.retrieved_docs:
             context.mark_failed("No retrieved docs available. Retrieve step must run first.")

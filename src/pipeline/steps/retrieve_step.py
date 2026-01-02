@@ -1,5 +1,6 @@
-"""Step that retrieves relevant documents from the vector store."""
 from __future__ import annotations
+
+"""Step that retrieves relevant documents from the vector store."""
 
 import logging
 
@@ -30,7 +31,7 @@ class RetrieveStep:
         context
             Query context with user_query set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         
         # Build access filter if role-aware access control is enabled
         if context.user_role or context.user_tags:
@@ -48,6 +49,7 @@ class RetrieveStep:
         if context.metadata_filter is not None and hasattr(self.retriever, "metadata_filter"):
             self.retriever.metadata_filter = context.metadata_filter
             logger.debug("Applied metadata filter to retriever")
+        
         
         logger.info(f"Retrieving documents for query: {context.user_query}")
 

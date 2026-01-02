@@ -30,3 +30,4 @@ DEFAULT_IMAGE_DESCRIPTION_PROMPT = (
     "Output format: specific, dense, and factual. Avoid filler words."
 )
 
+DEFAULT_IMAGE_DESCRIPTION_TIMEOUT = 60  # seconds

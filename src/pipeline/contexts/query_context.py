@@ -1,5 +1,6 @@
-"""Context for query pipeline."""
 from __future__ import annotations
+
+"""Context for query pipeline."""
 
 from typing import Any, List, Optional
 

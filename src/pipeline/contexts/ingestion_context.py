@@ -1,5 +1,6 @@
-"""Context for document ingestion pipeline."""
 from __future__ import annotations
+
+"""Context for document ingestion pipeline."""
 
 from pathlib import Path
 from typing import Any, Optional

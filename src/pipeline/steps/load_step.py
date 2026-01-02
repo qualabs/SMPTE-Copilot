@@ -1,5 +1,6 @@
-"""Step that loads a document and converts it to markdown."""
 from __future__ import annotations
+
+"""Step that loads a document and converts it to markdown."""
 
 import logging
 
@@ -29,11 +30,13 @@ class LoadStep:
         context
             Ingestion context with file_path set.
         """
-        logger = logging.getLogger()
+        logger = logging.getLogger(__name__)
         logger.info(f"Loading document: {context.file_path}")
 
-        markdown_path = self.loader.to_markdown_file()
+        md_text = self.loader.to_markdown_text()
+        context.raw_text = md_text
+        
+        markdown_path = self.loader.to_markdown_file(md_text=md_text)
         context.markdown_path = markdown_path
-        context.raw_text = self.loader.to_markdown_text()
 
         logger.info(f"Markdown saved to: {markdown_path}")
