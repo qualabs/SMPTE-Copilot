@@ -52,30 +52,12 @@ def load_role_mapping(mapping_file: str) -> dict[str, list[str]]:
 def main():
     """Query the vector database with a question from command line arguments."""
     parser = argparse.ArgumentParser(
-        description="Query vector database with optional role-aware access control"
+        description="Query vector database with role-aware access control from config"
     )
     parser.add_argument(
         "query",
         nargs="+",
         help="Search query string",
-    )
-    parser.add_argument(
-        "--user-role",
-        type=str,
-        default="",
-        help="User's role for access control (e.g., 'Finance_Manager')",
-    )
-    parser.add_argument(
-        "--user-tags",
-        type=str,
-        default="",
-        help="User's direct access tags, comma-separated (e.g., 'Finance,Public')",
-    )
-    parser.add_argument(
-        "--role-mapping",
-        type=str,
-        default="",
-        help="Path to role-to-tags mapping JSON file",
     )
     args = parser.parse_args()
 
@@ -86,12 +68,12 @@ def main():
 
     query = " ".join(args.query)
     
-    # Parse access control arguments
-    user_role = args.user_role.strip() if args.user_role else None
-    user_tags = [tag.strip() for tag in args.user_tags.split(",") if tag.strip()]
+    # Get access control settings from config
+    user_role = config.access_control.default_user_role
+    user_tags = config.access_control.default_user_tags or None
     role_mapping = None
-    if args.role_mapping:
-        role_mapping = load_role_mapping(args.role_mapping)
+    if config.access_control.role_mapping_file:
+        role_mapping = load_role_mapping(str(config.access_control.role_mapping_file))
 
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("Querying Vector Database")

@@ -59,16 +59,15 @@ embedding:
 
 vector_store:
   store_name: chromadb        # Vector store name (options: chromadb, qdrant)
-  persist_directory: ./vector_db  # Directory to persist vector store data (relative to current working directory)
-  collection_name: rag_collection    # Collection name in the vector store
-  store_config: null         # Additional store-specific configuration (dict)
-  # url: http://localhost:6333  # Qdrant server URL (only used when store_name is 'qdrant')
-  
-  # Example configuration for Qdrant (with native list support for access control):
+  store_config:               # Store-specific configuration (dict)
+    persist_directory: ./vector_db  # Directory to persist vector store data (relative to current working directory)
+    collection_name: rag_collection    # Collection name in the vector store
+  # For Qdrant, include url in store_config:
   # store_name: qdrant
-  # url: http://localhost:6333
-  # collection_name: rag_collection
-  # store_config: null
+  # store_config:
+  #   persist_directory: ./vector_db
+  #   collection_name: rag_collection
+  #   url: http://localhost:6333  # Qdrant server URL
 
 retrieval:
   searcher_strategy: similarity  # Retrieval strategy
@@ -87,4 +86,14 @@ paths:
 
 logging:
   level: INFO                    # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+
+access_control:
+  # Ingestion settings (applied to all ingested documents)
+  default_access_tags: []        # Default access tags for ingested documents (e.g., ["Finance", "Public"])
+  default_required_role: null    # Default required role for strict access control (e.g., "Finance_Manager")
+  
+  # Query settings (applied to all queries)
+  default_user_role: null       # Default user role for query access control (e.g., "Finance_Manager")
+  default_user_tags: []         # Default user tags for query access control (e.g., ["Finance", "Public"])
+  role_mapping_file: null       # Path to JSON file containing role-to-tags mapping (e.g., "./role_mapping.json")
 

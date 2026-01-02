@@ -18,6 +18,7 @@ from .llms.protocol import LLM
 from .pipeline import PipelineExecutor, QueryContext
 from .pipeline.steps import GenerationStep, QueryEmbeddingStep, RetrieveStep
 from .retrievers.protocol import Retriever
+from .vector_stores.constants import DEFAULT_COLLECTION_NAME, DEFAULT_VECTOR_DB_DIR
 from .vector_stores.protocol import VectorStore
 
 
@@ -48,7 +49,6 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
 
     logger = logging.getLogger(__name__)
 
-    vector_db_path: Path = config.vector_store.persist_directory
     if not vector_db_path.exists():
         raise RuntimeError(
             f"Vector database not found at {vector_db_path}. "
@@ -62,12 +62,15 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
         **(config.embedding.embed_config or {}),
     )
 
+    store_config = {
+        "persist_directory": store_config.get("persist_directory", DEFAULT_VECTOR_DB_DIR),
+        "collection_name": store_config.get("collection_name", DEFAULT_COLLECTION_NAME),
+        "embedding_function": embedding_model,
+    }
+    
     vector_store = VectorStoreFactory.create(
         config.vector_store.store_name,
-        persist_directory=str(vector_db_path),
-        collection_name=config.vector_store.collection_name,
-        embedding_function=embedding_model,
-        **(config.vector_store.store_config or {}),
+        **store_config,
     )
 
     retriever_kwargs = {"vector_store": vector_store, "k": config.retrieval.k}

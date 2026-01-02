@@ -26,6 +26,7 @@ from src.loaders.helpers import LoaderHelper
 from src.loaders.types import LoaderType
 from src.chunkers.types import ChunkerType
 from src.logger import Logger
+from src.vector_stores.constants import DEFAULT_COLLECTION_NAME, DEFAULT_VECTOR_DB_DIR
 from src.pipeline import IngestionContext, PipelineExecutor, PipelineStatus
 from src.pipeline.steps import (
     ChunkStep,
@@ -99,9 +100,6 @@ def ingest_file(
 
     logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
     logger.info("Storing in vector database...")
-    logger.info(f"  Database location: {config.vector_store.persist_directory}")
-    logger.info(f"  Collection: {config.vector_store.collection_name}")
-
     context = IngestionContext(file_path=file_path)
     
     # Set role-aware access control fields if provided
@@ -137,30 +135,13 @@ def ingest_file(
     if context.markdown_path:
         logger.info(f"✓ Markdown file: {context.markdown_path}")
     logger.info(f"✓ Chunks created: {len(context.chunks)}")
-    logger.info(f"✓ Database location: {config.vector_store.persist_directory}")
-    logger.info(f"✓ Collection: {config.vector_store.collection_name}")
+    logger.info(f"  Database location: {store_config_dict.get("persist_directory", DEFAULT_VECTOR_DB_DIR)}")
+    logger.info(f"  Collection: {store_config_dict.get("collection_name", DEFAULT_COLLECTION_NAME)}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
 
 
 def main():
     """Run the ingestion pipeline for one or more media files."""
-    parser = argparse.ArgumentParser(
-        description="Ingest media files into the vector database with optional access control"
-    )
-    parser.add_argument(
-        "--tags",
-        type=str,
-        default="",
-        help="Comma-separated access control tags (e.g., 'Finance,Public')",
-    )
-    parser.add_argument(
-        "--required-role",
-        type=str,
-        default="",
-        help="Required role for strict access control (e.g., 'Finance_Manager')",
-    )
-    args = parser.parse_args()
-
     config = Config.get_config()
 
     Logger.setup(config)
@@ -168,9 +149,9 @@ def main():
 
     input_path = config.paths.input_path
     
-    # Parse access control arguments
-    access_tags = [tag.strip() for tag in args.tags.split(",") if tag.strip()]
-    required_role = args.required_role.strip() if args.required_role else None
+    # Get access control settings from config
+    access_tags = config.access_control.default_access_tags or None
+    required_role = config.access_control.default_required_role
 
     try:
         media_files = LoaderHelper.resolve_media_inputs(input_path)
@@ -190,8 +171,6 @@ def main():
     logger.info("RAG Media Ingestion Pipeline")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Inputs: {len(media_files)} file(s)")
-    logger.info(f"Database: {config.vector_store.persist_directory}")
-    logger.info(f"Collection: {config.vector_store.collection_name}")
     logger.info(f"Chunker: {config.chunking.chunker_name}")
     logger.info(f"Embedding model: {config.embedding.embed_name}")
     if access_tags:
@@ -206,12 +185,14 @@ def main():
             **(config.embedding.embed_config or {}),
         )
 
+        store_config = {
+            "persist_directory": store_config.get("persist_directory", DEFAULT_VECTOR_DB_DIR),
+            "collection_name": store_config.get("collection_name", DEFAULT_COLLECTION_NAME),
+            "embedding_function": embedding_model,
+        }    
         vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,
-            persist_directory=str(config.vector_store.persist_directory),
-            collection_name=config.vector_store.collection_name,
-            embedding_function=embedding_model,
-            **(config.vector_store.store_config or {}),
+            **store_config,
         )
 
         for media_file in media_files:

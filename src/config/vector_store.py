@@ -1,12 +1,10 @@
 """Vector store configuration."""
 
-from pathlib import Path
 from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from src.vector_stores.constants import DEFAULT_COLLECTION_NAME
 from src.vector_stores.types import VectorStoreType
 
 
@@ -17,26 +15,13 @@ class VectorStoreConfig(BaseSettings):
         default=VectorStoreType.CHROMADB,
         description="Vector store type",
     )
-    persist_directory: Path = Field(
-        default=Path("./vector_db"),
-        description=(
-            "Directory to persist vector store data "
-            "(relative to current working directory)"
-        ),
-    )
-    collection_name: str = Field(
-        default=DEFAULT_COLLECTION_NAME,
-        description="Collection name in the vector store",
-    )
-    url: Optional[str] = Field(
-        default="http://localhost:6333",
-        description=(
-            "URL for Qdrant server "
-            "(only used when store_name is 'qdrant')"
-        ),
-    )
     store_config: Optional[dict] = Field(
         default=None,
-        description="Additional store-specific configuration",
+        description=(
+            "Store-specific configuration dictionary. "
+            "Required keys: persist_directory (str), collection_name (str). "
+            "For Qdrant: also include 'url' (str, default: 'http://localhost:6333'). "
+            "For ChromaDB: no additional config needed beyond persist_directory and collection_name."
+        ),
     )
 
