@@ -134,8 +134,6 @@ def ingest_file(
     if context.markdown_path:
         logger.info(f"✓ Markdown file: {context.markdown_path}")
     logger.info(f"✓ Chunks created: {len(context.chunks)}")
-    logger.info(f"  Database location: {store_config_dict.get('persist_directory')}")
-    logger.info(f"  Collection: {store_config_dict.get('collection_name')}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
 
 
@@ -172,6 +170,9 @@ def main():
     logger.info(f"Inputs: {len(media_files)} file(s)")
     logger.info(f"Chunker: {config.chunking.chunker_name}")
     logger.info(f"Embedding model: {config.embedding.embed_name}")
+    logger.info(f"Database location: {config.vector_store.store_config.get('persist_directory')}")
+    logger.info(f"Collection: {config.vector_store.store_config.get('collection_name')}")
+
     if access_tags:
         logger.info(f"Access tags: {access_tags}")
     if required_role:
@@ -185,8 +186,8 @@ def main():
         )
 
         store_config = {
-            "persist_directory": store_config.get("persist_directory"),
-            "collection_name": store_config.get("collection_name"),
+            "persist_directory": config.vector_store.store_config.get("persist_directory"),
+            "collection_name": config.vector_store.store_config.get("collection_name"),
             "embedding_function": embedding_model,
         }    
         vector_store = VectorStoreFactory.create(
