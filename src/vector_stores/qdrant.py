@@ -1,19 +1,113 @@
 """Qdrant vector store implementation."""
 from __future__ import annotations
 
-from typing import Any
+import logging
+from typing import Any, Optional
 
+from langchain.schema import Document
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams
+from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.http.exceptions import UnexpectedResponse
 
-from langchain_qdrant import QdrantVectorStore
-from qdrant_client import QdrantClient
-
+from ..constants import DEFAULT_RETRIEVAL_K
 from ..embeddings.protocol import Embeddings
 from .constants import DEFAULT_COLLECTION_NAME
 from .protocol import VectorStore
 
+class QdrantVectorStoreWrapper:
+    """Wrapper for QdrantVectorStore to support pre-computed embeddings in add_texts."""
+
+    def __init__(
+        self,
+        qdrant_store: QdrantVectorStore,
+        client: QdrantClient,
+        collection_name: str,
+    ):
+        """Initialize the wrapper.
+
+        Parameters
+        ----------
+        qdrant_store
+            The underlying QdrantVectorStore instance.
+        client
+            The QdrantClient instance for direct access.
+        collection_name
+            Name of the Qdrant collection.
+        """
+        self._store = qdrant_store
+        self._client = client
+        self._collection_name = collection_name
+
+    def add_texts(
+        self,
+        texts: list[str],
+        metadatas: Optional[list[dict[str, Any]]] = None,
+        ids: Optional[list[str]] = None,
+        embeddings: Optional[list[list[float]]] = None,
+    ) -> list[str]:
+        """Add texts to the vector store with pre-computed embeddings.
+
+        Parameters
+        ----------
+        texts
+            List of text strings to add.
+        metadatas
+            Optional list of metadata dictionaries.
+        ids
+            Optional list of document IDs.
+        embeddings
+            Pre-computed embedding vectors (always provided in this pipeline).
+
+        Returns
+        -------
+        List of document IDs.
+        """
+        if ids is None:
+            ids = [f"doc_{i}" for i in range(len(texts))]
+        if metadatas is None:
+            metadatas = [{}] * len(texts)
+
+        points = [
+            PointStruct(
+                id=doc_id,
+                vector=embedding,
+                payload={
+                    "page_content": text,
+                    **metadata,
+                },
+            )
+            for doc_id, text, embedding, metadata in zip(
+                ids, texts, embeddings, metadatas
+            )
+        ]
+
+        self._client.upsert(collection_name=self._collection_name, points=points)
+        return ids
+
+    def similarity_search(
+        self, 
+        query: str, 
+        k: int = DEFAULT_RETRIEVAL_K
+    ) -> list[Document]:
+        """Search for similar documents."""
+        return self._store.similarity_search(query, k=k)
+
+    def similarity_search_with_score(
+        self, 
+        query: str, 
+        k: int = DEFAULT_RETRIEVAL_K
+    ) -> list[tuple[Document, float]]:
+        """Search for similar documents with similarity scores."""
+        return self._store.similarity_search_with_score(query, k=k)
+
+    def add_documents(self, documents: list[Document]) -> list[str]:
+        """Add documents to the vector store."""
+        return self._store.add_documents(documents)
+
+    def persist(self) -> None:
+        """Persist the vector store to disk."""
+        self._store.persist()
 
 def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
     """Create a Qdrant vector store from configuration.
@@ -38,9 +132,11 @@ def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
         If required packages are not installed.
     """
 
-    url = config.get("url", "http://localhost:6333")
+    logger = logging.getLogger(__name__)
+
+    url = config.get("url", "http://qdrant:6333")
     collection_name = config.get("collection_name", DEFAULT_COLLECTION_NAME)
-    embedding_function = config.get("embedding_function")
+    embedding_function: Embeddings = config.get("embedding_function")
 
     if embedding_function is None:
         raise ValueError(
@@ -48,27 +144,37 @@ def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
             "Pass it via config: {'embedding_function': embedder.embedding_model}"
         )
 
-    # Create Qdrant client
-    print("QDRANT URL: ", url)
-    client = QdrantClient(url=url)
+    client = QdrantClient(url=url, check_compatibility=False)
 
-    # Check if collection exists, if not create it manually
-    if not client.collection_exists(collection_name):
-        # Get embedding dimension from the embedding function
-        # Create a test embedding to determine the dimension
-        test_embedding = embedding_function.embed_query("test")
-        embedding_dim = len(test_embedding)
+    try:
+        client.get_collection(collection_name)
+        logger.info(f"Qdrant collection already exists: {collection_name}")
+    except UnexpectedResponse as e:
+        if e.status_code == 404:
+            test_embedding = embedding_function.embed_query("test")
+            embedding_dim = len(test_embedding)
 
-        # Create collection with proper vector configuration
-        client.create_collection(
-            collection_name=collection_name,
-            vectors_config=VectorParams(size=embedding_dim, distance=Distance.COSINE),
-        )
+            logger.info(f"Creating Qdrant collection: {collection_name}")
+            logger.info(f"Embedding dimension: {embedding_dim}")
 
-    # Create Qdrant vector store using the new langchain-qdrant package
-    # Pass the client directly for proper initialization
-    return QdrantVectorStore(
+            client.create_collection(
+                collection_name=collection_name,
+                vectors_config=VectorParams(size=embedding_dim, distance=Distance.COSINE),
+            )
+        else:
+            raise
+    except Exception as e:
+        logger.error(f"Failed to create Qdrant collection: {e}")
+        raise
+
+    qdrant_store = QdrantVectorStore(
+        client=client,
+        embedding=embedding_function,
+        collection_name=collection_name,
+    )
+
+    return QdrantVectorStoreWrapper(
+        qdrant_store=qdrant_store,
         client=client,
         collection_name=collection_name,
-        embedding=embedding_function,
     )

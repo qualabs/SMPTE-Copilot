@@ -75,14 +75,3 @@ class VectorStore(Protocol):
         """Persist the vector store to disk."""
         ...
 
-    def delete(self, ids: Optional[list[str]] = None) -> None:
-        """Delete documents or the entire collection.
-
-        Parameters
-        ----------
-        ids
-            Optional list of document IDs to delete.
-            If None, may delete the entire collection (implementation-dependent).
-        """
-        ...
-

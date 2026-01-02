@@ -62,10 +62,9 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
     )
 
     store_config = {
-        "persist_directory": config.vector_store.store_config.get("persist_directory"),
-        "collection_name": config.vector_store.store_config.get("collection_name"),
-        "embedding_function": embedding_model,
-    }
+            "embedding_function": embedding_model,
+            **(config.vector_store.store_config or {}),
+    }    
 
     vector_store = VectorStoreFactory.create(
         config.vector_store.store_name,
