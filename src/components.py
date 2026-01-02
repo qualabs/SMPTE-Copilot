@@ -18,7 +18,6 @@ from .llms.protocol import LLM
 from .pipeline import PipelineExecutor, QueryContext
 from .pipeline.steps import GenerationStep, QueryEmbeddingStep, RetrieveStep
 from .retrievers.protocol import Retriever
-from .vector_stores.constants import DEFAULT_COLLECTION_NAME, DEFAULT_VECTOR_DB_DIR
 from .vector_stores.protocol import VectorStore
 
 
@@ -63,11 +62,11 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
     )
 
     store_config = {
-        "persist_directory": store_config.get("persist_directory", DEFAULT_VECTOR_DB_DIR),
-        "collection_name": store_config.get("collection_name", DEFAULT_COLLECTION_NAME),
+        "persist_directory": store_config.get("persist_directory"),
+        "collection_name": store_config.get("collection_name"),
         "embedding_function": embedding_model,
     }
-    
+
     vector_store = VectorStoreFactory.create(
         config.vector_store.store_name,
         **store_config,

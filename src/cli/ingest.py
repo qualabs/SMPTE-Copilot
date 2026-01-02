@@ -26,7 +26,6 @@ from src.loaders.helpers import LoaderHelper
 from src.loaders.types import LoaderType
 from src.chunkers.types import ChunkerType
 from src.logger import Logger
-from src.vector_stores.constants import DEFAULT_COLLECTION_NAME, DEFAULT_VECTOR_DB_DIR
 from src.pipeline import IngestionContext, PipelineExecutor, PipelineStatus
 from src.pipeline.steps import (
     ChunkStep,
@@ -135,8 +134,8 @@ def ingest_file(
     if context.markdown_path:
         logger.info(f"✓ Markdown file: {context.markdown_path}")
     logger.info(f"✓ Chunks created: {len(context.chunks)}")
-    logger.info(f"  Database location: {store_config_dict.get("persist_directory", DEFAULT_VECTOR_DB_DIR)}")
-    logger.info(f"  Collection: {store_config_dict.get("collection_name", DEFAULT_COLLECTION_NAME)}")
+    logger.info(f"  Database location: {store_config_dict.get('persist_directory')}")
+    logger.info(f"  Collection: {store_config_dict.get('collection_name')}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
 
 
@@ -186,8 +185,8 @@ def main():
         )
 
         store_config = {
-            "persist_directory": store_config.get("persist_directory", DEFAULT_VECTOR_DB_DIR),
-            "collection_name": store_config.get("collection_name", DEFAULT_COLLECTION_NAME),
+            "persist_directory": store_config.get("persist_directory"),
+            "collection_name": store_config.get("collection_name"),
             "embedding_function": embedding_model,
         }    
         vector_store = VectorStoreFactory.create(

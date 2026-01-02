@@ -7,6 +7,9 @@ from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 
+from langchain_qdrant import QdrantVectorStore
+from qdrant_client import QdrantClient
+
 from ..embeddings.protocol import Embeddings
 from .constants import DEFAULT_COLLECTION_NAME
 from .protocol import VectorStore
@@ -34,14 +37,6 @@ def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
     ImportError
         If required packages are not installed.
     """
-    try:
-        from langchain_qdrant import QdrantVectorStore
-        from qdrant_client import QdrantClient
-    except ImportError as exc:
-        raise ImportError(
-            "Qdrant requires 'qdrant-client' and 'langchain-qdrant' packages. "
-            "Install with: pip install qdrant-client langchain-qdrant"
-        ) from exc
 
     url = config.get("url", "http://localhost:6333")
     collection_name = config.get("collection_name", DEFAULT_COLLECTION_NAME)
