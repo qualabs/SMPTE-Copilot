@@ -83,6 +83,18 @@ class QdrantVectorStoreWrapper:
             )
             self._pending_points.append(point)
 
+    def _ensure_collection_exists(self) -> None:
+        """Ensure the Qdrant collection exists, raise helpful error if not."""
+        try:
+            self._client.get_collection(self._collection_name)
+        except UnexpectedResponse as e:
+            if e.status_code == 404:
+                raise ValueError(
+                    f"Qdrant collection '{self._collection_name}' does not exist. "
+                    f"Please run ingestion first to create the collection and add documents. "
+                ) from e
+            raise
+
     def similarity_search(
         self, 
         query: str, 
@@ -90,6 +102,7 @@ class QdrantVectorStoreWrapper:
         filter: Optional[Any] = None,
     ) -> list[Document]:
         """Search for similar documents."""
+        self._ensure_collection_exists()
         if filter is not None:
             return self._store.similarity_search(query, k=k, filter=filter)
         return self._store.similarity_search(query, k=k)
@@ -101,6 +114,7 @@ class QdrantVectorStoreWrapper:
         filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores."""
+        self._ensure_collection_exists()
         if filter is not None:
             return self._store.similarity_search_with_score(query, k=k, filter=filter)
         return self._store.similarity_search_with_score(query, k=k)
