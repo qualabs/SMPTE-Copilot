@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 
+from ...config import Config
 from ...retrievers.filters import build_access_filter
 from ...retrievers.protocol import Retriever
 from ..contexts.query_context import QueryContext
@@ -34,22 +35,28 @@ class RetrieveStep:
         logger = logging.getLogger(__name__)
         
         # Build access filter if role-aware access control is enabled
+        metadata_filter = None
         if context.user_role or context.user_tags:
             logger.info(
                 f"Applying role-aware access control: role='{context.user_role}', "
                 f"tags={context.user_tags}"
             )
-            context.metadata_filter = build_access_filter(
+            
+            # Get vector store type from configuration
+            config = Config.get_config()
+            vector_store_type = config.vector_store.store_name
+            
+            metadata_filter = build_access_filter(
                 user_role=context.user_role,
                 user_tags=context.user_tags,
                 role_mapping=context.role_mapping,
+                vector_store_type=vector_store_type,
             )
         
-        # Apply metadata filter to retriever if provided
-        if context.metadata_filter is not None and hasattr(self.retriever, "metadata_filter"):
-            self.retriever.metadata_filter = context.metadata_filter
-            logger.debug("Applied metadata filter to retriever")
-        
+        # Set filter on retriever if provided
+        if metadata_filter is not None:
+            self.retriever.set_filter(metadata_filter)
+            logger.debug("Set metadata filter on retriever")
         
         logger.info(f"Retrieving documents for query: {context.user_query}")
 

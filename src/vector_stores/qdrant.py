@@ -86,17 +86,23 @@ class QdrantVectorStoreWrapper:
     def similarity_search(
         self, 
         query: str, 
-        k: int = DEFAULT_RETRIEVAL_K
+        k: int = DEFAULT_RETRIEVAL_K,
+        filter: Optional[Any] = None,
     ) -> list[Document]:
         """Search for similar documents."""
+        if filter is not None:
+            return self._store.similarity_search(query, k=k, filter=filter)
         return self._store.similarity_search(query, k=k)
 
     def similarity_search_with_score(
         self, 
         query: str, 
-        k: int = DEFAULT_RETRIEVAL_K
+        k: int = DEFAULT_RETRIEVAL_K,
+        filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores."""
+        if filter is not None:
+            return self._store.similarity_search_with_score(query, k=k, filter=filter)
         return self._store.similarity_search_with_score(query, k=k)
 
     def add_documents(self, documents: list[Document]) -> list[str]:

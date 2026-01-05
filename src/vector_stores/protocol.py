@@ -21,17 +21,39 @@ class VectorStore(Protocol):
     def similarity_search(
         self,
         query: str,
-        k: int = DEFAULT_RETRIEVAL_K
+        k: int = DEFAULT_RETRIEVAL_K,
+        filter: Optional[Any] = None,
     ) -> list[Document]:
-        """Search for similar documents."""
+        """Search for similar documents.
+        
+        Parameters
+        ----------
+        query
+            Query string to search for.
+        k
+            Number of documents to retrieve.
+        filter
+            Optional metadata filter (vector store specific).
+        """
         ...
 
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = DEFAULT_RETRIEVAL_K
+        k: int = DEFAULT_RETRIEVAL_K,
+        filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
-        """Search for similar documents with similarity scores."""
+        """Search for similar documents with similarity scores.
+        
+        Parameters
+        ----------
+        query
+            Query string to search for.
+        k
+            Number of documents to retrieve.
+        filter
+            Optional metadata filter (vector store specific).
+        """
         ...
 
     def add_documents(

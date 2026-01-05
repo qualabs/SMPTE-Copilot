@@ -4,20 +4,24 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
+from src.retrievers.filters.factory import FilterBuilderFactory
+from src.vector_stores.types import VectorStoreType
+
 
 def build_access_filter(
     user_role: Optional[str] = None,
     user_tags: Optional[list[str]] = None,
     role_mapping: Optional[dict[str, list[str]]] = None,
+    vector_store_type: Optional[VectorStoreType] = None,
 ) -> Optional[Any]:
-    """Build Qdrant metadata filter for role-aware access control.
+    """Build metadata filter for role-aware access control.
 
     Implements the hybrid approach:
     (doc.required_role_strict == user_role) OR
     (doc.access_tags contains any of user_authorized_tags)
 
-    Note: Qdrant supports native list matching - access_tags stored as Python list
-    (e.g., ["Finance", "Public", "Internal"])
+    The filter format is specific to the vector store type. If no vector store
+    type is provided, returns None.
 
     Parameters
     ----------
@@ -27,65 +31,35 @@ def build_access_filter(
         User's direct access tags.
     role_mapping : dict[str, list[str]], optional
         Mapping of roles to authorized tags.
+    vector_store_type : VectorStoreType, optional
+        Type of vector store to build the filter for. If not provided, returns None.
 
     Returns
     -------
     Any or None
-        Qdrant filter object, or None if no filtering needed.
+        Vector store-specific filter object, or None if no filtering needed
+        or if vector store type is not provided.
     """
     logger = logging.getLogger(__name__)
 
-    # No filtering if neither role nor tags provided
+    if not vector_store_type:
+        logger.warning(
+            "No vector store type provided - cannot build access filter. "
+            "Access control filtering will be skipped."
+        )
+        return None
+
     if not user_role and not user_tags:
         logger.debug("No role or tags provided - skipping access control filtering")
         return None
 
     try:
-        from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
-    except ImportError:
-        logger.warning(
-            "qdrant_client not installed - access control filtering requires Qdrant"
+        builder = FilterBuilderFactory.create(vector_store_type)
+        return builder.build(
+            user_role=user_role,
+            user_tags=user_tags,
+            role_mapping=role_mapping,
         )
+    except ValueError as e:
+        logger.warning(f"Could not create filter builder: {e}")
         return None
-
-    # Aggregate all authorized tags
-    authorized_tags: set[str] = set(user_tags or [])
-    if user_role and role_mapping:
-        role_tags = role_mapping.get(user_role, [])
-        authorized_tags.update(role_tags)
-        logger.debug(
-            f"User role '{user_role}' expanded to tags: {role_tags}"
-        )
-
-    # Build Qdrant filter with should (OR) conditions
-    should_conditions: list[FieldCondition] = []
-
-    # Add role match condition
-    if user_role:
-        should_conditions.append(
-            FieldCondition(
-                key="metadata.required_role_strict", match=MatchValue(value=user_role)
-            )
-        )
-        logger.debug(f"Added role filter: required_role_strict == '{user_role}'")
-
-    # Add tag match condition - native array matching!
-    # In Qdrant with langchain-qdrant, metadata fields are under the metadata key
-    if authorized_tags:
-        should_conditions.append(
-            FieldCondition(
-                key="metadata.access_tags", match=MatchAny(any=list(authorized_tags))
-            )
-        )
-        logger.debug(f"Added tag filter: access_tags matches any of {authorized_tags}")
-
-    if not should_conditions:
-        logger.debug("No filter conditions generated")
-        return None
-
-    # Return Qdrant Filter with should (OR) logic
-    filter_obj = Filter(should=should_conditions)
-    logger.info(
-        f"Built access filter for role='{user_role}', tags={authorized_tags}"
-    )
-    return filter_obj

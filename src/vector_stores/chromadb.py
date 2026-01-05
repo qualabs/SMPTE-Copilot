@@ -59,17 +59,27 @@ class ChromaDBWrapper:
     def similarity_search(
         self,
         query: str,
-        k: int = DEFAULT_RETRIEVAL_K
+        k: int = DEFAULT_RETRIEVAL_K,
+        filter: Optional[Any] = None,
     ) -> list[Document]:
-        """Search for similar documents."""
+        """Search for similar documents.
+        
+        Note: ChromaDB does not support metadata filtering in this implementation.
+        The filter parameter is ignored.
+        """
         return self._store.similarity_search(query, k=k)
 
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = DEFAULT_RETRIEVAL_K
+        k: int = DEFAULT_RETRIEVAL_K,
+        filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
-        """Search for similar documents with similarity scores."""
+        """Search for similar documents with similarity scores.
+        
+        Note: ChromaDB does not support metadata filtering in this implementation.
+        The filter parameter is ignored.
+        """
         return self._store.similarity_search_with_score(query, k=k)
 
     def add_documents(self, documents: list[Document]) -> list[int]:
