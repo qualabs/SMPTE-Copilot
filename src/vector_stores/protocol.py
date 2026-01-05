@@ -47,7 +47,7 @@ class VectorStore(Protocol):
         metadatas: Optional[list[dict[str, Any]]] = None,
         ids: Optional[list[int]] = None,
         embeddings: Optional[list[list[float]]] = None,
-    ) -> list[int]:
+    ) -> None:
         """Add texts to the vector store.
 
         Add texts directly with optional embeddings and metadata.
@@ -65,9 +65,6 @@ class VectorStore(Protocol):
         embeddings
             Optional list of pre-computed embedding vectors.
 
-        Returns
-        -------
-        List of document IDs (if supported).
         """
         ...
 

@@ -49,7 +49,7 @@ class QdrantVectorStoreWrapper:
         metadatas: Optional[list[dict[str, Any]]] = None,
         ids: Optional[list[int]] = None,
         embeddings: Optional[list[list[float]]] = None,
-    ) -> list[int]:
+    ) -> None:
         """Add texts to the vector store with pre-computed embeddings.
 
         Points are accumulated and will be persisted when persist() is called.
@@ -65,10 +65,6 @@ class QdrantVectorStoreWrapper:
             Optional list of document IDs.
         embeddings
             Pre-computed embedding vectors (always provided in this pipeline).
-
-        Returns
-        -------
-        List of document IDs.
         """
         if ids is None:
             ids = list(range(len(texts)))
@@ -86,8 +82,6 @@ class QdrantVectorStoreWrapper:
                 payload=payload,
             )
             self._pending_points.append(point)
-
-        return ids
 
     def similarity_search(
         self, 

@@ -67,7 +67,7 @@ vector_store:
   # store_config:
   #   persist_directory: ./vector_db
   #   collection_name: rag_collection
-  #   url: http://localhost:6333  # Qdrant server URL
+  #   url: http://qdrant:6333  # Qdrant server URL
 
 retrieval:
   searcher_strategy: similarity  # Retrieval strategy
