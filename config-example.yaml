@@ -89,11 +89,10 @@ logging:
 
 access_control:
   # Ingestion settings (applied to all ingested documents)
-  default_access_tags: []        # Default access tags for ingested documents (e.g., ["Finance", "Public"])
-  default_required_role: null    # Default required role for strict access control (e.g., "Finance_Manager")
+  default_access_tags: ["Public"]        # Default access tags for ingested documents (e.g., ["Finance", "Public"])
+  default_required_role: "Protected"    # Default required role for strict access control (e.g., "Finance_Manager")
   
   # Query settings (applied to all queries)
-  default_user_role: null       # Default user role for query access control (e.g., "Finance_Manager")
-  default_user_tags: []         # Default user tags for query access control (e.g., ["Finance", "Public"])
+  default_user_role: "Public"   # Default user role for query access control (e.g., "Finance_Manager")
+  default_user_tags: ["Public"] # Default user tags for query access control (e.g., ["Finance", "Public"])
   role_mapping_file: null       # Path to JSON file containing role-to-tags mapping (e.g., "./role_mapping.json")
-
