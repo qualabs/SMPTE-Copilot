@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Main script to ingest media files into the vector database."""
 
-import argparse
 import logging
 import sys
 from pathlib import Path

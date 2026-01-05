@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import ClassVar, Callable
 
-from ..vector_stores.types import VectorStoreType
+from ...vector_stores.types import VectorStoreType
 from .qdrant import QdrantFilterBuilder
 from .protocol import FilterBuilder
 
