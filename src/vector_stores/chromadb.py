@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """ChromaDB vector store implementation."""
 
+from pathlib import Path
 from typing import Any, Optional
 
 from langchain.schema import Document
@@ -124,6 +125,13 @@ def create_chromadb_store(config: dict[str, Any]) -> VectorStore:
         raise ValueError(
             "ChromaDB requires an embedding_function. "
             "Pass it via config: {'embedding_function': embedder.embedding_model}"
+        )
+
+    vector_db_path = Path(persist_directory).expanduser().resolve()
+    if not vector_db_path.exists():
+        raise RuntimeError(
+            f"Vector database not found at {vector_db_path}. "
+            "Please run ingestion first."
         )
 
     chroma_store = Chroma(

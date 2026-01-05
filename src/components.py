@@ -3,7 +3,6 @@ from __future__ import annotations
 """Utility module for initializing RAG pipeline components from configuration."""
 
 import logging
-from pathlib import Path
 from typing import NamedTuple
 
 from . import (
@@ -47,13 +46,6 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
         config = Config.get_config()
 
     logger = logging.getLogger(__name__)
-
-    if not vector_db_path.exists():
-        raise RuntimeError(
-            f"Vector database not found at {vector_db_path}. "
-            "Please run ingestion first."
-        )
-
     logger.info("Initializing RAG components...")
 
     embedding_model = EmbeddingModelFactory.create(
