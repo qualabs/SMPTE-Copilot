@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from ...config import Config
-from ...retrievers.filters import build_access_filter
+from ...retrievers.filters import FilterBuilderFactory
 from ...retrievers.protocol import Retriever
 from ..contexts.query_context import QueryContext
 from ..step import PipelineStep
@@ -46,17 +46,18 @@ class RetrieveStep:
             config = Config.get_config()
             vector_store_type = config.vector_store.store_name
             
-            metadata_filter = build_access_filter(
-                user_role=context.user_role,
-                user_tags=context.user_tags,
-                role_mapping=context.role_mapping,
-                vector_store_type=vector_store_type,
-            )
-        
-        # Set filter on retriever if provided
-        if metadata_filter is not None:
-            self.retriever.set_filter(metadata_filter)
-            logger.debug("Set metadata filter on retriever")
+            try:
+                builder = FilterBuilderFactory.create(vector_store_type)
+                metadata_filter = builder.build(
+                    user_role=context.user_role,
+                    user_tags=context.user_tags,
+                    role_mapping=context.role_mapping,
+                )
+                self.retriever.set_filter(metadata_filter)
+                logger.debug("Set metadata filter on retriever")
+            except ValueError as e:
+                logger.warning(f"Could not create filter builder: {e}")
+                metadata_filter = None
         
         logger.info(f"Retrieving documents for query: {context.user_query}")
 
