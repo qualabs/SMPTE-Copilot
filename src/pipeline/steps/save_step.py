@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 
 from ...embeddings.constants import EMBEDDING_METADATA_KEY
-from ...vector_stores.constants import CHUNK_ID_PREFIX
 from ...vector_stores.protocol import VectorStore
 from ..contexts.ingestion_context import IngestionContext
 from ..step import PipelineStep
@@ -63,7 +62,7 @@ class SaveStep:
                     if context.access_metadata:
                         metadata.update(context.access_metadata)
             
-            ids = [f"{CHUNK_ID_PREFIX}{i}" for i in range(len(context.chunks))]
+            ids = list(range(len(context.chunks)))
 
             self.vector_store.add_texts(
                 texts=texts,

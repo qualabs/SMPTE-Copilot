@@ -35,18 +35,25 @@ class QdrantVectorStoreWrapper:
         collection_name
             Name of the Qdrant collection.
         """
+        self._logger = logging.getLogger(__name__)
+        self._logger.info(f"Initializing QdrantVectorStoreWrapper for collection: {collection_name}")
+
         self._store = qdrant_store
         self._client = client
         self._collection_name = collection_name
+        self._pending_points: list[PointStruct] = []
 
     def add_texts(
         self,
         texts: list[str],
         metadatas: Optional[list[dict[str, Any]]] = None,
-        ids: Optional[list[str]] = None,
+        ids: Optional[list[int]] = None,
         embeddings: Optional[list[list[float]]] = None,
-    ) -> list[str]:
+    ) -> list[int]:
         """Add texts to the vector store with pre-computed embeddings.
+
+        Points are accumulated and will be persisted when persist() is called.
+        This allows for efficient batching of multiple add_texts calls.
 
         Parameters
         ----------
@@ -64,25 +71,22 @@ class QdrantVectorStoreWrapper:
         List of document IDs.
         """
         if ids is None:
-            ids = [f"doc_{i}" for i in range(len(texts))]
+            ids = list(range(len(texts)))
         if metadatas is None:
             metadatas = [{}] * len(texts)
 
-        points = [
-            PointStruct(
+        for doc_id, text, embedding, metadata in zip(ids, texts, embeddings, metadatas):
+            vector = list(embedding)
+            
+            payload = {"page_content": text, **(metadata or {})}
+            
+            point = PointStruct(
                 id=doc_id,
-                vector=embedding,
-                payload={
-                    "page_content": text,
-                    **metadata,
-                },
+                vector=vector,
+                payload=payload,
             )
-            for doc_id, text, embedding, metadata in zip(
-                ids, texts, embeddings, metadatas
-            )
-        ]
+            self._pending_points.append(point)
 
-        self._client.upsert(collection_name=self._collection_name, points=points)
         return ids
 
     def similarity_search(
@@ -106,8 +110,23 @@ class QdrantVectorStoreWrapper:
         return self._store.add_documents(documents)
 
     def persist(self) -> None:
-        """Persist the vector store to disk."""
-        self._store.persist()
+        """Persist accumulated points to the Qdrant server.
+        
+        This method performs the actual upsert operation with all points
+        that were accumulated via add_texts() calls. After persisting,
+        the pending points buffer is cleared.
+        """
+        if not self._pending_points:
+            return
+        
+        self._logger.info(f"Persisting {len(self._pending_points)} points to Qdrant")
+        
+        self._client.upsert(
+            collection_name=self._collection_name,
+            points=self._pending_points,
+        )
+        
+        self._pending_points.clear()
 
 def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
     """Create a Qdrant vector store from configuration.

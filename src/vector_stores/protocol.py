@@ -45,9 +45,9 @@ class VectorStore(Protocol):
         self,
         texts: list[str],
         metadatas: Optional[list[dict[str, Any]]] = None,
-        ids: Optional[list[str]] = None,
+        ids: Optional[list[int]] = None,
         embeddings: Optional[list[list[float]]] = None,
-    ) -> list[str]:
+    ) -> list[int]:
         """Add texts to the vector store.
 
         Add texts directly with optional embeddings and metadata.
