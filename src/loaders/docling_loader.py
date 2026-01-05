@@ -106,15 +106,28 @@ class DoclingLoader(DocumentLoader):
         result = self._get_conversion_result()
         md_text = result.document.export_to_markdown()
         
+        metadata = {
+            "source": str(self.input_path),
+            "file_name": self.input_path.name,
+            "loader": "DoclingLoader",
+            "file_type": self.input_path.suffix.lower()
+        }
+        
+        if hasattr(result.document, "meta") and result.document.meta:
+            doc_meta = result.document.meta
+            if hasattr(doc_meta, "title") and doc_meta.title:
+                metadata["title"] = doc_meta.title
+            if hasattr(doc_meta, "author") and doc_meta.author:
+                metadata["author"] = doc_meta.author
+            if hasattr(doc_meta, "creation_date") and doc_meta.creation_date:
+                metadata["creation_date"] = str(doc_meta.creation_date)
+            if hasattr(doc_meta, "modification_date") and doc_meta.modification_date:
+                metadata["modification_date"] = str(doc_meta.modification_date)
+        
         return [
             Document(
                 page_content=md_text,
-                metadata={
-                    "source": str(self.input_path),
-                    "file_name": self.input_path.name,
-                    "loader": "DoclingLoader",
-                    "file_type": self.input_path.suffix.lower()
-                }
+                metadata=metadata
             )
         ]
 
