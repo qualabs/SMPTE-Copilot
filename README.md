@@ -656,10 +656,11 @@ The `role_mapping.json` file maps user roles to lists of authorized tags. Users 
 
 #### During Ingestion
 
-Documents are automatically tagged with `default_access_tags` from the configuration. You can also specify tags per document if needed (future feature).
+Documents receive `default_access_tags` from the configuration only if they don't already have `access_tags` in their metadata. This allows loaders or other sources to provide document-specific tags that take precedence over the default configuration.
 
 **Current behavior:**
-- All ingested documents receive the tags specified in `default_access_tags`
+- If a document's chunks already have `access_tags` in their metadata, those tags are preserved
+- If a document's chunks don't have `access_tags`, they receive the tags specified in `default_access_tags`
 - Tags are stored in the `access_tags` metadata field of each chunk
 
 #### During Querying
