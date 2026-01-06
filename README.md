@@ -519,6 +519,14 @@ paths:
 
 logging:
   level: INFO
+
+access_control:
+  # Ingestion settings (applied to all ingested documents)
+  default_access_tags: ["Public"]        # Default access tags for ingested documents
+  
+  # Query settings (applied to all queries)
+  default_user_role: "Public"            # Default user role for query access control
+  role_mapping_file: "./role_mapping.json"  # Path to JSON file containing role-to-tags mapping
 ```
 
 ### How Configuration Maps to Components
@@ -529,8 +537,9 @@ The configuration values directly map to the Enum types defined in each module:
 - **`preprocessing_name`** → `PreprocessorType` enum (e.g., `"rapidfuzz"` → `PreprocessorType.RAPIDFUZZ`)
 - **`chunker_name`** → `ChunkerType` enum (e.g., `"langchain"` → `ChunkerType.LANGCHAIN`)
 - **`embed_name`** → `EmbeddingModelType` enum (e.g., `"huggingface"` → `EmbeddingModelType.HUGGINGFACE`)
-- **`store_name`** → `VectorStoreType` enum (e.g., `"chromadb"` → `VectorStoreType.CHROMADB`)
+- **`store_name`** → `VectorStoreType` enum (e.g., `"chromadb"` → `VectorStoreType.CHROMADB`, `"qdrant"` → `VectorStoreType.QDRANT`)
 - **`searcher_strategy`** → `RetrieverType` enum (e.g., `"similarity"` → `RetrieverType.SIMILARITY`)
+- **`access_control`** → Access control configuration (see [Access Control System](#access-control-system) for details)
 
 The system uses these values to:
 1. Load the configuration from `config.yaml`
@@ -604,6 +613,63 @@ loader:
 ```
 
 **Note**: When adding a new component, the value you use in `config.yaml` must match the Enum value (the string value, not the Enum name). For example, if you add `COHERE = "cohere"` to the Enum, use `embed_name: cohere` in the config file.
+
+## Access Control System
+
+SMPTE-Copilot includes a tag-based access control system that allows you to control which documents users can access based on their roles. This system works by:
+
+1. **Tagging documents during ingestion** with access tags (e.g., `["Public"]`, `["Finance", "Public"]`)
+2. **Mapping user roles to authorized tags** via a role mapping file
+3. **Filtering query results** to only return documents the user is authorized to access
+
+### How It Works
+
+The access control system uses a **role-to-tags mapping** approach:
+
+- **Documents** are tagged with `access_tags` during ingestion (e.g., `["Finance", "Public"]`)
+- **Users** are assigned roles (e.g., `"Finance_Manager"`, `"Public"`)
+- **Roles** are mapped to authorized tags via `role_mapping.json` (e.g., `"Finance_Manager"` → `["Finance", "Public"]`)
+- **Queries** automatically filter results to only include documents where at least one of the document's `access_tags` matches one of the user's authorized tags
+
+### Role Mapping File
+
+The `role_mapping.json` file maps user roles to lists of authorized tags. Users can access documents that have at least one tag matching their authorized tags.
+
+**Example `role_mapping.json`:**
+
+```json
+{
+  "Public": ["Public"],
+  "Finance_Manager": ["Finance", "Public"],
+  "HR_Manager": ["HR", "Public"],
+  "Admin": ["Finance", "HR", "Public", "Admin"],
+  "Protected": ["Protected"]
+}
+```
+
+**How it works:**
+- A user with role `"Finance_Manager"` can access documents tagged with `"Finance"` OR `"Public"`
+- A user with role `"Public"` can only access documents tagged with `"Public"`
+- A user with role `"Admin"` can access documents with any of: `"Finance"`, `"HR"`, `"Public"`, or `"Admin"`
+
+### Usage Examples
+
+#### During Ingestion
+
+Documents are automatically tagged with `default_access_tags` from the configuration. You can also specify tags per document if needed (future feature).
+
+**Current behavior:**
+- All ingested documents receive the tags specified in `default_access_tags`
+- Tags are stored in the `access_tags` metadata field of each chunk
+
+#### During Querying
+
+When querying, the system automatically:
+1. Loads the user's role from `default_user_role` (or can be specified programmatically)
+2. Loads the role mapping from `role_mapping_file`
+3. Expands the user's role to authorized tags
+4. Filters query results to only include documents with matching tags
+
 
 ## How to Add New Components
 
