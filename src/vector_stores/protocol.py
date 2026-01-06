@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Protocol for vector store implementations."""
 
-from typing import Any, Protocol
+from typing import Any, Optional, Protocol
 
 from langchain.schema import Document
 
@@ -22,7 +22,7 @@ class VectorStore(Protocol):
         self,
         query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Any | None = None,
+        filter: Optional[Any] = None,
     ) -> list[Document]:
         """Search for similar documents.
 
@@ -41,7 +41,7 @@ class VectorStore(Protocol):
         self,
         query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Any | None = None,
+        filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores.
 
@@ -66,9 +66,9 @@ class VectorStore(Protocol):
     def add_texts(
         self,
         texts: list[str],
-        metadatas: list[dict[str, Any]] | None = None,
-        ids: list[int] | None = None,
-        embeddings: list[list[float]] | None = None,
+        metadatas: Optional[list[dict[str, Any]]] = None,
+        ids: Optional[list[int]] = None,
+        embeddings: Optional[list[list[float]]] = None,
     ) -> None:
         """Add texts to the vector store.
 

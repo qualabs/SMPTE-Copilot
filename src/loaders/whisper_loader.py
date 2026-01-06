@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import whisper
 from langchain.schema import Document
@@ -61,7 +61,7 @@ class WhisperLoader(DocumentLoader):
         self.language = config.get("language", "en")
         self.include_timestamps = config.get("include_timestamps", True)
 
-        self._model: whisper.Whisper | None = None
+        self._model: Optional[whisper.Whisper] = None
 
     def _load_model(self) -> whisper.Whisper:
         """Load the Whisper model (lazy loading).

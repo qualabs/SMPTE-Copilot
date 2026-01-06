@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Gemini tokenizer implementation."""
 
-from typing import Any
+from typing import Any, Optional
 
 from google import genai
 from pydantic import ConfigDict
@@ -23,7 +23,7 @@ class GeminiTokenizer(Tokenizer):
         self,
         model: str = "gemini-embedding-001",
         max_tokens: int = 2048,
-        google_api_key: str | None = None,
+        google_api_key: Optional[str] = None,
         **kwargs
     ):
         """Initialize the Gemini tokenizer.

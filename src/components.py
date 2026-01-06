@@ -3,7 +3,7 @@ from __future__ import annotations
 """Utility module for initializing RAG pipeline components from configuration."""
 
 import logging
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from . import (
     Config,
@@ -29,7 +29,7 @@ class RAGComponents(NamedTuple):
     llm: LLM
 
 
-def initialize_rag_components(config: Config | None = None) -> RAGComponents:
+def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
     """Initialize all RAG pipeline components from configuration.
 
     Parameters
@@ -90,8 +90,8 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
 def execute_query(
     components: RAGComponents,
     query: str,
-    user_role: str | None = None,
-    role_mapping: dict[str, list[str]] | None = None,
+    user_role: Optional[str] = None,
+    role_mapping: Optional[dict[str, list[str]]] = None,
 ) -> QueryContext:
     """Execute a RAG query using the provided components
 

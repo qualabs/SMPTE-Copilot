@@ -80,6 +80,7 @@ ignore = [
     "TRY300", # Consider moving statement to else block (prefer early return pattern)
     "PLW0603", # Using global statement (needed for singleton pattern)
     "PLW0602", # Using global for lock (needed for singleton pattern)
+    "UP045", # Prefer Optional[X] over X | None (required for Python 3.9 compatibility)
 ]
 
 # Enable specific rule sets

@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from docling.chunking import HybridChunker as DoclingHybridChunker
 from docling.document_converter import DocumentConverter
@@ -26,7 +26,7 @@ class HybridChunker:
         self,
         max_tokens: int = 2000,
         merge_peers: bool = False,
-        tokenizer: Tokenizer | None = None,
+        tokenizer: Optional[Tokenizer] = None,
     ):
         """Initialize the hybrid chunker.
 
@@ -107,7 +107,7 @@ class HybridChunker:
 
         return documents
 
-    def chunk_text(self, text: str, metadata: dict | None = None) -> list[Document]:
+    def chunk_text(self, text: str, metadata: Optional[dict] = None) -> list[Document]:
         """Chunk text using hybrid chunking strategy.
 
         Parameters

@@ -3,6 +3,8 @@ from __future__ import annotations
 """Base context for pipeline execution."""
 
 
+from typing import Optional
+
 from pydantic import BaseModel
 
 from .status import PipelineStatus
@@ -12,7 +14,7 @@ class PipelineContext(BaseModel):
     """Base context for pipeline execution."""
 
     status: PipelineStatus = PipelineStatus.PENDING
-    error: str | None = None
+    error: Optional[str] = None
 
     def mark_failed(self, error: str) -> None:
         """Mark the context as failed with an error message."""

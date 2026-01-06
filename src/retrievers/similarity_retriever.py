@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Similarity search retriever implementation."""
 
-from typing import Any
+from typing import Any, Optional
 
 from langchain.schema import Document
 
@@ -36,7 +36,7 @@ class DocumentRetriever:
         self.k = k
         self.metadata_filter: Any = None
 
-    def set_filter(self, filter: Any | None) -> None:
+    def set_filter(self, filter: Optional[Any]) -> None:
         """Set the metadata filter for retrieval.
 
         Parameters

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from langchain.schema import Document
 from langchain_qdrant import QdrantVectorStore
@@ -47,9 +47,9 @@ class QdrantVectorStoreWrapper:
     def add_texts(
         self,
         texts: list[str],
-        metadatas: list[dict[str, Any]] | None = None,
-        ids: list[int] | None = None,
-        embeddings: list[list[float]] | None = None,
+        metadatas: Optional[list[dict[str, Any]]] = None,
+        ids: Optional[list[int]] = None,
+        embeddings: Optional[list[list[float]]] = None,
     ) -> None:
         """Add texts to the vector store with pre-computed embeddings.
 
@@ -100,7 +100,7 @@ class QdrantVectorStoreWrapper:
         self,
         query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Any | None = None,
+        filter: Optional[Any] = None,
     ) -> list[Document]:
         """Search for similar documents."""
         self._ensure_collection_exists()
@@ -112,7 +112,7 @@ class QdrantVectorStoreWrapper:
         self,
         query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Any | None = None,
+        filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores."""
         self._ensure_collection_exists()
