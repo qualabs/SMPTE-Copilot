@@ -3,12 +3,10 @@ from __future__ import annotations
 """Step that generates the final answer from retrieved documents."""
 
 import logging
-from typing import List, Tuple
 
 from langchain.schema import Document
 
 from ...llms.protocol import LLM
-from ...llms.types import LLMType
 from ..contexts.query_context import QueryContext
 from ..step import PipelineStep
 
@@ -43,10 +41,10 @@ class GenerationStep(PipelineStep):
             logger.info("No retrieved docs available. Skipping answer generation.")
             return
 
-        retrieved: List[Tuple[Document, float]] = context.retrieved_docs
+        retrieved: list[tuple[Document, float]] = context.retrieved_docs
 
-        blocks: List[str] = []
-        citations: List[dict] = []
+        blocks: list[str] = []
+        citations: list[dict] = []
 
         for i, (doc, score) in enumerate(retrieved, start=1):
             meta = doc.metadata or {}

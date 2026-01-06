@@ -2,9 +2,8 @@ from __future__ import annotations
 
 """LangChain-based chunker implementation."""
 import logging
-
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from langchain.schema import Document
 from langchain.text_splitter import (
@@ -98,7 +97,7 @@ class LangChainChunker:
             **extra_kwargs
         )
 
-    def chunk_text(self, text: str, metadata: Optional[dict] = None) -> list[Document]:
+    def chunk_text(self, text: str, metadata: dict | None = None) -> list[Document]:
         """Chunk a markdown text string into LangChain Documents."""
         if not text or not text.strip():
             return []

@@ -2,18 +2,19 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from langchain.schema import Document
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
 from qdrant_client.http.exceptions import UnexpectedResponse
+from qdrant_client.models import Distance, PointStruct, VectorParams
 
 from ..constants import DEFAULT_RETRIEVAL_K
 from ..embeddings.protocol import Embeddings
 from .constants import DEFAULT_COLLECTION_NAME
 from .protocol import VectorStore
+
 
 class QdrantVectorStoreWrapper:
     """Wrapper for QdrantVectorStore to support pre-computed embeddings in add_texts."""
@@ -46,9 +47,9 @@ class QdrantVectorStoreWrapper:
     def add_texts(
         self,
         texts: list[str],
-        metadatas: Optional[list[dict[str, Any]]] = None,
-        ids: Optional[list[int]] = None,
-        embeddings: Optional[list[list[float]]] = None,
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[int] | None = None,
+        embeddings: list[list[float]] | None = None,
     ) -> None:
         """Add texts to the vector store with pre-computed embeddings.
 
@@ -73,9 +74,9 @@ class QdrantVectorStoreWrapper:
 
         for doc_id, text, embedding, metadata in zip(ids, texts, embeddings, metadatas):
             vector = list(embedding)
-            
+
             payload = {"page_content": text, **(metadata or {})}
-            
+
             point = PointStruct(
                 id=doc_id,
                 vector=vector,
@@ -96,10 +97,10 @@ class QdrantVectorStoreWrapper:
             raise
 
     def similarity_search(
-        self, 
-        query: str, 
+        self,
+        query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Optional[Any] = None,
+        filter: Any | None = None,
     ) -> list[Document]:
         """Search for similar documents."""
         self._ensure_collection_exists()
@@ -108,10 +109,10 @@ class QdrantVectorStoreWrapper:
         return self._store.similarity_search(query, k=k)
 
     def similarity_search_with_score(
-        self, 
-        query: str, 
+        self,
+        query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Optional[Any] = None,
+        filter: Any | None = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores."""
         self._ensure_collection_exists()
@@ -125,21 +126,21 @@ class QdrantVectorStoreWrapper:
 
     def persist(self) -> None:
         """Persist accumulated points to the Qdrant server.
-        
+
         This method performs the actual upsert operation with all points
         that were accumulated via add_texts() calls. After persisting,
         the pending points buffer is cleared.
         """
         if not self._pending_points:
             return
-        
+
         self._logger.info(f"Persisting {len(self._pending_points)} points to Qdrant")
-        
+
         self._client.upsert(
             collection_name=self._collection_name,
             points=self._pending_points,
         )
-        
+
         self._pending_points.clear()
 
 def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
@@ -196,8 +197,8 @@ def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
             )
         else:
             raise
-    except Exception as e:
-        logger.error(f"Failed to create Qdrant collection: {e}")
+    except Exception:
+        logger.exception("Failed to create Qdrant collection")
         raise
 
     qdrant_store = QdrantVectorStore(

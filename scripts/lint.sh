@@ -15,7 +15,7 @@ if [[ "$1" == "--fix" ]]; then
 else
     # Run ruff check
     echo "Running Ruff linter..."
-    ruff check src/ --show-files
+    ruff check src/
     exit_code=$?
     echo ""
     if [ $exit_code -ne 0 ]; then

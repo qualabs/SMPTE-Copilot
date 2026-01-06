@@ -7,7 +7,7 @@ from docling_core.transforms.chunker.tokenizer.base import BaseTokenizer
 
 class Tokenizer(BaseTokenizer, ABC):
     """Base class for tokenizer implementations that extends BaseTokenizer.
-    
+
     Tokenizers are used by hybrid chunkers to count tokens in text
     and split text into chunks based on token limits.
     """
@@ -66,7 +66,7 @@ class Tokenizer(BaseTokenizer, ABC):
         current_chunk = []
 
         for word in words:
-            test_chunk = " ".join(current_chunk + [word])
+            test_chunk = " ".join([*current_chunk, word])
             if self.count_tokens(test_chunk) <= self.max_tokens:
                 current_chunk.append(word)
             else:

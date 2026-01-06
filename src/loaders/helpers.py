@@ -51,23 +51,23 @@ class LoaderHelper:
                     f"Each entry in file_type_mapping must be a dictionary. "
                     f"Received: {type(entry)}"
                 )
-            
+
             extensions = entry.get("extensions")
             if not extensions:
                 raise ValueError(
                     "Each entry in file_type_mapping must have 'extensions' key "
                     "containing a list of file extensions."
                 )
-            
+
             if not isinstance(extensions, list):
-                raise ValueError(
+                raise TypeError(
                     f"'extensions' must be a list. Received: {type(extensions)}"
                 )
-            
+
             if suffix in extensions:
                 loader_entry = entry
                 break
-        
+
         if loader_entry is None:
             raise ValueError(
                 f"No loader configured for file type: {suffix}. "

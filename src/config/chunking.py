@@ -5,11 +5,6 @@ from typing import Any, Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
-from src.chunkers.constants import (
-    CHUNKING_METHOD_RECURSIVE,
-    DEFAULT_CHUNK_OVERLAP,
-    DEFAULT_CHUNK_SIZE,
-)
 from src.chunkers.types import ChunkerType
 
 
@@ -26,4 +21,3 @@ class ChunkingConfig(BaseSettings):
         "For langchain: chunk_size, chunk_overlap, method. "
         "For hybrid: max_tokens, merge_peers, tokenizer, tokenizer_config.",
     )
-    

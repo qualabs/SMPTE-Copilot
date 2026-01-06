@@ -6,7 +6,6 @@ import logging
 
 from ...embeddings.protocol import Embeddings
 from ..contexts.query_context import QueryContext
-from ..step import PipelineStep
 
 
 class QueryEmbeddingStep:

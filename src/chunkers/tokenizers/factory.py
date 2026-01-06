@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, ClassVar
 
-from .gemini import create_gemini_tokenizer
 from .base_tokenizer import Tokenizer
+from .gemini import create_gemini_tokenizer
 from .simple import create_simple_tokenizer
 from .types import TokenizerType
 

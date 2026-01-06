@@ -1,5 +1,3 @@
-import os
-import logging
 
 from collections.abc import Sequence
 from pathlib import Path
@@ -7,17 +5,13 @@ from typing import Any, Union
 
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
+    ConvertPipelineOptions,
     PdfPipelineOptions,
     PictureDescriptionApiOptions,
     TableFormerMode,
     TableStructureOptions,
-    ConvertPipelineOptions
 )
-from docling.document_converter import (
-    DocumentConverter,
-    PdfFormatOption,
-    WordFormatOption
-)
+from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption
 from langchain.schema import Document
 
 from src.constants import DEFAULT_IMAGE_DESCRIPTION_PROMPT, DEFAULT_IMAGE_DESCRIPTION_TIMEOUT
@@ -29,7 +23,7 @@ PageSpecifier = Union[Sequence[int], range, None]
 class DoclingLoader(DocumentLoader):
     def __init__(self, config: dict[str, Any]) -> None:
         self.config = config
-        
+
         file_path = self.config.get("file_path")
         if not file_path:
             raise ValueError("'file_path' is required in loader configuration")
@@ -40,13 +34,13 @@ class DoclingLoader(DocumentLoader):
 
         output_dir = self.config.get("output_dir")
         self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
-        
+
         prompt = self.config.get("image_description_prompt", DEFAULT_IMAGE_DESCRIPTION_PROMPT)
 
         llm_api_key = self.config.get("llm_api_key")
         llm_endpoint = self.config.get("llm_endpoint")
         llm_model = self.config.get("llm_model")
-        
+
         can_do_picture_description = (llm_api_key is not None and
                                        llm_endpoint is not None and
                                          llm_model is not None)
@@ -105,14 +99,14 @@ class DoclingLoader(DocumentLoader):
 
         result = self._get_conversion_result()
         md_text = result.document.export_to_markdown()
-        
+
         metadata = {
             "source": str(self.input_path),
             "file_name": self.input_path.name,
             "loader": "DoclingLoader",
             "file_type": self.input_path.suffix.lower()
         }
-        
+
         if hasattr(result.document, "meta") and result.document.meta:
             doc_meta = result.document.meta
             if hasattr(doc_meta, "title") and doc_meta.title:
@@ -123,7 +117,7 @@ class DoclingLoader(DocumentLoader):
                 metadata["creation_date"] = str(doc_meta.creation_date)
             if hasattr(doc_meta, "modification_date") and doc_meta.modification_date:
                 metadata["modification_date"] = str(doc_meta.modification_date)
-        
+
         return [
             Document(
                 page_content=md_text,

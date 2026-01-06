@@ -56,7 +56,7 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
     store_config = {
             "embedding_function": embedding_model,
             **(config.vector_store.store_config or {}),
-    }    
+    }
 
     vector_store = VectorStoreFactory.create(
         config.vector_store.store_name,
@@ -90,8 +90,8 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
 def execute_query(
     components: RAGComponents,
     query: str,
-    user_role: str = None,
-    role_mapping: dict[str, list[str]] = None,
+    user_role: str | None = None,
+    role_mapping: dict[str, list[str]] | None = None,
 ) -> QueryContext:
     """Execute a RAG query using the provided components
 
@@ -115,7 +115,7 @@ def execute_query(
     logger.info(f"Executing query: {query}")
 
     context = QueryContext(user_query=query)
-    
+
     # Set tag-based access control fields if provided
     if user_role:
         context.user_role = user_role

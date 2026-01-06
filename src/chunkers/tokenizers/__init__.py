@@ -1,7 +1,7 @@
 """Tokenizer module for chunkers."""
 
-from .factory import TokenizerFactory
 from .base_tokenizer import Tokenizer
+from .factory import TokenizerFactory
 from .types import TokenizerType
 
 __all__ = [

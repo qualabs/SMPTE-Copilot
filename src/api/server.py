@@ -18,24 +18,28 @@ from src.logger import Logger
 from src.pipeline import PipelineStatus
 
 
-def load_role_mapping(mapping_file: str) -> dict[str, list[str]]:
+def _load_role_mapping(
+    mapping_file: str,
+    logger: logging.Logger,
+) -> dict[str, list[str]]:
     """Load role-to-tags mapping from JSON file.
 
     Parameters
     ----------
     mapping_file : str
         Path to the JSON file containing role-to-tags mapping.
+    logger : logging.Logger
+        Logger instance for logging messages.
 
     Returns
     -------
     dict[str, list[str]]
         Role-to-tags mapping, or empty dict if file doesn't exist.
     """
-    logger = logging.getLogger(__name__)
     try:
         mapping_path = Path(mapping_file)
         if mapping_path.exists():
-            with open(mapping_path, "r") as f:
+            with mapping_path.open() as f:
                 return json.load(f)
         else:
             logger.warning(f"Role mapping file not found: {mapping_file}")
@@ -50,30 +54,30 @@ async def lifespan(app: FastAPI):
     # Initialize state attributes
     app.state.logger = logging.getLogger(__name__)
     app.state.initialized = False
-    
+
     # Startup
     try:
         config = Config.get_config()
         Logger.setup(config)
         app.state.logger.info("Initializing RAG components...")
         app.state.components = initialize_rag_components(config)
-        
+
         # Load access control configuration
         app.state.user_role = config.access_control.default_user_role
         app.state.role_mapping = None
-        
+
         if config.access_control.role_mapping_file:
-            app.state.role_mapping = load_role_mapping(str(config.access_control.role_mapping_file))
+            app.state.role_mapping = _load_role_mapping(str(config.access_control.role_mapping_file), app.state.logger)
             if app.state.user_role:
                 app.state.logger.info(
                     f"Access control enabled: role='{app.state.user_role}', "
                     f"mapping loaded with {len(app.state.role_mapping)} roles"
                 )
-        
+
         app.state.initialized = True
         app.state.logger.info("Server startup complete")
-    except Exception as e:
-        app.state.logger.error(f"Failed to initialize components: {e}")
+    except Exception:
+        app.state.logger.exception("Failed to initialize components")
         app.state.initialized = False
 
     yield
@@ -181,5 +185,5 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
         logger.error(f"Error processing query: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Internal server error: {str(e)}",
-        )
+            detail=f"Internal server error: {e!s}",
+        ) from e

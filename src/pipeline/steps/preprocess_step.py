@@ -7,7 +7,6 @@ import logging
 from ...constants import DEFAULT_ENCODING
 from ...preprocessing.protocol import Preprocessor
 from ..contexts.ingestion_context import IngestionContext
-from ..step import PipelineStep
 
 
 class PreprocessStep:

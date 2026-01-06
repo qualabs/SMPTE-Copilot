@@ -1,6 +1,6 @@
 """Pydantic models for OpenAI-compatible API."""
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,7 @@ class ChatCompletionRequest(BaseModel):
     """Request body for chat completions."""
 
     model: str = Field(default="smpte-copilot", description="Model identifier")
-    messages: List[Message] = Field(..., description="List of messages in the conversation")
+    messages: list[Message] = Field(..., description="List of messages in the conversation")
     temperature: Optional[float] = Field(default=0.7, ge=0, le=2, description="Sampling temperature")
     max_tokens: Optional[int] = Field(default=None, description="Maximum tokens to generate")
     stream: Optional[bool] = Field(default=False, description="Whether to stream responses")
@@ -46,5 +46,5 @@ class ChatCompletionResponse(BaseModel):
     object: str = "chat.completion"
     created: int
     model: str
-    choices: List[ChatCompletionChoice]
+    choices: list[ChatCompletionChoice]
     usage: Usage

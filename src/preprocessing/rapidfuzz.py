@@ -2,14 +2,15 @@ from __future__ import annotations
 
 """RapidFuzz-based preprocessor implementation."""
 
-import re
-from typing import Any
-from collections import defaultdict
-
 import logging
+import re
+from collections import defaultdict
+from typing import Any
+
 from rapidfuzz import fuzz
 
 from .protocol import Preprocessor
+
 
 class RapidFuzzPreprocessor:
     """Preprocessor using RapidFuzz for fuzzy matching to remove repeated content.
@@ -120,7 +121,7 @@ class RapidFuzzPreprocessor:
             for i in candidate_group_indices:
                 if i in indices_to_remove:
                     continue
-                    
+
                 line = normalized_lines[i]
                 matched_cluster_idx = None
                 for cluster_idx, cluster in enumerate(clusters):
@@ -239,7 +240,7 @@ def create_rapidfuzz_preprocessor(config: dict[str, Any]) -> Preprocessor:
     """
     min_repetitions = config.get("min_repetitions", 3)
     similarity_threshold = config.get("similarity_threshold", 0.85)
-    
+
     return RapidFuzzPreprocessor(
         min_repetitions=min_repetitions,
         similarity_threshold=similarity_threshold,

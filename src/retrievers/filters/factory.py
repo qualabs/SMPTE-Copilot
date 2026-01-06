@@ -1,11 +1,11 @@
 """Factory for creating filter builders."""
 from __future__ import annotations
 
-from typing import ClassVar, Callable
+from typing import Callable, ClassVar
 
 from ...vector_stores.types import VectorStoreType
-from .qdrant import QdrantFilterBuilder
 from .protocol import FilterBuilder
+from .qdrant import QdrantFilterBuilder
 
 
 class FilterBuilderFactory:

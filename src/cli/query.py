@@ -20,33 +20,99 @@ from src.cli.constants import (
 )
 from src.components import execute_query, initialize_rag_components
 from src.logger import Logger
-from src.pipeline import PipelineStatus
+from src.pipeline import PipelineStatus, QueryContext
 
 
-def load_role_mapping(mapping_file: str) -> dict[str, list[str]]:
+def _load_role_mapping(
+    mapping_file: str,
+    logger: logging.Logger
+) -> dict[str, list[str]]:
     """Load role-to-tags mapping from JSON file.
 
     Parameters
     ----------
     mapping_file : str
         Path to the JSON file containing role-to-tags mapping.
+    logger : logging.Logger
+        Logger instance for logging messages.
 
     Returns
     -------
     dict[str, list[str]]
         Role-to-tags mapping, or empty dict if file doesn't exist.
     """
-    logger = logging.getLogger()
     try:
         mapping_path = Path(mapping_file)
         if mapping_path.exists():
-            with open(mapping_path, "r") as f:
+            with mapping_path.open() as f:
                 return json.load(f)
         else:
             logger.warning(f"Role mapping file not found: {mapping_file}")
     except Exception as e:
         logger.warning(f"Could not load role mapping: {e}")
     return {}
+
+
+def _log_query_info(
+    query: str,
+    user_role: str | None,
+    role_mapping: dict[str, list[str]],
+    logger: logging.Logger
+) -> None:
+    """Log query information and role mapping."""
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info("Querying Vector Database")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info(f"Query: {query}")
+    if user_role:
+        logger.info(f"User role: {user_role}")
+    if role_mapping:
+        logger.info(f"Role mapping loaded: {len(role_mapping)} roles")
+        if user_role and user_role in role_mapping:
+            logger.info(f"Role '{user_role}' maps to tags: {role_mapping[user_role]}")
+    logger.info("")
+
+
+def _display_results(
+    context: QueryContext,
+    logger: logging.Logger,
+) -> None:
+    """Display query results, citations, and retrieved documents."""
+    logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info("Final Answer")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info(context.llm_response or "(no response)")
+
+    if context.citations:
+        logger.info("\nSources:")
+        for c in context.citations:
+            cid = c.get("id")
+            source = c.get("source")
+            score = c.get("score")
+            logger.info(f"  [{cid}] {source}  distance={score}")
+
+    results_with_scores = context.retrieved_docs or []
+
+    logger.info("\n" + ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info(f"Retrieved {len(results_with_scores)} chunks (debug):")
+    logger.info("Distance Score Guide (similarity_search_with_score):")
+    logger.info("  - Lower score = More similar to query")
+    logger.info(
+        f"  - Score range depends on the distance metric "
+        f"(often around {MIN_SCORE}-{MAX_SCORE_DISTANCE})"
+    )
+    logger.info("  - Closer to 0 = more similar")
+    logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
+
+    for i, (doc, score) in enumerate(results_with_scores, ENUMERATE_START):
+        logger.info(f"\n[{i}] Distance Score: {score:.{SCORE_DECIMAL_PLACES}f}")
+        logger.info(f"    Content: {doc.page_content}")
+        if doc.metadata:
+            logger.info(f"    Metadata: {doc.metadata}")
+
+    logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info("Note: Lower distance scores indicate better matches to your query.")
+    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
 
 def main():
@@ -67,30 +133,17 @@ def main():
     logger = logging.getLogger(__name__)
 
     query = " ".join(args.query)
-    
+
     user_role = config.access_control.default_user_role
     role_mapping = {}
     if config.access_control.role_mapping_file:
-        role_mapping = load_role_mapping(str(config.access_control.role_mapping_file))
-        
-    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info("Querying Vector Database")
-    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"Query: {query}")
-    if user_role:
-        logger.info(f"User role: {user_role}")
-    if role_mapping:
-        logger.info(f"Role mapping loaded: {len(role_mapping)} roles")
-        if user_role and user_role in role_mapping:
-            logger.info(f"Role '{user_role}' maps to tags: {role_mapping[user_role]}")
-        
-    logger.info("")
+        role_mapping = _load_role_mapping(str(config.access_control.role_mapping_file), logger)
+
+    _log_query_info(query, user_role, role_mapping, logger)
 
     try:
-        # Initialize RAG components
         components = initialize_rag_components(config)
 
-        # Execute query using shared logic with access control
         context = execute_query(
             components,
             query,
@@ -101,41 +154,7 @@ def main():
         if context.status == PipelineStatus.FAILED:
             raise RuntimeError(f"Pipeline failed: {context.error}")
 
-        logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
-        logger.info("Final Answer")
-        logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-        logger.info(context.llm_response or "(no response)")
-
-        if context.citations:
-            logger.info("\nSources:")
-            for c in context.citations:
-                cid = c.get("id")
-                source = c.get("source")
-                score = c.get("score")
-                logger.info(f"  [{cid}] {source}  distance={score}")
-
-        results_with_scores = context.retrieved_docs or []
-
-        logger.info("\n" + ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
-        logger.info(f"Retrieved {len(results_with_scores)} chunks (debug):")
-        logger.info("Distance Score Guide (similarity_search_with_score):")
-        logger.info("  - Lower score = More similar to query")
-        logger.info(
-            f"  - Score range depends on the distance metric "
-            f"(often around {MIN_SCORE}-{MAX_SCORE_DISTANCE})"
-        )
-        logger.info("  - Closer to 0 = more similar")
-        logger.info(ALT_SEPARATOR_CHAR * SEPARATOR_LENGTH)
-
-        for i, (doc, score) in enumerate(results_with_scores, ENUMERATE_START):
-            logger.info(f"\n[{i}] Distance Score: {score:.{SCORE_DECIMAL_PLACES}f}")
-            logger.info(f"    Content: {doc.page_content}")
-            if doc.metadata:
-                logger.info(f"    Metadata: {doc.metadata}")
-
-        logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
-        logger.info("Note: Lower distance scores indicate better matches to your query.")
-        logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        _display_results(context, logger)
 
     except Exception as e:
         logger.error(f"✗ Error: {e}", exc_info=True)
