@@ -6,5 +6,6 @@ class VectorStoreType(str, Enum):
     """Vector store type enumeration."""
 
     CHROMADB = "chromadb"
+    QDRANT = "qdrant"
 
 

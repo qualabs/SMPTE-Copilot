@@ -21,17 +21,39 @@ class VectorStore(Protocol):
     def similarity_search(
         self,
         query: str,
-        k: int = DEFAULT_RETRIEVAL_K
+        k: int = DEFAULT_RETRIEVAL_K,
+        filter: Optional[Any] = None,
     ) -> list[Document]:
-        """Search for similar documents."""
+        """Search for similar documents.
+        
+        Parameters
+        ----------
+        query
+            Query string to search for.
+        k
+            Number of documents to retrieve.
+        filter
+            Optional metadata filter (vector store specific).
+        """
         ...
 
     def similarity_search_with_score(
         self,
         query: str,
-        k: int = DEFAULT_RETRIEVAL_K
+        k: int = DEFAULT_RETRIEVAL_K,
+        filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
-        """Search for similar documents with similarity scores."""
+        """Search for similar documents with similarity scores.
+        
+        Parameters
+        ----------
+        query
+            Query string to search for.
+        k
+            Number of documents to retrieve.
+        filter
+            Optional metadata filter (vector store specific).
+        """
         ...
 
     def add_documents(
@@ -45,9 +67,9 @@ class VectorStore(Protocol):
         self,
         texts: list[str],
         metadatas: Optional[list[dict[str, Any]]] = None,
-        ids: Optional[list[str]] = None,
+        ids: Optional[list[int]] = None,
         embeddings: Optional[list[list[float]]] = None,
-    ) -> list[str]:
+    ) -> None:
         """Add texts to the vector store.
 
         Add texts directly with optional embeddings and metadata.
@@ -65,24 +87,10 @@ class VectorStore(Protocol):
         embeddings
             Optional list of pre-computed embedding vectors.
 
-        Returns
-        -------
-        List of document IDs (if supported).
         """
         ...
 
     def persist(self) -> None:
         """Persist the vector store to disk."""
-        ...
-
-    def delete(self, ids: Optional[list[str]] = None) -> None:
-        """Delete documents or the entire collection.
-
-        Parameters
-        ----------
-        ids
-            Optional list of document IDs to delete.
-            If None, may delete the entire collection (implementation-dependent).
-        """
         ...
 

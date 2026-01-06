@@ -22,4 +22,8 @@ class QueryContext(PipelineContext):
     prompt: Optional[str] = None
     llm_response: Optional[str] = None
     citations: Optional[List[dict]] = None
+    
+    # Roles are automatically converted to tags via role_mapping
+    user_role: Optional[str] = None
+    role_mapping: Optional[dict[str, list[str]]] = None  # Role-to-tags mapping
 

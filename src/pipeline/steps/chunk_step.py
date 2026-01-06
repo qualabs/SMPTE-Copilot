@@ -37,7 +37,13 @@ class ChunkStep:
 
         logger.info(f"Chunking markdown file: {context.markdown_path}")
 
+        base_metadata = context.metadata.copy() if context.metadata else {}
+        
         chunks = self.chunker.chunk_markdown_file(str(context.markdown_path))
+        
+        for chunk in chunks:
+            chunk.metadata.update(base_metadata)
+        
         context.chunks = chunks
 
         logger.info(f"Created {len(chunks)} chunks")

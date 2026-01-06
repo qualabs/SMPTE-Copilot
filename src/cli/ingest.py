@@ -40,6 +40,7 @@ def ingest_file(
     config: Config,
     embedding_model: Embeddings,
     vector_store: VectorStore,
+    access_tags: list[str] = None,
 ) -> None:
     """Ingest a media file into the vector database using the pipeline pattern.
 
@@ -53,10 +54,14 @@ def ingest_file(
         Embedding model instance.
     vector_store
         Vector store instance.
+    access_tags
+        Optional list of access control tags for the document.
     """
     logger = logging.getLogger(__name__)
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Ingesting: {file_path}")
+    if access_tags:
+        logger.info(f"Access tags: {access_tags}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
     loader_name, loader_config_from_mapping = (
@@ -88,10 +93,11 @@ def ingest_file(
 
     logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
     logger.info("Storing in vector database...")
-    logger.info(f"  Database location: {config.vector_store.persist_directory}")
-    logger.info(f"  Collection: {config.vector_store.collection_name}")
-
     context = IngestionContext(file_path=file_path)
+    
+    # Set tag-based access control if provided
+    if access_tags:
+        context.access_tags = access_tags
 
     preprocessing_config = config.preprocessing.preprocessing_config or {}
     preprocessor = PreprocessorFactory.create(
@@ -120,8 +126,6 @@ def ingest_file(
     if context.markdown_path:
         logger.info(f"✓ Markdown file: {context.markdown_path}")
     logger.info(f"✓ Chunks created: {len(context.chunks)}")
-    logger.info(f"✓ Database location: {config.vector_store.persist_directory}")
-    logger.info(f"✓ Collection: {config.vector_store.collection_name}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
 
 
@@ -133,6 +137,9 @@ def main():
     logger = logging.getLogger(__name__)
 
     input_path = config.paths.input_path
+    
+    # Get access control settings from config
+    access_tags = config.access_control.default_access_tags or None
 
     try:
         media_files = LoaderHelper.resolve_media_inputs(input_path)
@@ -152,10 +159,13 @@ def main():
     logger.info("RAG Media Ingestion Pipeline")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Inputs: {len(media_files)} file(s)")
-    logger.info(f"Database: {config.vector_store.persist_directory}")
-    logger.info(f"Collection: {config.vector_store.collection_name}")
     logger.info(f"Chunker: {config.chunking.chunker_name}")
     logger.info(f"Embedding model: {config.embedding.embed_name}")
+    logger.info(f"Database location: {config.vector_store.store_config.get('persist_directory')}")
+    logger.info(f"Collection: {config.vector_store.store_config.get('collection_name')}")
+
+    if access_tags:
+        logger.info(f"Access tags: {access_tags}")
     logger.info("")
 
     try:
@@ -164,16 +174,23 @@ def main():
             **(config.embedding.embed_config or {}),
         )
 
+        store_config = {
+            "embedding_function": embedding_model,
+            **(config.vector_store.store_config or {}),
+        }    
         vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,
-            persist_directory=str(config.vector_store.persist_directory),
-            collection_name=config.vector_store.collection_name,
-            embedding_function=embedding_model,
-            **(config.vector_store.store_config or {}),
+            **store_config,
         )
 
         for media_file in media_files:
-            ingest_file(media_file, config, embedding_model, vector_store)
+            ingest_file(
+                media_file,
+                config,
+                embedding_model,
+                vector_store,
+                access_tags=access_tags if access_tags else None,
+            )
 
         logger.info("✓ All files processed successfully.")
 

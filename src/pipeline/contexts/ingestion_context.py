@@ -22,4 +22,7 @@ class IngestionContext(PipelineContext):
     markdown_path: Optional[Path] = None
     chunks: list[Document] = []
     vectors: list[list[float]] = []
-    metadata: dict[str, Any] = {}
+    metadata: dict[str, Any] = {}  # Metadata extracted from the loaded document
+    
+    access_metadata: dict[str, Any] = {}  # Additional metadata for access control
+    access_tags: list[str] = []  # Tags for document-level access control

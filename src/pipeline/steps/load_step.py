@@ -33,6 +33,11 @@ class LoadStep:
         logger = logging.getLogger(__name__)
         logger.info(f"Loading document: {context.file_path}")
 
+        loaded_docs = self.loader.load_documents()
+        
+        if loaded_docs:
+            context.metadata = loaded_docs[0].metadata.copy()
+
         md_text = self.loader.to_markdown_text()
         context.raw_text = md_text
         

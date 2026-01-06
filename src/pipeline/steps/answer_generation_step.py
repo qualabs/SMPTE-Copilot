@@ -40,7 +40,7 @@ class GenerationStep(PipelineStep):
         logger = logging.getLogger(__name__)
 
         if not context.retrieved_docs:
-            context.mark_failed("No retrieved docs available. Retrieve step must run first.")
+            logger.info("No retrieved docs available. Skipping answer generation.")
             return
 
         retrieved: List[Tuple[Document, float]] = context.retrieved_docs

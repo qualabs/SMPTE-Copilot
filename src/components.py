@@ -3,7 +3,6 @@ from __future__ import annotations
 """Utility module for initializing RAG pipeline components from configuration."""
 
 import logging
-from pathlib import Path
 from typing import NamedTuple
 
 from . import (
@@ -47,14 +46,6 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
         config = Config.get_config()
 
     logger = logging.getLogger(__name__)
-
-    vector_db_path: Path = config.vector_store.persist_directory
-    if not vector_db_path.exists():
-        raise RuntimeError(
-            f"Vector database not found at {vector_db_path}. "
-            "Please run ingestion first."
-        )
-
     logger.info("Initializing RAG components...")
 
     embedding_model = EmbeddingModelFactory.create(
@@ -62,12 +53,14 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
         **(config.embedding.embed_config or {}),
     )
 
+    store_config = {
+            "embedding_function": embedding_model,
+            **(config.vector_store.store_config or {}),
+    }    
+
     vector_store = VectorStoreFactory.create(
         config.vector_store.store_name,
-        persist_directory=str(vector_db_path),
-        collection_name=config.vector_store.collection_name,
-        embedding_function=embedding_model,
-        **(config.vector_store.store_config or {}),
+        **store_config,
     )
 
     retriever_kwargs = {"vector_store": vector_store, "k": config.retrieval.k}
@@ -94,7 +87,12 @@ def initialize_rag_components(config: Config | None = None) -> RAGComponents:
     )
 
 
-def execute_query(components: RAGComponents, query: str) -> QueryContext:
+def execute_query(
+    components: RAGComponents,
+    query: str,
+    user_role: str = None,
+    role_mapping: dict[str, list[str]] = None,
+) -> QueryContext:
     """Execute a RAG query using the provided components
 
     Parameters
@@ -103,6 +101,10 @@ def execute_query(components: RAGComponents, query: str) -> QueryContext:
         Initialized RAG components
     query : str
         User's question or query text
+    user_role : str, optional
+        User's role for access control (expanded to tags via role_mapping)
+    role_mapping : dict[str, list[str]], optional
+        Role-to-tags mapping for access control
 
     Returns
     -------
@@ -113,6 +115,12 @@ def execute_query(components: RAGComponents, query: str) -> QueryContext:
     logger.info(f"Executing query: {query}")
 
     context = QueryContext(user_query=query)
+    
+    # Set tag-based access control fields if provided
+    if user_role:
+        context.user_role = user_role
+    if role_mapping:
+        context.role_mapping = role_mapping
 
     steps = [
         QueryEmbeddingStep(components.embedding_model),

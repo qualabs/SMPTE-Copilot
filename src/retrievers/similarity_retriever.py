@@ -34,14 +34,33 @@ class DocumentRetriever:
         """
         self.vector_store = vector_store
         self.k = k
+        self.metadata_filter: Any = None
+
+    def set_filter(self, filter: Any | None) -> None:
+        """Set the metadata filter for retrieval.
+        
+        Parameters
+        ----------
+        filter
+            Optional metadata filter (vector store specific).
+        """
+        self.metadata_filter = filter
 
     def retrieve(self, query: str) -> list[Document]:
         """Retrieve relevant documents for a query."""
-        return self.vector_store.similarity_search(query, k=self.k)
+        return self.vector_store.similarity_search(
+            query, 
+            k=self.k, 
+            filter=self.metadata_filter
+        )
 
     def retrieve_with_scores(self, query: str) -> list[tuple[Document, float]]:
         """Retrieve documents with similarity scores."""
-        return self.vector_store.similarity_search_with_score(query, k=self.k)
+        return self.vector_store.similarity_search_with_score(
+            query, 
+            k=self.k, 
+            filter=self.metadata_filter
+        )
 
 
 def create_similarity_retriever(config: dict[str, Any]) -> Retriever:

@@ -8,6 +8,7 @@ import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+from .access_control import AccessControlConfig
 from .chunking import ChunkingConfig
 from .constants import CONFIG_FILE_NAME
 from .embedding import EmbeddingConfig
@@ -32,6 +33,7 @@ class Config(BaseSettings):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     paths: PathsConfig = Field(default_factory=PathsConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    access_control: AccessControlConfig = Field(default_factory=AccessControlConfig)
 
     @classmethod
     def from_file(cls, config_path: Path) -> "Config":

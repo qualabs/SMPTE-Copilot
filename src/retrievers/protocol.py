@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Protocol for retriever implementations."""
 
-from typing import Protocol
+from typing import Any, Optional, Protocol
 
 from langchain.schema import Document
 
@@ -20,5 +20,15 @@ class Retriever(Protocol):
 
     def retrieve_with_scores(self, query: str) -> list[tuple[Document, float]]:
         """Retrieve documents with similarity scores."""
+        ...
+
+    def set_filter(self, filter: Optional[Any]) -> None:
+        """Set the metadata filter for retrieval.
+        
+        Parameters
+        ----------
+        filter
+            Optional metadata filter (vector store specific).
+        """
         ...
 

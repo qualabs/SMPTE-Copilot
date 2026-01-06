@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Simple script to query the vector database with a question."""
 
+import argparse
+import json
 import logging
 import sys
+from pathlib import Path
 
 from src import Config
 from src.cli.constants import (
@@ -20,26 +23,80 @@ from src.logger import Logger
 from src.pipeline import PipelineStatus
 
 
+def load_role_mapping(mapping_file: str) -> dict[str, list[str]]:
+    """Load role-to-tags mapping from JSON file.
+
+    Parameters
+    ----------
+    mapping_file : str
+        Path to the JSON file containing role-to-tags mapping.
+
+    Returns
+    -------
+    dict[str, list[str]]
+        Role-to-tags mapping, or empty dict if file doesn't exist.
+    """
+    logger = logging.getLogger()
+    try:
+        mapping_path = Path(mapping_file)
+        if mapping_path.exists():
+            with open(mapping_path, "r") as f:
+                return json.load(f)
+        else:
+            logger.warning(f"Role mapping file not found: {mapping_file}")
+    except Exception as e:
+        logger.warning(f"Could not load role mapping: {e}")
+    return {}
+
+
 def main():
     """Query the vector database with a question from command line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Query vector database with role-aware access control from config"
+    )
+    parser.add_argument(
+        "query",
+        nargs="+",
+        help="Search query string",
+    )
+    args = parser.parse_args()
+
     config = Config.get_config()
 
     Logger.setup(config)
     logger = logging.getLogger(__name__)
 
-    query = " ".join(sys.argv[1:])
-
+    query = " ".join(args.query)
+    
+    user_role = config.access_control.default_user_role
+    role_mapping = {}
+    if config.access_control.role_mapping_file:
+        role_mapping = load_role_mapping(str(config.access_control.role_mapping_file))
+        
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("Querying Vector Database")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"Query: {query}\n")
+    logger.info(f"Query: {query}")
+    if user_role:
+        logger.info(f"User role: {user_role}")
+    if role_mapping:
+        logger.info(f"Role mapping loaded: {len(role_mapping)} roles")
+        if user_role and user_role in role_mapping:
+            logger.info(f"Role '{user_role}' maps to tags: {role_mapping[user_role]}")
+        
+    logger.info("")
 
     try:
         # Initialize RAG components
         components = initialize_rag_components(config)
 
-        # Execute query using shared logic
-        context = execute_query(components, query)
+        # Execute query using shared logic with access control
+        context = execute_query(
+            components,
+            query,
+            user_role=user_role,
+            role_mapping=role_mapping,
+        )
 
         if context.status == PipelineStatus.FAILED:
             raise RuntimeError(f"Pipeline failed: {context.error}")
