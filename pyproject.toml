@@ -30,9 +30,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "ipykernel>=6.29.0",
-  "jupyter>=1.0.0",
-  "ruff>=0.1.0",
+    "ipykernel>=6.29.0",
+    "jupyter>=1.0.0",
+    "ruff>=0.1.0",
+    "pre-commit>=3.0.0",
 ]
 openai = [
   "openai>=1.0.0",  # For OpenAI embeddings
