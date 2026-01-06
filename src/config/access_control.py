@@ -23,11 +23,7 @@ class AccessControlConfig(BaseSettings):
     # Query settings
     default_user_role: Optional[str] = Field(
         default=None,
-        description="Default user role for query access control",
-    )
-    default_user_tags: list[str] = Field(
-        default_factory=list,
-        description="Default user tags for query access control (comma-separated or list)",
+        description="Default user role for query access control (expanded to tags via role_mapping)",
     )
     role_mapping_file: Optional[Path] = Field(
         default=None,

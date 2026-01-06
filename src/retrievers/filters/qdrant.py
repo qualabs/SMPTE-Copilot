@@ -19,17 +19,17 @@ class QdrantFilterBuilder:
     def build(
         self,
         user_role: Optional[str] = None,
-        user_tags: Optional[list[str]] = None,
         role_mapping: Optional[dict[str, list[str]]] = None,
     ) -> Optional[Any]:
-        """Build Qdrant metadata filter for role-aware access control.
+        """Build Qdrant metadata filter for tag-based access control.
+
+        Roles are automatically converted to tags using role_mapping.
+        Only filters by access_tags - simpler and more consistent model.
 
         Parameters
         ----------
         user_role : str, optional
-            User's primary role.
-        user_tags : list[str], optional
-            User's direct access tags.
+            User's primary role (will be expanded to tags via role_mapping).
         role_mapping : dict[str, list[str]], optional
             Mapping of roles to authorized tags.
 
@@ -38,41 +38,36 @@ class QdrantFilterBuilder:
         Filter or None
             Qdrant Filter object, or None if no filtering needed.
         """
-        if not user_role and not user_tags:
-            self._logger.debug("No role or tags provided - skipping access control filtering")
+        if not user_role or not role_mapping:
+            self._logger.debug("No role or role_mapping provided - skipping access control filtering")
             return None
-
-        authorized_tags: set[str] = set(user_tags or [])
-        if user_role and role_mapping:
-            role_tags = role_mapping.get(user_role, [])
-            authorized_tags.update(role_tags)
-            self._logger.debug(f"User role '{user_role}' expanded to tags: {role_tags}")
-
-        should_conditions: list[FieldCondition] = []
-
-        if user_role:
-            should_conditions.append(
-                FieldCondition(
-                    key="metadata.required_role_strict", match=MatchValue(value=user_role)
-                )
+        
+        authorized_tags = role_mapping.get(user_role, [])
+        if not authorized_tags:
+            self._logger.warning(
+                f"User role '{user_role}' not found in role_mapping or has no authorized tags. "
+                f"No access granted - returning filter that matches nothing."
             )
-            self._logger.debug(f"Added role filter: required_role_strict == '{user_role}'")
-
-        if authorized_tags:
-            should_conditions.append(
-                FieldCondition(
-                    key="metadata.access_tags", match=MatchAny(any=list(authorized_tags))
-                )
+            return Filter(
+                must=[
+                    FieldCondition(
+                        key="access_tags",
+                        match=MatchAny(any=["__NO_ACCESS__"])
+                    )
+                ]
             )
-            self._logger.debug(f"Added tag filter: access_tags matches any of {authorized_tags}")
 
-        if not should_conditions:
-            self._logger.debug("No filter conditions generated")
-            return None
+        self._logger.debug(f"User role '{user_role}' expanded to tags: {authorized_tags}")
 
-        filter_obj = Filter(should=should_conditions)
+        filter_obj = Filter(
+            must=[
+                FieldCondition(
+                    key="access_tags", match=MatchAny(any=authorized_tags)
+                )
+            ]
+        )
         self._logger.info(
-            f"Built Qdrant access filter for role='{user_role}', tags={authorized_tags}"
+            f"Built Qdrant access filter for role '{user_role}' -> tags={authorized_tags}"
         )
         return filter_obj
 

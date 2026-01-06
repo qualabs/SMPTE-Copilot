@@ -34,12 +34,12 @@ class RetrieveStep:
         """
         logger = logging.getLogger(__name__)
         
-        # Build access filter if role-aware access control is enabled
+        # Build access filter if tag-based access control is enabled
+        # Roles are automatically converted to tags via role_mapping
         metadata_filter = None
-        if context.user_role or context.user_tags:
+        if context.user_role and context.role_mapping:
             logger.info(
-                f"Applying role-aware access control: role='{context.user_role}', "
-                f"tags={context.user_tags}"
+                f"Applying tag-based access control: role='{context.user_role}'"
             )
             
             # Get vector store type from configuration
@@ -50,7 +50,6 @@ class RetrieveStep:
                 builder = FilterBuilderFactory.create(vector_store_type)
                 metadata_filter = builder.build(
                     user_role=context.user_role,
-                    user_tags=context.user_tags,
                     role_mapping=context.role_mapping,
                 )
                 self.retriever.set_filter(metadata_filter)

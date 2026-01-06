@@ -35,6 +35,7 @@ services:
     volumes:
       - vector_db:/app/vector_db
       - ./config.yaml:/app/config.yaml:ro
+      - ./role_mapping.json:/app/role_mapping.json:ro
     environment:
       - PYTHONUNBUFFERED=1
     command: python src/cli/query.py --help
@@ -51,6 +52,7 @@ services:
     volumes:
       - vector_db:/app/vector_db
       - ./config.yaml:/app/config.yaml:ro
+      - ./role_mapping.json:/app/role_mapping.json:ro
     environment:
       - PYTHONUNBUFFERED=1
     command: uvicorn src.api.server:app --host 0.0.0.0 --port 8000

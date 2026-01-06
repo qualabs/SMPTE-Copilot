@@ -68,23 +68,22 @@ def main():
 
     query = " ".join(args.query)
     
-    # Get access control settings from config
     user_role = config.access_control.default_user_role
-    user_tags = config.access_control.default_user_tags or None
-    role_mapping = None
+    role_mapping = {}
     if config.access_control.role_mapping_file:
         role_mapping = load_role_mapping(str(config.access_control.role_mapping_file))
-
+        
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("Querying Vector Database")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Query: {query}")
     if user_role:
         logger.info(f"User role: {user_role}")
-    if user_tags:
-        logger.info(f"User tags: {user_tags}")
     if role_mapping:
         logger.info(f"Role mapping loaded: {len(role_mapping)} roles")
+        if user_role and user_role in role_mapping:
+            logger.info(f"Role '{user_role}' maps to tags: {role_mapping[user_role]}")
+        
     logger.info("")
 
     try:
@@ -96,7 +95,6 @@ def main():
             components,
             query,
             user_role=user_role,
-            user_tags=user_tags if user_tags else None,
             role_mapping=role_mapping,
         )
 

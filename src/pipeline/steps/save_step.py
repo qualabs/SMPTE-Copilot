@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Step that saves chunks with embeddings to the vector store."""
 
+import hashlib
 import logging
 
 from ...embeddings.constants import EMBEDDING_METADATA_KEY
@@ -27,8 +28,7 @@ class SaveStep:
         """Inject access control metadata into a metadata dictionary.
         
         Prioritizes file metadata over global config. If metadata already
-        contains access_tags or required_role_strict, those are preserved.
-        Otherwise, falls back to context values.
+        contains access_tags, those are preserved. Otherwise, falls back to context values.
 
         Parameters
         ----------
@@ -39,8 +39,7 @@ class SaveStep:
         """
         if "access_tags" not in metadata and context.access_tags:
             metadata["access_tags"] = context.access_tags
-        if "required_role_strict" not in metadata and context.required_role_strict:
-            metadata["required_role_strict"] = context.required_role_strict
+        
         if context.access_metadata:
             metadata.update(context.access_metadata)
 
@@ -76,7 +75,10 @@ class SaveStep:
             for metadata in metadatas:
                 self._inject_access_metadata(metadata, context)
             
-            ids = list(range(len(context.chunks)))
+            file_path_str = str(context.file_path.resolve())
+            file_hash_bytes = hashlib.md5(file_path_str.encode()).digest()
+            file_hash = int.from_bytes(file_hash_bytes[:8], byteorder='big', signed=False)
+            ids = [file_hash + i for i in range(len(context.chunks))]
 
             self.vector_store.add_texts(
                 texts=texts,

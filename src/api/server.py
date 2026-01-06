@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """FastAPI server exposing OpenAI-compatible chat completions endpoint"""
 
+import json
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -14,6 +16,32 @@ from src.api.models import ChatCompletionRequest, ChatCompletionResponse
 from src.components import RAGComponents, execute_query, initialize_rag_components
 from src.logger import Logger
 from src.pipeline import PipelineStatus
+
+
+def load_role_mapping(mapping_file: str) -> dict[str, list[str]]:
+    """Load role-to-tags mapping from JSON file.
+
+    Parameters
+    ----------
+    mapping_file : str
+        Path to the JSON file containing role-to-tags mapping.
+
+    Returns
+    -------
+    dict[str, list[str]]
+        Role-to-tags mapping, or empty dict if file doesn't exist.
+    """
+    logger = logging.getLogger(__name__)
+    try:
+        mapping_path = Path(mapping_file)
+        if mapping_path.exists():
+            with open(mapping_path, "r") as f:
+                return json.load(f)
+        else:
+            logger.warning(f"Role mapping file not found: {mapping_file}")
+    except Exception as e:
+        logger.warning(f"Could not load role mapping: {e}")
+    return {}
 
 
 @asynccontextmanager
@@ -29,6 +57,19 @@ async def lifespan(app: FastAPI):
         Logger.setup(config)
         app.state.logger.info("Initializing RAG components...")
         app.state.components = initialize_rag_components(config)
+        
+        # Load access control configuration
+        app.state.user_role = config.access_control.default_user_role
+        app.state.role_mapping = None
+        
+        if config.access_control.role_mapping_file:
+            app.state.role_mapping = load_role_mapping(str(config.access_control.role_mapping_file))
+            if app.state.user_role:
+                app.state.logger.info(
+                    f"Access control enabled: role='{app.state.user_role}', "
+                    f"mapping loaded with {len(app.state.role_mapping)} roles"
+                )
+        
         app.state.initialized = True
         app.state.logger.info("Server startup complete")
     except Exception as e:
@@ -109,7 +150,12 @@ async def chat_completions(request: ChatCompletionRequest) -> ChatCompletionResp
     logger.info(f"Processing query: {query}")
 
     try:
-        context = execute_query(components, query)
+        context = execute_query(
+            components,
+            query,
+            user_role=app.state.user_role,
+            role_mapping=app.state.role_mapping,
+        )
 
         if context.status == PipelineStatus.FAILED:
             logger.error(f"Pipeline failed: {context.error}")

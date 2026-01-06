@@ -91,7 +91,6 @@ def execute_query(
     components: RAGComponents,
     query: str,
     user_role: str = None,
-    user_tags: list[str] = None,
     role_mapping: dict[str, list[str]] = None,
 ) -> QueryContext:
     """Execute a RAG query using the provided components
@@ -103,9 +102,7 @@ def execute_query(
     query : str
         User's question or query text
     user_role : str, optional
-        User's role for access control
-    user_tags : list[str], optional
-        User's access tags for access control
+        User's role for access control (expanded to tags via role_mapping)
     role_mapping : dict[str, list[str]], optional
         Role-to-tags mapping for access control
 
@@ -119,11 +116,9 @@ def execute_query(
 
     context = QueryContext(user_query=query)
     
-    # Set role-aware access control fields if provided
+    # Set tag-based access control fields if provided
     if user_role:
         context.user_role = user_role
-    if user_tags:
-        context.user_tags = user_tags
     if role_mapping:
         context.role_mapping = role_mapping
 

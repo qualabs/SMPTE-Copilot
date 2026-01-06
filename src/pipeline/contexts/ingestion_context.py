@@ -24,7 +24,5 @@ class IngestionContext(PipelineContext):
     vectors: list[list[float]] = []
     metadata: dict[str, Any] = {}  # Metadata extracted from the loaded document
     
-    # Role-aware access control fields (optional)
     access_metadata: dict[str, Any] = {}  # Additional metadata for access control
     access_tags: list[str] = []  # Tags for document-level access control
-    required_role_strict: Optional[str] = None  # Strict role requirement for document access

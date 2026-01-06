@@ -23,8 +23,7 @@ class QueryContext(PipelineContext):
     llm_response: Optional[str] = None
     citations: Optional[List[dict]] = None
     
-    # Role-aware access control fields (optional)
-    user_role: Optional[str] = None  # User role for access control
-    user_tags: list[str] = []  # User tags for access control
+    # Roles are automatically converted to tags via role_mapping
+    user_role: Optional[str] = None
     role_mapping: Optional[dict[str, list[str]]] = None  # Role-to-tags mapping
 

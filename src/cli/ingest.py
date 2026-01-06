@@ -41,7 +41,6 @@ def ingest_file(
     embedding_model: Embeddings,
     vector_store: VectorStore,
     access_tags: list[str] = None,
-    required_role: str = None,
 ) -> None:
     """Ingest a media file into the vector database using the pipeline pattern.
 
@@ -57,16 +56,12 @@ def ingest_file(
         Vector store instance.
     access_tags
         Optional list of access control tags for the document.
-    required_role
-        Optional required role for strict access control.
     """
     logger = logging.getLogger(__name__)
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Ingesting: {file_path}")
     if access_tags:
         logger.info(f"Access tags: {access_tags}")
-    if required_role:
-        logger.info(f"Required role: {required_role}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
     loader_name, loader_config_from_mapping = (
@@ -100,11 +95,9 @@ def ingest_file(
     logger.info("Storing in vector database...")
     context = IngestionContext(file_path=file_path)
     
-    # Set role-aware access control fields if provided
+    # Set tag-based access control if provided
     if access_tags:
         context.access_tags = access_tags
-    if required_role:
-        context.required_role_strict = required_role
 
     preprocessing_config = config.preprocessing.preprocessing_config or {}
     preprocessor = PreprocessorFactory.create(
@@ -147,7 +140,6 @@ def main():
     
     # Get access control settings from config
     access_tags = config.access_control.default_access_tags or None
-    required_role = config.access_control.default_required_role
 
     try:
         media_files = LoaderHelper.resolve_media_inputs(input_path)
@@ -174,8 +166,6 @@ def main():
 
     if access_tags:
         logger.info(f"Access tags: {access_tags}")
-    if required_role:
-        logger.info(f"Required role: {required_role}")
     logger.info("")
 
     try:
@@ -200,7 +190,6 @@ def main():
                 embedding_model,
                 vector_store,
                 access_tags=access_tags if access_tags else None,
-                required_role=required_role,
             )
 
         logger.info("✓ All files processed successfully.")
