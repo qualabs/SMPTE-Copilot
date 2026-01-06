@@ -1,5 +1,5 @@
 services:
-  # Qdrant vector database service (optional - for role-aware access control)
+  # Qdrant vector database service (optional - only needed when using Qdrant)
   qdrant:
     image: qdrant/qdrant:v1.10.0
     container_name: qdrant
@@ -24,8 +24,6 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     command: python src/cli/ingest.py --help
-    depends_on:
-      - qdrant
 
   # Service for querying documents
   query:
@@ -39,8 +37,6 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     command: python src/cli/query.py --help
-    depends_on:
-      - qdrant
 
   # API Server - OpenAI-compatible endpoint
   api:
@@ -56,8 +52,6 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     command: uvicorn src.api.server:app --host 0.0.0.0 --port 8000
-    depends_on:
-      - qdrant
     healthcheck:
       test:
         [
