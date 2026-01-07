@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict
 
 from .base_tokenizer import Tokenizer
 
+
 class SimpleTokenizer(Tokenizer):
     """Simple tokenizer that uses character-based approximation for token counting.
-    
+
     This tokenizer doesn't require any external API and works independently
     of the embedding model. It uses a fast approximation (4 chars per token).
     """

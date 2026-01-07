@@ -7,13 +7,14 @@ from typing import Any, Optional
 from langchain.schema import Document
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
 from qdrant_client.http.exceptions import UnexpectedResponse
+from qdrant_client.models import Distance, PointStruct, VectorParams
 
 from ..constants import DEFAULT_RETRIEVAL_K
 from ..embeddings.protocol import Embeddings
 from .constants import DEFAULT_COLLECTION_NAME
 from .protocol import VectorStore
+
 
 class QdrantVectorStoreWrapper:
     """Wrapper for QdrantVectorStore to support pre-computed embeddings in add_texts."""
@@ -73,9 +74,9 @@ class QdrantVectorStoreWrapper:
 
         for doc_id, text, embedding, metadata in zip(ids, texts, embeddings, metadatas):
             vector = list(embedding)
-            
+
             payload = {"page_content": text, **(metadata or {})}
-            
+
             point = PointStruct(
                 id=doc_id,
                 vector=vector,
@@ -96,8 +97,8 @@ class QdrantVectorStoreWrapper:
             raise
 
     def similarity_search(
-        self, 
-        query: str, 
+        self,
+        query: str,
         k: int = DEFAULT_RETRIEVAL_K,
         filter: Optional[Any] = None,
     ) -> list[Document]:
@@ -108,8 +109,8 @@ class QdrantVectorStoreWrapper:
         return self._store.similarity_search(query, k=k)
 
     def similarity_search_with_score(
-        self, 
-        query: str, 
+        self,
+        query: str,
         k: int = DEFAULT_RETRIEVAL_K,
         filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
@@ -125,21 +126,21 @@ class QdrantVectorStoreWrapper:
 
     def persist(self) -> None:
         """Persist accumulated points to the Qdrant server.
-        
+
         This method performs the actual upsert operation with all points
         that were accumulated via add_texts() calls. After persisting,
         the pending points buffer is cleared.
         """
         if not self._pending_points:
             return
-        
+
         self._logger.info(f"Persisting {len(self._pending_points)} points to Qdrant")
-        
+
         self._client.upsert(
             collection_name=self._collection_name,
             points=self._pending_points,
         )
-        
+
         self._pending_points.clear()
 
 def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
@@ -196,8 +197,8 @@ def create_qdrant_store(config: dict[str, Any]) -> VectorStore:
             )
         else:
             raise
-    except Exception as e:
-        logger.error(f"Failed to create Qdrant collection: {e}")
+    except Exception:
+        logger.exception("Failed to create Qdrant collection")
         raise
 
     qdrant_store = QdrantVectorStore(

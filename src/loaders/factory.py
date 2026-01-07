@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Callable, ClassVar
 
-
+from .docling_loader import create_docling_loader
 from .protocol import DocumentLoader
 from .pymupdf_loader import create_pymupdf_loader
-from .docling_loader import create_docling_loader
-from .whisper_loader import create_whisper_loader
 from .types import LoaderType
+from .whisper_loader import create_whisper_loader
 
 
 class LoaderFactory:

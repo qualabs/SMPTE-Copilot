@@ -6,7 +6,6 @@ import logging
 
 from ...loaders.protocol import DocumentLoader
 from ..contexts.ingestion_context import IngestionContext
-from ..step import PipelineStep
 
 
 class LoadStep:
@@ -34,13 +33,13 @@ class LoadStep:
         logger.info(f"Loading document: {context.file_path}")
 
         loaded_docs = self.loader.load_documents()
-        
+
         if loaded_docs:
             context.metadata = loaded_docs[0].metadata.copy()
 
         md_text = self.loader.to_markdown_text()
         context.raw_text = md_text
-        
+
         markdown_path = self.loader.to_markdown_file(md_text=md_text)
         context.markdown_path = markdown_path
 

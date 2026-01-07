@@ -64,7 +64,7 @@ class ChromaDBWrapper:
         filter: Optional[Any] = None,
     ) -> list[Document]:
         """Search for similar documents.
-        
+
         Note: ChromaDB does not support metadata filtering in this implementation.
         The filter parameter is ignored.
         """
@@ -77,7 +77,7 @@ class ChromaDBWrapper:
         filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores.
-        
+
         Note: ChromaDB does not support metadata filtering in this implementation.
         The filter parameter is ignored.
         """

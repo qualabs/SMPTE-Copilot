@@ -21,8 +21,8 @@ Usage:
 from typing import Any, Callable, ClassVar
 
 from .chromadb import create_chromadb_store
-from .qdrant import create_qdrant_store
 from .protocol import VectorStore
+from .qdrant import create_qdrant_store
 from .types import VectorStoreType
 
 

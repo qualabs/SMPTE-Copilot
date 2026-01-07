@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from google import genai
 
@@ -22,7 +22,7 @@ class GeminiLLM(LLM):
         return resp.text or ""
 
 
-def create_gemini_llm(config: Dict[str, Any]) -> LLM:
+def create_gemini_llm(config: dict[str, Any]) -> LLM:
     return GeminiLLM(
         model=config.get("model", "gemini-2.5-flash"),
         api_key=config.get("api_key"),

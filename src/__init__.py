@@ -13,7 +13,7 @@ from .loaders import LoaderFactory, LoaderHelper
 from .logger import Logger
 from .preprocessing import PreprocessorFactory
 from .retrievers import RetrieverFactory
-from .vector_stores import VectorStoreFactory, VectorStore
+from .vector_stores import VectorStore, VectorStoreFactory
 
 __all__ = [
     # Protocols (used for type hints)

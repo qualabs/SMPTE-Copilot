@@ -10,7 +10,6 @@ from ...embeddings.constants import EMBEDDING_METADATA_KEY, EMBEDDING_MODEL_META
 from ...embeddings.protocol import Embeddings
 from ...embeddings.types import EmbeddingModelType
 from ..contexts.ingestion_context import IngestionContext
-from ..step import PipelineStep
 
 
 class EmbeddingGenerationStep:

@@ -9,14 +9,14 @@ from .models import ChatCompletionChoice, ChatCompletionResponse, Message, Usage
 
 def estimate_token_usage(prompt: Optional[str], answer: str) -> Usage:
     """Estimate token usage for the query and response.
-    
+
     Parameters
     ----------
     prompt
         The prompt sent to the LLM
     answer
         The generated answer
-        
+
     Returns
     -------
     Usage object with estimated token counts
@@ -24,7 +24,7 @@ def estimate_token_usage(prompt: Optional[str], answer: str) -> Usage:
     prompt_tokens = len(prompt.split()) if prompt else 0
     completion_tokens = len(answer.split())
     total_tokens = prompt_tokens + completion_tokens
-    
+
     return Usage(
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
@@ -38,7 +38,7 @@ def build_chat_response(
     usage: Usage,
 ) -> ChatCompletionResponse:
     """Build an OpenAI-compatible chat completion response.
-    
+
     Parameters
     ----------
     answer
@@ -47,20 +47,20 @@ def build_chat_response(
         The model identifier to include in the response
     usage
         Token usage statistics
-        
+
     Returns
     -------
     ChatCompletionResponse object
     """
     response_id = f"chatcmpl-{uuid.uuid4().hex[:24]}"
     created_timestamp = int(time.time())
-    
+
     choice = ChatCompletionChoice(
         index=0,
         message=Message(role="assistant", content=answer),
         finish_reason="stop",
     )
-    
+
     return ChatCompletionResponse(
         id=response_id,
         created=created_timestamp,

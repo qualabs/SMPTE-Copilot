@@ -10,7 +10,6 @@ from typing import Any, Optional, Union
 import whisper
 from langchain.schema import Document
 
-from ..constants import DEFAULT_ENCODING
 from .protocol import DocumentLoader
 
 PageSpecifier = Union[Sequence[int], range, None]
@@ -38,7 +37,7 @@ class WhisperLoader(DocumentLoader):
             - Any other keys are stored and can be accessed via self.config
         """
         self.logger = logging.getLogger(__name__)
-        
+
         file_path = config.get("file_path")
         if not file_path:
             raise ValueError("'file_path' is required in loader configuration")
@@ -90,9 +89,9 @@ class WhisperLoader(DocumentLoader):
             transcribe_kwargs = {
                 "language": self.language,
             }
-            
+
             result = model.transcribe(str(self.input_path), **transcribe_kwargs)
-            
+
             if not result.get("text", "").strip():
                 self.logger.warning(f"Empty transcription for {self.input_path}")
 
@@ -155,7 +154,7 @@ class WhisperLoader(DocumentLoader):
         Transcription as Markdown-formatted string with timestamps.
         """
         result = self._get_transcription_result()
-        
+
         if not result.get("text", "").strip():
             return ""
 
@@ -167,12 +166,12 @@ class WhisperLoader(DocumentLoader):
             return f"# Transcription\n\n{result['text'].strip()}"
 
         markdown_lines = ["# Transcription\n"]
-        
+
         for segment in segments:
             start_time = segment.get("start", 0)
             end_time = segment.get("end", 0)
             text = segment.get("text", "").strip()
-            
+
             if not text:
                 continue
 

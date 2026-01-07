@@ -41,7 +41,7 @@ class DocumentLoader(Protocol):
         pages: PageSpecifier = None,
         output_path: Optional[Path] = None,
         overwrite: bool = True,
-        md_text: str = None,
+        md_text: Optional[str] = None,
     ) -> Path:
         """Save the document as a Markdown file.
 

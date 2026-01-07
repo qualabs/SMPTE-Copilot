@@ -56,7 +56,7 @@ class PipelineExecutor:
 
             step_name = step.__class__.__name__
             start_time = time.time()
-            
+
             try:
                 logger.info(f"Starting step: {step_name}")
                 step.run(context)
@@ -64,7 +64,7 @@ class PipelineExecutor:
                 logger.info(f"Completed step: {step_name} (took {elapsed_time:.2f}s)")
             except Exception as e:
                 elapsed_time = time.time() - start_time
-                logger.error(f"Failed step: {step_name} after {elapsed_time:.2f}s: {e}")
+                logger.exception(f"Failed step: {step_name} after {elapsed_time:.2f}s")
                 context.mark_failed(str(e))
                 raise
 

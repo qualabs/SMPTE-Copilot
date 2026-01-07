@@ -2,14 +2,15 @@ from __future__ import annotations
 
 """RapidFuzz-based preprocessor implementation."""
 
-import re
-from typing import Any
-from collections import defaultdict
-
 import logging
+import re
+from collections import defaultdict
+from typing import Any, Optional
+
 from rapidfuzz import fuzz
 
 from .protocol import Preprocessor
+
 
 class RapidFuzzPreprocessor:
     """Preprocessor using RapidFuzz for fuzzy matching to remove repeated content.
@@ -120,7 +121,7 @@ class RapidFuzzPreprocessor:
             for i in candidate_group_indices:
                 if i in indices_to_remove:
                     continue
-                    
+
                 line = normalized_lines[i]
                 matched_cluster_idx = None
                 for cluster_idx, cluster in enumerate(clusters):
@@ -145,7 +146,7 @@ class RapidFuzzPreprocessor:
 
         return indices_to_remove
 
-    def _group_numeric_lines(self, normalized_lines: list[str | None]) -> set[int]:
+    def _group_numeric_lines(self, normalized_lines: list[Optional[str]]) -> set[int]:
         """Group lines that contain only numbers.
 
         This handles cases like page numbers "1", "2", "3" that should be
@@ -171,7 +172,7 @@ class RapidFuzzPreprocessor:
             return set(numeric_indices)
         return set()
 
-    def _group_by_characteristics(self, normalized_lines: list[str | None]) -> dict[tuple, list[int]]:
+    def _group_by_characteristics(self, normalized_lines: list[Optional[str]]) -> dict[tuple, list[int]]:
         """Group lines by characteristics to reduce fuzzy matching comparisons.
 
         Groups lines by (length_category, prefix) where:
@@ -239,7 +240,7 @@ def create_rapidfuzz_preprocessor(config: dict[str, Any]) -> Preprocessor:
     """
     min_repetitions = config.get("min_repetitions", 3)
     similarity_threshold = config.get("similarity_threshold", 0.85)
-    
+
     return RapidFuzzPreprocessor(
         min_repetitions=min_repetitions,
         similarity_threshold=similarity_threshold,

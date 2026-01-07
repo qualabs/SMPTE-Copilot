@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Similarity search retriever implementation."""
 
-from typing import Any
+from typing import Any, Optional
 
 from langchain.schema import Document
 
@@ -36,9 +36,9 @@ class DocumentRetriever:
         self.k = k
         self.metadata_filter: Any = None
 
-    def set_filter(self, filter: Any | None) -> None:
+    def set_filter(self, filter: Optional[Any]) -> None:
         """Set the metadata filter for retrieval.
-        
+
         Parameters
         ----------
         filter
@@ -49,16 +49,16 @@ class DocumentRetriever:
     def retrieve(self, query: str) -> list[Document]:
         """Retrieve relevant documents for a query."""
         return self.vector_store.similarity_search(
-            query, 
-            k=self.k, 
+            query,
+            k=self.k,
             filter=self.metadata_filter
         )
 
     def retrieve_with_scores(self, query: str) -> list[tuple[Document, float]]:
         """Retrieve documents with similarity scores."""
         return self.vector_store.similarity_search_with_score(
-            query, 
-            k=self.k, 
+            query,
+            k=self.k,
             filter=self.metadata_filter
         )
 

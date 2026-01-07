@@ -25,7 +25,7 @@ class VectorStore(Protocol):
         filter: Optional[Any] = None,
     ) -> list[Document]:
         """Search for similar documents.
-        
+
         Parameters
         ----------
         query
@@ -44,7 +44,7 @@ class VectorStore(Protocol):
         filter: Optional[Any] = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores.
-        
+
         Parameters
         ----------
         query

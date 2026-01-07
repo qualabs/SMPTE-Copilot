@@ -12,13 +12,13 @@ from .access_control import AccessControlConfig
 from .chunking import ChunkingConfig
 from .constants import CONFIG_FILE_NAME
 from .embedding import EmbeddingConfig
+from .llm import LLMConfig
 from .loader import LoaderConfig
 from .logging import LoggingConfig
 from .paths import PathsConfig
 from .preprocessing import PreprocessingConfig
 from .retrieval import RetrievalConfig
 from .vector_store import VectorStoreConfig
-from .llm import LLMConfig
 
 
 class Config(BaseSettings):

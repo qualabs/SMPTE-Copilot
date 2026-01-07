@@ -4,6 +4,7 @@
 import logging
 import sys
 from pathlib import Path
+from typing import Optional
 
 from src import (
     ChunkerFactory,
@@ -22,8 +23,6 @@ from src.cli.constants import (
 )
 from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
 from src.loaders.helpers import LoaderHelper
-from src.loaders.types import LoaderType
-from src.chunkers.types import ChunkerType
 from src.logger import Logger
 from src.pipeline import IngestionContext, PipelineExecutor, PipelineStatus
 from src.pipeline.steps import (
@@ -40,7 +39,7 @@ def ingest_file(
     config: Config,
     embedding_model: Embeddings,
     vector_store: VectorStore,
-    access_tags: list[str] = None,
+    access_tags: Optional[list[str]] = None,
 ) -> None:
     """Ingest a media file into the vector database using the pipeline pattern.
 
@@ -73,7 +72,7 @@ def ingest_file(
         f"Converting {file_extension} file to Markdown "
         f"(loader: {loader_name})..."
     )
-    
+
     loader_config = LoaderHelper.create_loader_config(
         file_path,
         loader_name,
@@ -84,7 +83,7 @@ def ingest_file(
 
     chunker_config = config.chunking.chunker_config or {}
     embedding_config = config.embedding.embed_config or {}
-    
+
     chunker = ChunkerFactory.create(
         config.chunking.chunker_name,
         **chunker_config,
@@ -94,7 +93,7 @@ def ingest_file(
     logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
     logger.info("Storing in vector database...")
     context = IngestionContext(file_path=file_path)
-    
+
     # Set tag-based access control if provided
     if access_tags:
         context.access_tags = access_tags
@@ -137,7 +136,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     input_path = config.paths.input_path
-    
+
     # Get access control settings from config
     access_tags = config.access_control.default_access_tags or None
 
@@ -177,7 +176,7 @@ def main():
         store_config = {
             "embedding_function": embedding_model,
             **(config.vector_store.store_config or {}),
-        }    
+        }
         vector_store = VectorStoreFactory.create(
             config.vector_store.store_name,
             **store_config,

@@ -23,12 +23,36 @@ Follow this standard GitHub workflow:
     -   `feat/video-ingestion-module` 
     -   `fix/metadata-parser-issue`
 
-#### 4. Make your changes
+#### 4. Install pre-commit hooks (recommended)
+
+This project uses [pre-commit](https://pre-commit.com) to automatically run linting checks before commits. Install the hooks:
+
+```bash
+# Install development dependencies (includes ruff and pre-commit)
+pip install -e ".[dev]"
+
+# Install the git hooks
+pre-commit install
+```
+
+**Note:** The pre-commit hooks require `ruff` to be installed, which is included in the `[dev]` dependencies. Make sure you've installed the development dependencies before installing the hooks.
+
+After installation, the hooks will automatically run on every commit. You can also run them manually:
+
+```bash
+# Run on all files
+pre-commit run --all-files
+
+# Run on staged files only (automatic on commit)
+pre-commit run
+```
+
+#### 5. Make your changes
 -   Write clear, modular code.
 
-#### 5. Push your branch
+#### 6. Push your branch
 
-#### 6. Open a Pull Request (PR) with: 
+#### 7. Open a Pull Request (PR) with: 
 
 - **What** you changed
 - **Why** the change is needed

@@ -2,20 +2,17 @@ from __future__ import annotations
 
 """Hybrid chunker implementation using Docling's HybridChunker."""
 import logging
-
 import tempfile
 from pathlib import Path
 from typing import Any, Optional
 
+from docling.chunking import HybridChunker as DoclingHybridChunker
+from docling.document_converter import DocumentConverter
 from langchain.schema import Document
 
 from ..constants import DEFAULT_ENCODING
 from .protocol import Chunker
 from .tokenizers import Tokenizer, TokenizerFactory, TokenizerType
-
-from docling.chunking import HybridChunker as DoclingHybridChunker
-from docling.datamodel.base_models import InputFormat
-from docling.document_converter import DocumentConverter
 
 
 class HybridChunker:
@@ -52,15 +49,15 @@ class HybridChunker:
         self.merge_peers = merge_peers
 
         self.tokenizer = tokenizer
-        
+
         self.chunker = DoclingHybridChunker(
             tokenizer=self.tokenizer,
             max_tokens=max_tokens,
             merge_peers=merge_peers,
         )
-        
+
         self.doc_converter = DocumentConverter()
-    
+
     def _process_chunks(self, dl_doc: Any, metadata: dict) -> list[Document]:
         """Process Docling chunks into LangChain Documents.
 
@@ -77,11 +74,11 @@ class HybridChunker:
         """
         chunks = list(self.chunker.chunk(dl_doc=dl_doc))
         documents = []
-        
+
         for i, chunk in enumerate(chunks):
             chunk_text = self.chunker.contextualize(chunk=chunk)
             chunk_tokens = self.tokenizer.count_tokens(chunk_text)
-            
+
             self.logger.info(f"Chunk {i} has {chunk_tokens} tokens, max_tokens: {self.max_tokens}")
 
             if chunk_tokens > self.max_tokens:
@@ -102,14 +99,14 @@ class HybridChunker:
                     "chunking_method": "hybrid",
                 }
                 documents.append(Document(page_content=chunk_text, metadata=chunk_metadata))
-        
+
         final_count = len(documents)
         for idx, doc in enumerate(documents):
             doc.metadata["total_chunks"] = final_count
             doc.metadata["chunk_index"] = idx
-        
+
         return documents
-        
+
     def chunk_text(self, text: str, metadata: Optional[dict] = None) -> list[Document]:
         """Chunk text using hybrid chunking strategy.
 
@@ -128,17 +125,17 @@ class HybridChunker:
             return []
 
         metadata = metadata or {}
-        
+
         with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as tmp_file:
             tmp_file.write(text)
             tmp_path = tmp_file.name
-        
+
         try:
             result = self.doc_converter.convert(source=tmp_path)
             dl_doc = result.document
         finally:
             Path(tmp_path).unlink()
-        
+
         return self._process_chunks(dl_doc, metadata)
 
     def chunk_documents(self, documents: list[Document]) -> list[Document]:
@@ -164,9 +161,9 @@ class HybridChunker:
         return all_chunks
 
     def chunk_markdown_file(
-        self, 
-        file_path: str, 
-        encoding: str = DEFAULT_ENCODING
+        self,
+        file_path: str,
+        encoding: str = DEFAULT_ENCODING,
     ) -> list[Document]:
         """Load a markdown file and chunk it using hybrid chunking.
 
@@ -192,7 +189,7 @@ class HybridChunker:
 
         result = self.doc_converter.convert(source=str(path))
         dl_doc = result.document
-        
+
         return self._process_chunks(dl_doc, metadata)
 
 

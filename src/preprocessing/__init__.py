@@ -9,8 +9,8 @@ from .types import PreprocessorType
 
 __all__ = [
     "Preprocessor",
-    "PreprocessorType",
     "PreprocessorFactory",
+    "PreprocessorType",
     "RapidFuzzPreprocessor",
 ]
 

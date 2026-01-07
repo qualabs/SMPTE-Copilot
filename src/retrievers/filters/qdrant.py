@@ -4,9 +4,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional
 
-from .protocol import FilterBuilder
-
-from qdrant_client.models import FieldCondition, Filter, MatchAny, MatchValue
+from qdrant_client.models import FieldCondition, Filter, MatchAny
 
 
 class QdrantFilterBuilder:
@@ -41,7 +39,7 @@ class QdrantFilterBuilder:
         if not user_role or not role_mapping:
             self._logger.debug("No role or role_mapping provided - skipping access control filtering")
             return None
-        
+
         authorized_tags = role_mapping.get(user_role, [])
         if not authorized_tags:
             self._logger.warning(

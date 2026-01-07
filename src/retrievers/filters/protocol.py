@@ -6,10 +6,10 @@ from typing import Any, Optional, Protocol
 
 class FilterBuilder(Protocol):
     """Protocol for building access control filters for vector stores.
-    
+
     Each vector store implementation should provide its own filter builder
     that converts access control parameters into the appropriate filter format.
-    
+
     The system uses tag-based filtering exclusively. Roles are automatically
     converted to tags using role_mapping for a simpler, more consistent model.
     """

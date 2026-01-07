@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 """Gemini tokenizer implementation."""
-import os
 
 from typing import Any, Optional
 
-from pydantic import ConfigDict, Field
+from google import genai
+from pydantic import ConfigDict
 
 from .base_tokenizer import Tokenizer
-
-from google import genai
 
 
 class GeminiTokenizer(Tokenizer):
@@ -47,7 +45,7 @@ class GeminiTokenizer(Tokenizer):
         self.client = genai.Client(api_key=google_api_key)
         self.model = model
         self.max_tokens = max_tokens
-                
+
     def count_tokens(self, text: str) -> int:
         """Count tokens using Gemini's API with fallback to local estimation.
 

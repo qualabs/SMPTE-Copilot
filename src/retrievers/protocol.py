@@ -24,7 +24,7 @@ class Retriever(Protocol):
 
     def set_filter(self, filter: Optional[Any]) -> None:
         """Set the metadata filter for retrieval.
-        
+
         Parameters
         ----------
         filter
