@@ -23,10 +23,10 @@ from .vector_stores.protocol import VectorStore
 class RAGComponents(NamedTuple):
     """Container for initialized RAG pipeline components."""
 
-    embedding_model: Embeddings
-    vector_store: VectorStore
-    retriever: Retriever
-    llm: LLM
+    embedding_model: Optional[Embeddings]
+    vector_store: Optional[VectorStore]
+    retriever: Optional[Retriever]
+    llm: Optional[LLM]
 
 
 def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
@@ -48,34 +48,48 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
     logger = logging.getLogger(__name__)
     logger.info("Initializing RAG components...")
 
-    embedding_model = EmbeddingModelFactory.create(
-        config.embedding.embed_name,
-        **(config.embedding.embed_config or {}),
-    )
+    pipeline_config = config.pipeline.query
 
-    store_config = {
-            "embedding_function": embedding_model,
-            **(config.vector_store.store_config or {}),
-    }
+    embedding_model = None
+    vector_store = None
+    retriever = None
+    llm = None
 
-    vector_store = VectorStoreFactory.create(
-        config.vector_store.store_name,
-        **store_config,
-    )
+    logger.info(f"Retrieve step - enabled: {pipeline_config.retrieve_enabled}")
+    logger.info(f"Generation step - enabled: {pipeline_config.generation_enabled}")
 
-    retriever_kwargs = {"vector_store": vector_store, "k": config.retrieval.k}
-    if config.retrieval.searcher_config:
-        retriever_kwargs.update(config.retrieval.searcher_config)
+    # Only create embedding, vector_store and retriever if retrieve step is enabled
+    # (retrieve includes query embedding as they are dependent)
+    if pipeline_config.retrieve_enabled:
+        embedding_model = EmbeddingModelFactory.create(
+            config.embedding.embed_name,
+            **(config.embedding.embed_config or {}),
+        )
 
-    retriever = RetrieverFactory.create(
-        config.retrieval.searcher_strategy,
-        **retriever_kwargs,
-    )
+        store_config = {
+                "embedding_function": embedding_model,
+                **(config.vector_store.store_config or {}),
+        }
 
-    llm = LLMFactory.create(
-        config.llm.llm_name,
-        **(config.llm.llm_config or {}),
-    )
+        vector_store = VectorStoreFactory.create(
+            config.vector_store.store_name,
+            **store_config,
+        )
+
+        retriever_kwargs = {"vector_store": vector_store, "k": config.retrieval.k}
+        if config.retrieval.searcher_config:
+            retriever_kwargs.update(config.retrieval.searcher_config)
+
+        retriever = RetrieverFactory.create(
+            config.retrieval.searcher_strategy,
+            **retriever_kwargs,
+        )
+
+    if pipeline_config.generation_enabled:
+        llm = LLMFactory.create(
+            config.llm.llm_name,
+            **(config.llm.llm_config or {}),
+        )
 
     logger.info("RAG components initialized successfully")
 
@@ -111,6 +125,8 @@ def execute_query(
     QueryContext
         Pipeline context containing the query results
     """
+    Config.get_config()
+
     logger = logging.getLogger(__name__)
     logger.info(f"Executing query: {query}")
 
@@ -122,11 +138,17 @@ def execute_query(
     if role_mapping:
         context.role_mapping = role_mapping
 
-    steps = [
-        QueryEmbeddingStep(components.embedding_model),
-        RetrieveStep(components.retriever),
-        GenerationStep(components.llm),
-    ]
+    # Build steps list dynamically based on pipeline configuration
+    steps = []
+
+    if components.embedding_model:
+        steps.append(QueryEmbeddingStep(components.embedding_model))
+
+    if components.retriever:
+        steps.append(RetrieveStep(components.retriever))
+
+    if components.llm:
+        steps.append(GenerationStep(components.llm))
 
     executor = PipelineExecutor(steps)
     context = executor.execute(context)
