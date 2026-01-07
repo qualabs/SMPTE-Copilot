@@ -16,6 +16,7 @@ from .llm import LLMConfig
 from .loader import LoaderConfig
 from .logging import LoggingConfig
 from .paths import PathsConfig
+from .pipeline import PipelineConfig
 from .preprocessing import PreprocessingConfig
 from .retrieval import RetrievalConfig
 from .vector_store import VectorStoreConfig
@@ -34,6 +35,7 @@ class Config(BaseSettings):
     paths: PathsConfig = Field(default_factory=PathsConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     access_control: AccessControlConfig = Field(default_factory=AccessControlConfig)
+    pipeline: PipelineConfig = Field(default_factory=PipelineConfig)
 
     @classmethod
     def from_file(cls, config_path: Path) -> "Config":

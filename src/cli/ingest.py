@@ -34,11 +34,88 @@ from src.pipeline.steps import (
 )
 
 
+def _build_ingestion_steps(
+    file_path: Path,
+    config: Config,
+    embedding_model: Optional[Embeddings],
+    vector_store: Optional[VectorStore],
+) -> list:
+    """Build the list of pipeline steps based on configuration.
+
+    Parameters
+    ----------
+    file_path
+        Path to the media file to ingest.
+    config
+        Configuration object.
+    embedding_model
+        Embedding model instance (can be None if save step is disabled).
+    vector_store
+        Vector store instance (can be None if save step is disabled).
+
+    Returns
+    -------
+    list
+        List of pipeline steps to execute.
+    """
+    logger = logging.getLogger(__name__)
+    steps = []
+    pipeline_config = config.pipeline.ingestion
+
+    logger.info(f"Load step - enabled: {pipeline_config.load_enabled}")
+    if pipeline_config.load_enabled:
+        loader_name, loader_config_from_mapping = (
+            LoaderHelper.get_loader_config_for_file(file_path, config)
+        )
+        file_extension = file_path.suffix.lower()
+        logger.info(
+            f"Converting {file_extension} file to Markdown "
+            f"(loader: {loader_name})..."
+        )
+        loader_config = LoaderHelper.create_loader_config(
+            file_path,
+            loader_name,
+            loader_config_from_mapping,
+            config,
+        )
+        loader = LoaderFactory.create(loader_name, **loader_config)
+        steps.append(LoadStep(loader))
+
+    logger.info(f"Preprocess step - enabled: {pipeline_config.preprocess_enabled}")
+    if pipeline_config.preprocess_enabled:
+        preprocessing_config = config.preprocessing.preprocessing_config or {}
+        preprocessor = PreprocessorFactory.create(
+            config.preprocessing.preprocessing_name,
+            **preprocessing_config,
+        )
+        steps.append(PreprocessStep(preprocessor))
+
+    logger.info(f"Chunk step - enabled: {pipeline_config.chunk_enabled}")
+    if pipeline_config.chunk_enabled:
+        chunker_config = config.chunking.chunker_config or {}
+        embedding_config = config.embedding.embed_config or {}
+        chunker = ChunkerFactory.create(
+            config.chunking.chunker_name,
+            **chunker_config,
+            **embedding_config,
+        )
+        steps.append(ChunkStep(chunker))
+
+    logger.info(f"Save step - enabled: {pipeline_config.save_enabled}")
+    if embedding_model and vector_store:
+        logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
+        steps.append(EmbeddingGenerationStep(embedding_model, config.embedding.embed_name))
+        logger.info("Storing in vector database...")
+        steps.append(SaveStep(vector_store))
+
+    return steps
+
+
 def ingest_file(
     file_path: Path,
     config: Config,
-    embedding_model: Embeddings,
-    vector_store: VectorStore,
+    embedding_model: Optional[Embeddings],
+    vector_store: Optional[VectorStore],
     access_tags: Optional[list[str]] = None,
 ) -> None:
     """Ingest a media file into the vector database using the pipeline pattern.
@@ -50,9 +127,9 @@ def ingest_file(
     config
         Configuration object.
     embedding_model
-        Embedding model instance.
+        Embedding model instance (can be None if save step is disabled).
     vector_store
-        Vector store instance.
+        Vector store instance (can be None if save step is disabled).
     access_tags
         Optional list of access control tags for the document.
     """
@@ -63,54 +140,14 @@ def ingest_file(
         logger.info(f"Access tags: {access_tags}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
-    loader_name, loader_config_from_mapping = (
-        LoaderHelper.get_loader_config_for_file(file_path, config)
-    )
-    file_extension = file_path.suffix.lower()
-
-    logger.info(
-        f"Converting {file_extension} file to Markdown "
-        f"(loader: {loader_name})..."
-    )
-
-    loader_config = LoaderHelper.create_loader_config(
-        file_path,
-        loader_name,
-        loader_config_from_mapping,
-        config,
-    )
-    loader = LoaderFactory.create(loader_name, **loader_config)
-
-    chunker_config = config.chunking.chunker_config or {}
-    embedding_config = config.embedding.embed_config or {}
-
-    chunker = ChunkerFactory.create(
-        config.chunking.chunker_name,
-        **chunker_config,
-        **embedding_config,
-    )
-
-    logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
-    logger.info("Storing in vector database...")
     context = IngestionContext(file_path=file_path)
 
     # Set tag-based access control if provided
     if access_tags:
         context.access_tags = access_tags
 
-    preprocessing_config = config.preprocessing.preprocessing_config or {}
-    preprocessor = PreprocessorFactory.create(
-        config.preprocessing.preprocessing_name,
-        **preprocessing_config,
-    )
-
-    steps = [
-        LoadStep(loader),
-        PreprocessStep(preprocessor),
-        ChunkStep(chunker),
-        EmbeddingGenerationStep(embedding_model, config.embedding.embed_name),
-        SaveStep(vector_store),
-    ]
+    # Build steps list dynamically based on pipeline configuration
+    steps = _build_ingestion_steps(file_path, config, embedding_model, vector_store)
 
     executor = PipelineExecutor(steps)
     context = executor.execute(context)
@@ -168,19 +205,25 @@ def main():
     logger.info("")
 
     try:
-        embedding_model = EmbeddingModelFactory.create(
-            config.embedding.embed_name,
-            **(config.embedding.embed_config or {}),
-        )
+        pipeline_config = config.pipeline.ingestion
+        embedding_model = None
+        vector_store = None
 
-        store_config = {
-            "embedding_function": embedding_model,
-            **(config.vector_store.store_config or {}),
-        }
-        vector_store = VectorStoreFactory.create(
-            config.vector_store.store_name,
-            **store_config,
-        )
+        # Only create embedding_model and vector_store if save step is enabled
+        if pipeline_config.save_enabled:
+            embedding_model = EmbeddingModelFactory.create(
+                config.embedding.embed_name,
+                **(config.embedding.embed_config or {}),
+            )
+
+            store_config = {
+                "embedding_function": embedding_model,
+                **(config.vector_store.store_config or {}),
+            }
+            vector_store = VectorStoreFactory.create(
+                config.vector_store.store_name,
+                **store_config,
+            )
 
         for media_file in media_files:
             ingest_file(
