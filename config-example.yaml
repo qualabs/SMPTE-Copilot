@@ -101,7 +101,6 @@ pipeline:
     load_enabled: true              
     preprocess_enabled: true        
     chunk_enabled: true             
-    embedding_enabled: true         
     save_enabled: true              
   
   query:

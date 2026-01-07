@@ -251,7 +251,7 @@ The pipeline pattern consists of three main components:
 
 ### Ingestion Pipeline
 
-The ingestion pipeline (`ingest.py`) processes documents through sequential steps:
+The ingestion pipeline (`ingest.py`) processes documents through sequential steps. Each step can be enabled or disabled via configuration (see [Configurable Pipelines](#configurable-pipelines)):
 
 ```
 Load → Preprocess → Chunk → Embed → Save
@@ -293,13 +293,19 @@ from src.pipeline.steps import (
 )
 context = IngestionContext(file_path=file_path)
 
-steps = [
-    LoadStep(loader),
-    PreprocessStep(preprocessor),
-    ChunkStep(chunker),
-    EmbeddingGenerationStep(embedding_model, model_name),
-    SaveStep(vector_store),
-]
+# Steps are built dynamically based on pipeline configuration
+# Only enabled steps are included
+steps = []
+if config.pipeline.ingestion.load_enabled:
+    steps.append(LoadStep(loader))
+if config.pipeline.ingestion.preprocess_enabled:
+    steps.append(PreprocessStep(preprocessor))
+if config.pipeline.ingestion.chunk_enabled:
+    steps.append(ChunkStep(chunker))
+if config.pipeline.ingestion.save_enabled:
+    # Save step includes both embedding generation and database storage
+    steps.append(EmbeddingGenerationStep(embedding_model, model_name))
+    steps.append(SaveStep(vector_store))
 
 executor = PipelineExecutor(steps)
 context = executor.execute(context)
@@ -307,7 +313,7 @@ context = executor.execute(context)
 
 ### Query Pipeline
 
-The query pipeline (`query.py`) processes user queries through three sequential steps:
+The query pipeline (`query.py`) processes user queries through sequential steps. Each step can be enabled or disabled via configuration (see [Configurable Pipelines](#configurable-pipelines)):
 
 ```
 QueryEmbedding → Retrieve → Generate
@@ -332,15 +338,18 @@ QueryEmbedding → Retrieve → Generate
 
 ```python
 from src.pipeline import QueryContext, PipelineExecutor
-from src.pipeline.steps import QueryEmbeddingStep, RetrieveStep
+from src.pipeline.steps import QueryEmbeddingStep, RetrieveStep, GenerationStep
 
 context = QueryContext(user_query=query)
 
-steps = [
-    QueryEmbeddingStep(embedding_model),
-    RetrieveStep(retriever),
-    GenerateStep(llm),
-]
+# Steps are built dynamically based on pipeline configuration
+# Only enabled steps are included
+steps = []
+if config.pipeline.query.retrieve_enabled:
+    steps.append(QueryEmbeddingStep(embedding_model))
+    steps.append(RetrieveStep(retriever))
+if config.pipeline.query.generation_enabled:
+    steps.append(GenerationStep(llm))
 
 executor = PipelineExecutor(steps)
 context = executor.execute(context)
@@ -527,6 +536,18 @@ access_control:
   # Query settings (applied to all queries)
   default_user_role: "Public"            # Default user role for query access control
   role_mapping_file: "./role_mapping.json"  # Path to JSON file containing role-to-tags mapping
+
+pipeline:
+  # Configure which steps are enabled in the ingestion and query pipelines
+  ingestion:
+    load_enabled: true              # Enable/disable the load step (converts files to markdown)
+    preprocess_enabled: true        # Enable/disable the preprocessing step (removes duplicates, etc.)
+    chunk_enabled: true             # Enable/disable the chunking step
+    save_enabled: true              # Enable/disable the save step (includes embedding generation and vector database storage)
+  
+  query:
+    retrieve_enabled: true          # Enable/disable the retrieval step (includes query embedding step)
+    generation_enabled: true        # Enable/disable the LLM generation step
 ```
 
 ### How Configuration Maps to Components
@@ -670,6 +691,138 @@ When querying, the system automatically:
 2. Loads the role mapping from `role_mapping_file`
 3. Expands the user's role to authorized tags
 4. Filters query results to only include documents with matching tags
+
+## Configurable Pipelines
+
+SMPTE-Copilot allows you to enable or disable individual pipeline steps through configuration. This provides flexibility to customize the processing flow based on your specific needs without modifying code.
+
+### Overview
+
+Both the **ingestion pipeline** and **query pipeline** support configurable steps that can be enabled or disabled via the `pipeline` section in `config.yaml`. When a step is disabled:
+- The step is skipped during execution
+- Associated components (loaders, embeddings, etc.) are not initialized, saving resources
+- The pipeline continues with only the enabled steps
+
+### Configuration
+
+Configure pipeline steps in the `pipeline` section of `config.yaml`:
+
+```yaml
+pipeline:
+  ingestion:
+    load_enabled: true              
+    preprocess_enabled: true        
+    chunk_enabled: true             
+    embedding_enabled: true         
+    save_enabled: true              
+  
+  query:
+    retrieve_enabled: true          
+    generation_enabled: true        
+```
+
+### Ingestion Pipeline Steps
+
+The ingestion pipeline consists of four configurable steps:
+
+1. **`load_enabled`** (Load Step)
+   - Converts media files (PDF, images, videos, audio) to Markdown format
+   - Required for: Processing source files
+   - If disabled: You must provide pre-processed markdown files
+
+2. **`preprocess_enabled`** (Preprocess Step)
+   - Removes repeated headers, footers, and page numbers
+   - Optional: Can be skipped if your documents don't have repetitions
+   - If disabled: Raw text from loader is used directly
+
+3. **`chunk_enabled`** (Chunk Step)
+   - Splits the text into smaller, manageable chunks
+   - Required for: Creating embeddings and storing in vector database
+   - If disabled: Single large document will be used (not recommended)
+
+4. **`save_enabled`** (Save Step)
+   - Generates vector embeddings for each chunk and stores them in the vector database
+   - This step includes embedding generation as they are dependent operations
+   - Required for: Persisting data for later queries and enabling semantic search
+   - If disabled: Processing happens but data is not saved (useful for testing)
+
+**Note**: The save step includes embedding generation because embeddings are only useful when stored in the vector database. The embedding model and vector store are only created if `save_enabled` is true
+
+### Query Pipeline Steps
+
+The query pipeline consists of two configurable steps:
+
+1. **`retrieve_enabled`** (Retrieve Step)
+   - Generates query embedding and retrieves relevant documents from the vector database
+   - This step includes query embedding as they are dependent operations
+   - Required for: Finding relevant context from your document corpus
+   - If disabled: LLM will generate responses without document context
+
+2. **`generation_enabled`** (Generation Step)
+   - Uses an LLM to generate a natural language response based on retrieved documents
+   - Optional: Can be disabled if you only want document retrieval
+   - If disabled: Only retrieved documents are returned (no LLM response)
+
+**Note**: The retrieve step includes query embedding because they are dependent operations - you can't retrieve documents without first embedding the query.
+
+### Use Cases
+
+#### Use Case 1: Testing Without Database Storage
+
+Process and chunk documents without saving to the database:
+
+```yaml
+pipeline:
+  ingestion:
+    load_enabled: true
+    preprocess_enabled: true
+    chunk_enabled: true
+    save_enabled: false            # Skip embedding and database storage
+```
+
+**Result**: Documents are processed and chunked, but embeddings are not generated and data is not saved to the database. Useful for testing preprocessing and chunking configurations.
+
+#### Use Case 2: Skip Preprocessing
+
+If your documents are clean and don't need preprocessing:
+
+```yaml
+pipeline:
+  ingestion:
+    load_enabled: true
+    preprocess_enabled: false     # Skip preprocessing
+    chunk_enabled: true
+    embedding_enabled: true
+    save_enabled: true
+```
+
+**Result**: Faster ingestion by skipping the preprocessing step.
+
+#### Use Case 3: Document Retrieval Only
+
+Retrieve relevant documents without LLM generation:
+
+```yaml
+pipeline:
+  query:
+    retrieve_enabled: true
+    generation_enabled: false     # Skip LLM generation
+```
+
+**Result**: Returns retrieved documents with similarity scores, but no natural language response. Useful for building custom downstream processing or when you want to save LLM API costs.
+
+#### Use Case 4: LLM Without Retrieval
+
+Use LLM for direct question answering without document context:
+
+```yaml
+pipeline:
+  query:
+    retrieve_enabled: false       # Skip retrieval
+    generation_enabled: true
+```
+
+**Result**: LLM generates responses without retrieving documents from the database. Useful for general knowledge questions or when you want the LLM to answer without specific context.
 
 
 ## How to Add New Components

@@ -23,13 +23,9 @@ class IngestionPipelineConfig(BaseModel):
         default=True,
         description="Enable/disable the chunking step",
     )
-    embedding_enabled: bool = Field(
-        default=True,
-        description="Enable/disable the embedding generation step",
-    )
     save_enabled: bool = Field(
         default=True,
-        description="Enable/disable the save step (stores in vector database)",
+        description="Enable/disable the save step (includes embedding generation and vector database storage)",
     )
 
 

@@ -49,7 +49,7 @@ def _build_ingestion_steps(
     config
         Configuration object.
     embedding_model
-        Embedding model instance (can be None if embedding step is disabled).
+        Embedding model instance (can be None if save step is disabled).
     vector_store
         Vector store instance (can be None if save step is disabled).
 
@@ -101,13 +101,10 @@ def _build_ingestion_steps(
         )
         steps.append(ChunkStep(chunker))
 
-    logger.info(f"Embedding generation step - enabled: {pipeline_config.embedding_enabled}")
-    if pipeline_config.embedding_enabled and embedding_model:
+    logger.info(f"Save step - enabled: {pipeline_config.save_enabled}")
+    if embedding_model and vector_store:
         logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
         steps.append(EmbeddingGenerationStep(embedding_model, config.embedding.embed_name))
-
-    logger.info(f"Save step - enabled: {pipeline_config.save_enabled}")
-    if pipeline_config.save_enabled and vector_store:
         logger.info("Storing in vector database...")
         steps.append(SaveStep(vector_store))
 
@@ -130,7 +127,7 @@ def ingest_file(
     config
         Configuration object.
     embedding_model
-        Embedding model instance (can be None if embedding step is disabled).
+        Embedding model instance (can be None if save step is disabled).
     vector_store
         Vector store instance (can be None if save step is disabled).
     access_tags
@@ -212,16 +209,13 @@ def main():
         embedding_model = None
         vector_store = None
 
-        # Only create embedding_model if embedding or save steps are enabled
-        # (save step needs embedding_model for vector store initialization)
-        if pipeline_config.embedding_enabled or pipeline_config.save_enabled:
+        # Only create embedding_model and vector_store if save step is enabled
+        if pipeline_config.save_enabled:
             embedding_model = EmbeddingModelFactory.create(
                 config.embedding.embed_name,
                 **(config.embedding.embed_config or {}),
             )
 
-        # Only create vector_store if save step is enabled
-        if pipeline_config.save_enabled:
             store_config = {
                 "embedding_function": embedding_model,
                 **(config.vector_store.store_config or {}),
