@@ -101,7 +101,11 @@ pipeline:
     load_enabled: true              
     preprocess_enabled: true        
     chunk_enabled: true             
-    save_enabled: true              
+    save_enabled: true
+    # Parallelization settings for processing multiple files
+    parallel_enabled: false         # Enable parallel processing (default: false)
+    max_workers: null               # Max parallel workers (null = CPU count, 1 = sequential)
+    executor_type: thread           # Executor type: 'thread' (I/O-bound) or 'process' (CPU-bound)
   
   query:
     retrieve_enabled: true          

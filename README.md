@@ -714,7 +714,11 @@ pipeline:
     preprocess_enabled: true        
     chunk_enabled: true             
     embedding_enabled: true         
-    save_enabled: true              
+    save_enabled: true
+    # Parallelization settings
+    parallel_enabled: false         # Enable parallel processing of multiple files
+    max_workers: null               # Max parallel workers (null = CPU count, 1 = sequential)
+    executor_type: thread           # Executor type: 'thread' (I/O-bound) or 'process' (CPU-bound)
   
   query:
     retrieve_enabled: true          
@@ -747,6 +751,50 @@ The ingestion pipeline consists of four configurable steps:
    - If disabled: Processing happens but data is not saved (useful for testing)
 
 **Note**: The save step includes embedding generation because embeddings are only useful when stored in the vector database. The embedding model and vector store are only created if `save_enabled` is true
+
+### Parallel Ingestion
+
+The ingestion pipeline supports parallel processing of multiple files to improve throughput when ingesting large batches of documents. Parallelization can significantly reduce total ingestion time, especially when processing many files.
+
+**Configuration Parameters:**
+
+1. **`parallel_enabled`** (default: `false`)
+   - Enables parallel processing of files
+   - When `false`: Files are processed sequentially (one at a time)
+   - When `true`: Multiple files are processed concurrently using thread or process pools
+
+2. **`max_workers`** (default: `null`)
+   - Maximum number of parallel workers
+   - `null`: Uses the number of CPU cores available
+   - `1`: Equivalent to sequential processing (parallel_enabled=false)
+   - `> 1`: Specified number of parallel workers
+   - Recommended: Start with `null` and adjust based on your system resources
+
+3. **`executor_type`** (default: `"thread"`)
+   - Type of executor for parallel processing
+   - `"thread"`: ThreadPoolExecutor - best for I/O-bound tasks (API calls, file reading)
+   - `"process"`: ProcessPoolExecutor - best for CPU-bound tasks (heavy computation)
+   - Recommended: Use `"thread"` for most cases as ingestion involves API calls and I/O operations
+
+**Example Configuration:**
+
+```yaml
+pipeline:
+  ingestion:
+    load_enabled: true
+    preprocess_enabled: true
+    chunk_enabled: true
+    save_enabled: true
+    parallel_enabled: true          # Enable parallel processing
+    max_workers: 4                  # Use 4 parallel workers
+    executor_type: thread           # Use thread-based executor
+```
+
+**Considerations:**
+- Ensure your vector store supports concurrent writes (most do)
+- Monitor system resources when processing many large files
+- API rate limits may affect parallel processing with external services
+- Start with fewer workers and scale up as needed
 
 ### Query Pipeline Steps
 
@@ -824,6 +872,23 @@ pipeline:
 
 **Result**: LLM generates responses without retrieving documents from the database. Useful for general knowledge questions or when you want the LLM to answer without specific context.
 
+#### Use Case 5: High-Volume Parallel Ingestion
+
+Process large batches of documents quickly using parallel processing:
+
+```yaml
+pipeline:
+  ingestion:
+    load_enabled: true
+    preprocess_enabled: true
+    chunk_enabled: true
+    save_enabled: true
+    parallel_enabled: true        # Enable parallel processing
+    max_workers: null             # Use all available CPU cores
+    executor_type: thread         # Thread-based for I/O operations
+```
+
+**Result**: Multiple files are processed concurrently, significantly reducing total ingestion time. The executor automatically manages worker threads and provides progress tracking. Failed files are reported at the end without stopping the entire batch.
 
 ## How to Add New Components
 

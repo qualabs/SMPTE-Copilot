@@ -4,6 +4,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from src.cli.models import ExecutorType
+
 
 class IngestionPipelineConfig(BaseModel):
     """Configuration for ingestion pipeline steps.
@@ -26,6 +28,18 @@ class IngestionPipelineConfig(BaseModel):
     save_enabled: bool = Field(
         default=True,
         description="Enable/disable the save step (includes embedding generation and vector database storage)",
+    )
+    parallel_enabled: bool = Field(
+        default=False,
+        description="Enable/disable parallel processing of multiple files",
+    )
+    max_workers: Optional[int] = Field(
+        default=None,
+        description="Maximum number of parallel workers (None = CPU count, 1 = sequential)",
+    )
+    executor_type: ExecutorType = Field(
+        default=ExecutorType.THREAD,
+        description="Type of executor: 'thread' for I/O-bound tasks, 'process' for CPU-bound tasks",
     )
 
 
