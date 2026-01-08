@@ -41,10 +41,11 @@ class LoadStep:
             if "access_tags" not in context.metadata and context.access_tags:
                 context.metadata["access_tags"] = context.access_tags
 
-        md_text = self.loader.to_markdown_text()
-        context.raw_text = md_text
+            # Get markdown text from the loaded document
+            md_text = loaded_docs[0].page_content
+            context.raw_text = md_text
 
-        markdown_path = self.loader.to_markdown_file(md_text=md_text)
-        context.markdown_path = markdown_path
+            markdown_path = self.loader.to_markdown_file(md_text=md_text)
+            context.markdown_path = markdown_path
 
-        logger.info(f"Markdown saved to: {markdown_path}")
+            logger.info(f"Markdown saved to: {markdown_path}")

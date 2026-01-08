@@ -75,7 +75,7 @@ class WhisperLoader(DocumentLoader):
             self._model = whisper.load_model(self.model_name, device=self.device)
         return self._model
 
-    def _get_transcription_result(self) -> dict[str, Any]:
+    def _transcribe(self) -> dict[str, Any]:
         """Transcribe the video/audio file using Whisper and return full result.
 
         Returns
@@ -117,43 +117,14 @@ class WhisperLoader(DocumentLoader):
         millis = int((seconds % 1) * 1000)
         return f"{hours:02d}:{minutes:02d}:{secs:02d}.{millis:03d}"
 
-    def load_documents(self) -> list[Document]:
-        """Load the video/audio file into LangChain Document objects.
+    def _to_markdown_text(self) -> str:
+        """Convert transcription to markdown text.
 
         Returns
         -------
-        List of Document objects representing the transcription.
+        Markdown text representation of the transcription.
         """
-        result = self._get_transcription_result()
-        transcription = result["text"].strip()
-
-        return [
-            Document(
-                page_content=transcription,
-                metadata={
-                    "source": str(self.input_path),
-                    "file_name": self.input_path.name,
-                    "loader": "WhisperLoader",
-                    "file_type": self.input_path.suffix.lower(),
-                    "model": self.model_name,
-                    "language": self.language or "auto-detected",
-                }
-            )
-        ]
-
-    def to_markdown_text(self, pages: PageSpecifier = None) -> str:
-        """Return the transcription as Markdown text with timestamps.
-
-        Parameters
-        ----------
-        pages
-            Not used for audio/video files (kept for protocol compatibility).
-
-        Returns
-        -------
-        Transcription as Markdown-formatted string with timestamps.
-        """
-        result = self._get_transcription_result()
+        result = self._transcribe()
 
         if not result.get("text", "").strip():
             return ""
@@ -166,7 +137,6 @@ class WhisperLoader(DocumentLoader):
             return f"# Transcription\n\n{result['text'].strip()}"
 
         markdown_lines = ["# Transcription\n"]
-
         for segment in segments:
             start_time = segment.get("start", 0)
             end_time = segment.get("end", 0)
@@ -179,6 +149,29 @@ class WhisperLoader(DocumentLoader):
             markdown_lines.append(f"{timestamp_str}\n{text}")
 
         return "\n".join(markdown_lines)
+
+    def load_documents(self) -> list[Document]:
+        """Load the video/audio file into LangChain Document objects with markdown-formatted content.
+
+        Returns
+        -------
+        List of Document objects with markdown transcription in page_content.
+        """
+        markdown_content = self._to_markdown_text()
+
+        return [
+            Document(
+                page_content=markdown_content,
+                metadata={
+                    "source": str(self.input_path),
+                    "file_name": self.input_path.name,
+                    "loader": "WhisperLoader",
+                    "file_type": self.input_path.suffix.lower(),
+                    "model": self.model_name,
+                    "language": self.language or "auto-detected",
+                }
+            )
+        ]
 
 
 def create_whisper_loader(config: dict[str, Any]) -> DocumentLoader:
