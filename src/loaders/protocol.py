@@ -19,19 +19,15 @@ class DocumentLoader(Protocol):
     Any class implementing these methods can load documents from various
     sources (PDF, DOCX, HTML, etc.) and convert them to a standard format.
     This allows swapping implementations without changing the rest of the code.
+
+    The load_documents() method should return documents with markdown-formatted
+    content in the page_content field.
     """
 
     def load_documents(self) -> list[Document]:
-        """Load documents into LangChain Document objects."""
-        ...
+        """Load documents into LangChain Document objects.
 
-    def to_markdown_text(self, pages: PageSpecifier = None) -> str:
-        """Convert the document to Markdown text.
-
-        Parameters
-        ----------
-        pages
-            Optional sequence of page numbers, range, or None for all pages.
+        The page_content field should contain markdown-formatted text.
         """
         ...
 
