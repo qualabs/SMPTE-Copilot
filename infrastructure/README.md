@@ -2,6 +2,8 @@
 
 This directory contains Terraform code to provision the AWS infrastructure.
 
+The application is deployed to a EC2 instance on the `/opt/app directory`
+
 ## Prerequisites
 1. **Terraform**: [Install Terraform](https://developer.hashicorp.com/terraform/downloads)
 2. **AWS CLI**: [Install AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and configure with `aws configure`.

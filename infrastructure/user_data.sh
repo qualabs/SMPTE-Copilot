@@ -49,6 +49,12 @@ fi
 usermod -aG ssm-users ubuntu
 usermod -aG ssm-users ssm-user
 
+# Ensure a collaborative umask so group write is preserved
+umask 0002
+
+# Trust the app directory for all users to avoid Git "dubious ownership"
+git config --system --add safe.directory /opt/app || true
+
 # 3. Setup Application Directory
 # Using /opt because /home/ubuntu is restricted to the ubuntu user
 APP_DIR="/opt/app"
@@ -66,4 +72,14 @@ if [ -d ".git" ]; then
 else
     git clone ${repo_url} .
 fi
+
+# Ensure repo is group-shared and fix permissions for multi-user edits
+git -C "$APP_DIR" config core.sharedRepository group || true
+chgrp -R ssm-users "$APP_DIR"
+chmod -R g+rwX "$APP_DIR"
+find "$APP_DIR" -type d -exec chmod g+s {} +
+
+# 5. Pre-pull images and build with Docker Compose
+docker compose pull --include-deps
+docker compose build --pull
 
