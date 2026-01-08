@@ -3,6 +3,7 @@
 
 import logging
 import sys
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -21,6 +22,8 @@ from src.cli.constants import (
     SEPARATOR_CHAR,
     SEPARATOR_LENGTH,
 )
+from src.cli.models import IngestionResult
+from src.cli.parallel_ingestor import ParallelIngestor
 from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
 from src.loaders.helpers import LoaderHelper
 from src.logger import Logger
@@ -117,7 +120,7 @@ def ingest_file(
     embedding_model: Optional[Embeddings],
     vector_store: Optional[VectorStore],
     access_tags: Optional[list[str]] = None,
-) -> None:
+) -> IngestionResult:
     """Ingest a media file into the vector database using the pipeline pattern.
 
     Parameters
@@ -132,6 +135,11 @@ def ingest_file(
         Vector store instance (can be None if save step is disabled).
     access_tags
         Optional list of access control tags for the document.
+
+    Returns
+    -------
+    IngestionResult
+        Result object containing success status, chunks count, and any errors.
     """
     logger = logging.getLogger(__name__)
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
@@ -153,7 +161,11 @@ def ingest_file(
     context = executor.execute(context)
 
     if context.status == PipelineStatus.FAILED:
-        raise RuntimeError(f"Pipeline failed: {context.error}")
+        return IngestionResult(
+            file_path=file_path,
+            success=False,
+            error=context.error,
+        )
 
     logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("Ingestion Complete!")
@@ -163,6 +175,125 @@ def ingest_file(
         logger.info(f"✓ Markdown file: {context.markdown_path}")
     logger.info(f"✓ Chunks created: {len(context.chunks)}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
+
+    return IngestionResult(
+        file_path=file_path,
+        success=True,
+        chunks_count=len(context.chunks),
+        markdown_path=context.markdown_path,
+    )
+
+
+def _process_files_parallel(
+    media_files: list[Path],
+    config: Config,
+    embedding_model: Optional[Embeddings],
+    vector_store: Optional[VectorStore],
+    access_tags: Optional[list[str]],
+) -> bool:
+    """Process files in parallel.
+
+    Parameters
+    ----------
+    media_files
+        List of media files to process.
+    config
+        Configuration object.
+    embedding_model
+        Embedding model instance.
+    vector_store
+        Vector store instance.
+    access_tags
+        Optional access control tags.
+
+    Returns
+    -------
+    bool
+        True if all files processed successfully, False otherwise.
+    """
+    logger = logging.getLogger(__name__)
+    logger.info("Parallel processing enabled")
+
+    pipeline_config = config.pipeline.ingestion
+    parallel_ingestor = ParallelIngestor(
+        max_workers=pipeline_config.max_workers,
+        executor_type=pipeline_config.executor_type,
+    )
+
+    results = parallel_ingestor.execute(
+        files=media_files,
+        task_fn=ingest_file,
+        task_args={
+            "config": config,
+            "embedding_model": embedding_model,
+            "vector_store": vector_store,
+            "access_tags": access_tags,
+        },
+    )
+
+    parallel_ingestor.log_summary(results)
+
+    if results["failed"]:
+        logger.error(f"✗ {len(results['failed'])} file(s) failed to process")
+        return False
+
+    logger.info("✓ All files processed successfully.")
+    return True
+
+
+def _process_files_sequential(
+    media_files: list[Path],
+    config: Config,
+    embedding_model: Optional[Embeddings],
+    vector_store: Optional[VectorStore],
+    access_tags: Optional[list[str]],
+) -> bool:
+    """Process files sequentially.
+
+    Parameters
+    ----------
+    media_files
+        List of media files to process.
+    config
+        Configuration object.
+    embedding_model
+        Embedding model instance.
+    vector_store
+        Vector store instance.
+    access_tags
+        Optional access control tags.
+
+    Returns
+    -------
+    bool
+        True if all files processed successfully, False otherwise.
+    """
+    logger = logging.getLogger(__name__)
+    logger.info("Sequential processing (parallel disabled)")
+
+    failed_files = []
+
+    for media_file in media_files:
+        result = ingest_file(
+            media_file,
+            config,
+            embedding_model,
+            vector_store,
+            access_tags=access_tags if access_tags else None,
+        )
+
+        if not result.success:
+            failed_files.append((media_file, result.error))
+
+    if failed_files:
+        logger.error("\nFailed files:")
+        for file_path, error in failed_files:
+            logger.error(f"  - {file_path.name}: {error}")
+        logger.error(f"\n✗ {len(failed_files)} file(s) failed to process")
+        return False
+
+    logger.info("✓ All files processed successfully.")
+    return True
 
 
 def main():
@@ -225,16 +356,22 @@ def main():
                 **store_config,
             )
 
-        for media_file in media_files:
-            ingest_file(
-                media_file,
-                config,
-                embedding_model,
-                vector_store,
-                access_tags=access_tags if access_tags else None,
-            )
+        # Process files in parallel if enabled, otherwise sequentially
+        start_time = time.time()
+        process_fn = _process_files_parallel if pipeline_config.parallel_enabled else _process_files_sequential
+        process_fn(
+            media_files,
+            config,
+            embedding_model,
+            vector_store,
+            access_tags,
+        )
+        elapsed_time = time.time() - start_time
 
-        logger.info("✓ All files processed successfully.")
+        logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info("Ingestion complete!")
+        logger.info(f"Total time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
+        logger.info(f"{len(media_files)} file(s) processed successfully")
 
     except Exception as exc:
         logger.error(f"\n✗ Error during ingestion: {exc}", exc_info=True)
