@@ -37,6 +37,10 @@ class LoadStep:
         if loaded_docs:
             context.metadata = loaded_docs[0].metadata.copy()
 
+            # Inject default access_tags if not present in document metadata
+            if "access_tags" not in context.metadata and context.access_tags:
+                context.metadata["access_tags"] = context.access_tags
+
         md_text = self.loader.to_markdown_text()
         context.raw_text = md_text
 
