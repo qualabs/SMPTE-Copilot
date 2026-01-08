@@ -117,6 +117,8 @@ class DoclingLoader(DocumentLoader):
                 metadata["creation_date"] = str(doc_meta.creation_date)
             if hasattr(doc_meta, "modification_date") and doc_meta.modification_date:
                 metadata["modification_date"] = str(doc_meta.modification_date)
+            if hasattr(doc_meta, "access_tags") and doc_meta.access_tags:
+                metadata["access_tags"] = doc_meta.access_tags
 
         return [
             Document(
