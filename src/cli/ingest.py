@@ -17,6 +17,7 @@ from src import (
     VectorStore,
     VectorStoreFactory,
 )
+from src.input_sources import InputSourceFactory, InputSourceType
 from src.cli.constants import (
     EXIT_CODE_ERROR,
     SEPARATOR_CHAR,
@@ -308,8 +309,34 @@ def main():
     # Get access control settings from config
     access_tags = config.access_control.default_access_tags or None
 
+    # Initialize input source
+    input_source = None
     try:
-        media_files = LoaderHelper.resolve_media_inputs(input_path)
+        source_type = InputSourceType(config.input_source.source_type)
+        source_config = config.input_source.source_config or {}
+        input_source = InputSourceFactory.create(source_type, source_config)
+        logger.info(f"Using input source: {source_type.value}")
+    except ValueError as e:
+        logger.error(f"✗ Invalid input source type: {config.input_source.source_type}")
+        logger.error(f"Available types: {[t.value for t in InputSourceType]}")
+        sys.exit(EXIT_CODE_ERROR)
+    except Exception as e:
+        logger.exception(f"✗ Error initializing input source: {e}")
+        sys.exit(EXIT_CODE_ERROR)
+
+    try:
+        # List files using input source
+        file_ids = input_source.list_files(str(input_path), list(SUPPORTED_FILE_EXTENSIONS))
+        
+        if not file_ids:
+            logger.warning(f"No supported files found in: {input_path}")
+            supported_types = ", ".join(SUPPORTED_FILE_EXTENSIONS)
+            logger.warning(f"Supported file types: {supported_types}")
+            sys.exit(EXIT_CODE_ERROR)
+        
+        # Get actual file paths (for local: same as file_ids, for S3: downloads to temp)
+        media_files = [input_source.get_file(file_id) for file_id in file_ids]
+        
     except (FileNotFoundError, ValueError):
         logger.exception("✗ Error resolving media inputs")
         logger.exception("\nUsage:")
@@ -320,6 +347,8 @@ def main():
         logger.exception("  - Config file: config.yaml or config.yml")
         logger.exception("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
         logger.exception("  - Default paths are relative to current working directory")
+        if input_source:
+            input_source.cleanup()
         sys.exit(EXIT_CODE_ERROR)
 
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
@@ -376,6 +405,10 @@ def main():
     except Exception as exc:
         logger.error(f"\n✗ Error during ingestion: {exc}", exc_info=True)
         sys.exit(EXIT_CODE_ERROR)
+    finally:
+        # Clean up temporary files (S3 downloads, etc.)
+        if input_source:
+            input_source.cleanup()
 
 
 if __name__ == "__main__":

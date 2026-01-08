@@ -1,6 +1,19 @@
 # Example configuration file for SMPTE-Copilot RAG system
 # Copy this file to config.yaml and modify as needed
 
+input_source:
+  source_type: local           # Options: local, s3
+  source_config: {}            # Source-specific configuration (empty for local)
+  # For S3, use:
+  # source_type: s3
+  # source_config:
+  #   bucket_name: "my-documents-bucket"  # Required: S3 bucket name
+  #   prefix: "documents/"                # Optional: S3 key prefix to filter files
+  #   aws_access_key_id: "YOUR_ACCESS_KEY"      # Optional: AWS credentials (or use IAM role/env vars)
+  #   aws_secret_access_key: "YOUR_SECRET_KEY"  # Optional: AWS credentials
+  #   region_name: "us-east-1"                  # Optional: AWS region
+  #   # endpoint_url: "http://custom-s3:9000"   # Optional: For S3-compatible services (MinIO, etc.)
+
 loader:
   file_type_mapping:         # Map file extensions to loader types (required)
     # Format: list of entries, each with a list of extensions that use the same loader

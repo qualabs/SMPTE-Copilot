@@ -12,6 +12,7 @@ from .access_control import AccessControlConfig
 from .chunking import ChunkingConfig
 from .constants import CONFIG_FILE_NAME
 from .embedding import EmbeddingConfig
+from .input_source import InputSourceConfig
 from .llm import LLMConfig
 from .loader import LoaderConfig
 from .logging import LoggingConfig
@@ -25,6 +26,7 @@ from .vector_store import VectorStoreConfig
 class Config(BaseSettings):
     """Main configuration class combining all sub-configurations."""
 
+    input_source: InputSourceConfig = Field(default_factory=InputSourceConfig)
     loader: LoaderConfig = Field(default_factory=LoaderConfig)
     preprocessing: PreprocessingConfig = Field(default_factory=PreprocessingConfig)
     chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
