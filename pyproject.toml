@@ -25,7 +25,8 @@ dependencies = [
   "fastapi>=0.104.0",
   "openai-whisper>=20231117",
   "uvicorn[standard]>=0.24.0",
-  "rapidfuzz>=3.0.0"
+  "rapidfuzz>=3.0.0",
+  "boto3>=1.42.24",
 ]
 
 [project.optional-dependencies]
@@ -38,9 +39,6 @@ dev = [
 openai = [
   "openai>=1.0.0",  # For OpenAI embeddings
   "tiktoken>=0.5.0",  # Required by OpenAIEmbeddings for token counting
-]
-s3 = [
-  "boto3>=1.28.0",  # For S3 input source
 ]
 
 [build-system]
