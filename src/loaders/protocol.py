@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Protocol, Union
+from typing import Protocol
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from ..constants import DEFAULT_ENCODING
 
-PageSpecifier = Union[Sequence[int], range, None]
+PageSpecifier = Sequence[int] | range | None
 
 
 class DocumentLoader(Protocol):
@@ -35,9 +35,9 @@ class DocumentLoader(Protocol):
         self,
         *,
         pages: PageSpecifier = None,
-        output_path: Optional[Path] = None,
+        output_path: Path | None = None,
         overwrite: bool = True,
-        md_text: Optional[str] = None,
+        md_text: str | None = None,
     ) -> Path:
         """Save the document as a Markdown file.
 
@@ -60,7 +60,7 @@ class DocumentLoader(Protocol):
         destination.write_text(md_text, encoding=DEFAULT_ENCODING)
         return destination
 
-    def _resolve_output_path(self, output_path: Optional[Path]) -> Path:
+    def _resolve_output_path(self, output_path: Path | None) -> Path:
         """Resolve the output path for the markdown file.
 
         Parameters
