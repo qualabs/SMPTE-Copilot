@@ -17,7 +17,7 @@ from src import (
     VectorStore,
     VectorStoreFactory,
 )
-from src.input_sources import InputSourceFactory, InputSourceType
+from src.input_sources import InputSource, InputSourceFactory, InputSourceType
 from src.cli.constants import (
     EXIT_CODE_ERROR,
     SEPARATOR_CHAR,
@@ -117,6 +117,7 @@ def _build_ingestion_steps(
 
 def ingest_file(
     file_path: Path,
+    input_source: InputSource,
     config: Config,
     embedding_model: Optional[Embeddings],
     vector_store: Optional[VectorStore],
@@ -128,6 +129,8 @@ def ingest_file(
     ----------
     file_path
         Path to the media file to ingest.
+    input_source
+        InputSource instance to resolve file paths
     config
         Configuration object.
     embedding_model
@@ -155,8 +158,11 @@ def ingest_file(
     if access_tags:
         context.access_tags = access_tags
 
+    # Resolve the actual file path from the input source
+    file_path_resolved = input_source.get_file(str(file_path))
+
     # Build steps list dynamically based on pipeline configuration
-    steps = _build_ingestion_steps(file_path, config, embedding_model, vector_store)
+    steps = _build_ingestion_steps(file_path_resolved, config, embedding_model, vector_store)
 
     executor = PipelineExecutor(steps)
     context = executor.execute(context)
@@ -187,6 +193,7 @@ def ingest_file(
 
 def _process_files_parallel(
     media_files: list[Path],
+    input_source: InputSource,
     config: Config,
     embedding_model: Optional[Embeddings],
     vector_store: Optional[VectorStore],
@@ -198,6 +205,8 @@ def _process_files_parallel(
     ----------
     media_files
         List of media files to process.
+    input_source
+        InputSource instance to resolve file paths
     config
         Configuration object.
     embedding_model
@@ -225,6 +234,7 @@ def _process_files_parallel(
         files=media_files,
         task_fn=ingest_file,
         task_args={
+            "input_source": input_source,
             "config": config,
             "embedding_model": embedding_model,
             "vector_store": vector_store,
@@ -244,6 +254,7 @@ def _process_files_parallel(
 
 def _process_files_sequential(
     media_files: list[Path],
+    input_source: InputSource,
     config: Config,
     embedding_model: Optional[Embeddings],
     vector_store: Optional[VectorStore],
@@ -255,6 +266,8 @@ def _process_files_sequential(
     ----------
     media_files
         List of media files to process.
+    input_source
+        InputSource instance to resolve file paths
     config
         Configuration object.
     embedding_model
@@ -277,6 +290,7 @@ def _process_files_sequential(
     for media_file in media_files:
         result = ingest_file(
             media_file,
+            input_source,
             config,
             embedding_model,
             vector_store,
@@ -325,18 +339,32 @@ def main():
         sys.exit(EXIT_CODE_ERROR)
 
     try:
+        # For S3 sources, use empty string or configured prefix instead of local file path
+        # For local sources, use the input_path as-is
+        if source_type == InputSourceType.S3:
+            # For S3, the path is controlled by prefix in source_config
+            # Use empty string to list from the configured prefix
+            search_path = ""
+        else:
+            # For local files, use the input_path
+            search_path = str(input_path)
+        
         # List files using input source
-        file_ids = input_source.list_files(str(input_path), list(SUPPORTED_FILE_EXTENSIONS))
+        media_files = input_source.list_files(search_path, list(SUPPORTED_FILE_EXTENSIONS))
         
-        if not file_ids:
-            logger.warning(f"No supported files found in: {input_path}")
-            supported_types = ", ".join(SUPPORTED_FILE_EXTENSIONS)
-            logger.warning(f"Supported file types: {supported_types}")
-            sys.exit(EXIT_CODE_ERROR)
+        # if not file_ids:
+        #     logger.warning(f"No supported files found")
+        #     if source_type == InputSourceType.S3:
+        #         logger.warning(f"S3 bucket: {source_config.get('bucket_name')}, prefix: {source_config.get('prefix', '(root)')}")
+        #     else:
+        #         logger.warning(f"Path: {input_path}")
+        #     supported_types = ", ".join(SUPPORTED_FILE_EXTENSIONS)
+        #     logger.warning(f"Supported file types: {supported_types}")
+        #     sys.exit(EXIT_CODE_ERROR)
         
-        # Get actual file paths (for local: same as file_ids, for S3: downloads to temp)
-        media_files = [input_source.get_file(file_id) for file_id in file_ids]
-        
+        # # Get actual file paths (for local: same as file_ids, for S3: downloads to temp)
+        # media_files = [input_source.get_file(file_id) for file_id in file_ids]
+
     except (FileNotFoundError, ValueError):
         logger.exception("✗ Error resolving media inputs")
         logger.exception("\nUsage:")
@@ -390,6 +418,7 @@ def main():
         process_fn = _process_files_parallel if pipeline_config.parallel_enabled else _process_files_sequential
         process_fn(
             media_files,
+            input_source,
             config,
             embedding_model,
             vector_store,
