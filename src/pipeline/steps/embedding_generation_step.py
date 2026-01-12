@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from ...embeddings.constants import EMBEDDING_METADATA_KEY, EMBEDDING_MODEL_METADATA_KEY
 from ...embeddings.protocol import Embeddings
@@ -47,7 +47,7 @@ class EmbeddingGenerationStep:
         embeddings = self.embedding_model.embed_documents(texts)
 
         embedded_chunks = []
-        for chunk, embedding in zip(context.chunks, embeddings):
+        for chunk, embedding in zip(context.chunks, embeddings, strict=False):
             embedded_chunk = Document(
                 page_content=chunk.page_content,
                 metadata={

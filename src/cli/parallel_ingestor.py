@@ -2,8 +2,9 @@
 
 import logging
 import os
+from collections.abc import Callable
 from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Optional
+from typing import Any
 
 from src.cli.constants import SEPARATOR_CHAR, SEPARATOR_LENGTH
 from src.cli.models import IngestionResult
@@ -19,7 +20,7 @@ class ParallelIngestor:
 
     def __init__(
         self,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         executor_type: ExecutorType = ExecutorType.THREAD,
     ):
         """Initialize the parallel ingestor.
@@ -101,7 +102,7 @@ class ParallelIngestor:
                             f"[{completed}/{total}] ✗ Failed to process: {source_id} - {result.error}"
                         )
                 except Exception as e:
-                    self.logger.info(f"[{completed}/{total}] ✗ Exception processing {source_id}")
+                    self.logger.info(f"[{completed}/{total}] ✗ Exception processing {source_id}, {e}")
                     results["failed"].append(
                         IngestionResult(
                             file_path=source_id,

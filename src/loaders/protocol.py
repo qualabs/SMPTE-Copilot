@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Protocol, Union
+from typing import Protocol
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from ..constants import DEFAULT_ENCODING
 
-PageSpecifier = Union[Sequence[int], range, None]
+PageSpecifier = Sequence[int] | range | None
 
 
 class DocumentLoader(Protocol):
@@ -19,19 +19,15 @@ class DocumentLoader(Protocol):
     Any class implementing these methods can load documents from various
     sources (PDF, DOCX, HTML, etc.) and convert them to a standard format.
     This allows swapping implementations without changing the rest of the code.
+
+    The load_documents() method should return documents with markdown-formatted
+    content in the page_content field.
     """
 
     def load_documents(self) -> list[Document]:
-        """Load documents into LangChain Document objects."""
-        ...
+        """Load documents into LangChain Document objects.
 
-    def to_markdown_text(self, pages: PageSpecifier = None) -> str:
-        """Convert the document to Markdown text.
-
-        Parameters
-        ----------
-        pages
-            Optional sequence of page numbers, range, or None for all pages.
+        The page_content field should contain markdown-formatted text.
         """
         ...
 
@@ -39,9 +35,9 @@ class DocumentLoader(Protocol):
         self,
         *,
         pages: PageSpecifier = None,
-        output_path: Optional[Path] = None,
+        output_path: Path | None = None,
         overwrite: bool = True,
-        md_text: Optional[str] = None,
+        md_text: str | None = None,
     ) -> Path:
         """Save the document as a Markdown file.
 
@@ -64,7 +60,7 @@ class DocumentLoader(Protocol):
         destination.write_text(md_text, encoding=DEFAULT_ENCODING)
         return destination
 
-    def _resolve_output_path(self, output_path: Optional[Path]) -> Path:
+    def _resolve_output_path(self, output_path: Path | None) -> Path:
         """Resolve the output path for the markdown file.
 
         Parameters

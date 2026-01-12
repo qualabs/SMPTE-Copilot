@@ -6,16 +6,19 @@ An open-source AI co-pilot that ingests and indexes text, audio, and video to en
 
 ```bash
 # Build
-docker-compose build
+docker compose build
+
+# Start Qdrant vector database
+docker compose up qdrant
 
 # Ingest all PDFs in data folder
-docker-compose run --rm ingest python src/cli/ingest.py /app/data/
+docker compose run --rm ingest python src/cli/ingest.py /app/data/
 
 # Query
-docker-compose run --rm query python src/cli/query.py "your question"
+docker compose run --rm query python src/cli/query.py "your question"
 
 # Clean up
-docker-compose down
+docker compose down
 ```
 
 ### API Server (OpenAI-Compatible)
@@ -24,7 +27,7 @@ The project includes an OpenAI-compatible REST API server that can be integrated
 
 ```bash
 # Start the API server
-docker-compose up api
+docker compose up api
 
 # API will be available at http://localhost:8000
 # OpenAI-compatible endpoint: http://localhost:8000/v1/chat/completions
@@ -48,7 +51,7 @@ SMPTE-Copilot can be used with **OpenWebUI** as a chat interface via its OpenAI-
 To start OpenWebUI with SMPTE-Copilot:
 
 ```bash
-docker-compose up openwebui
+docker compose up openwebui
 ```
 
 ## Project Structure

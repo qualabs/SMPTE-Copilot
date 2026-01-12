@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import pymupdf4llm
-from langchain.schema import Document
 from langchain_community.document_loaders import PyMuPDFLoader as LangChainPyMuPDFLoader
+from langchain_core.documents import Document
 
 from .protocol import DocumentLoader
 
-PageSpecifier = Union[Sequence[int], range, None]
+PageSpecifier = Sequence[int] | range | None
 
 
 class PyMuPDFLoader(DocumentLoader):
@@ -63,11 +63,11 @@ class PyMuPDFLoader(DocumentLoader):
         self.output_dir = Path(output_dir).expanduser().resolve() if output_dir else None
 
     def load_documents(self) -> list[Document]:
-        """Load the PDF into LangChain Document objects.
+        """Load the PDF into LangChain Document objects with markdown-formatted content.
 
         Returns
         -------
-        List of Document objects representing the PDF content.
+        List of Document objects with markdown in page_content.
 
         Raises
         ------
@@ -75,31 +75,29 @@ class PyMuPDFLoader(DocumentLoader):
             If the PDF cannot be loaded (e.g., corrupted file, permission issues).
         """
         try:
+            md_text = pymupdf4llm.to_markdown(str(self.input_path))
+
+            # Get metadata using LangChain loader
             loader = LangChainPyMuPDFLoader(str(self.input_path))
-            return loader.load()
+            docs = loader.load()
+
+            # Use first document's metadata but replace content with markdown
+            metadata = docs[0].metadata if docs else {
+                "source": str(self.input_path),
+                "file_name": self.input_path.name,
+            }
+            metadata["loader"] = "PyMuPDFLoader"
+            metadata["file_type"] = ".pdf"
+
+            return [
+                Document(
+                    page_content=md_text,
+                    metadata=metadata
+                )
+            ]
         except Exception as e:
             raise RuntimeError(
                 f"Failed to load PDF from {self.input_path}: {e}"
-            ) from e
-
-    def to_markdown_text(self, pages: PageSpecifier = None) -> str:
-        """Return the PDF rendered as Markdown text.
-
-        Parameters
-        ----------
-        pages
-            Optional sequence of page numbers, range, or None for all pages.
-
-        Raises
-        ------
-        RuntimeError
-            If the PDF cannot be converted to Markdown (e.g., corrupted file).
-        """
-        try:
-            return pymupdf4llm.to_markdown(str(self.input_path), pages=pages)
-        except Exception as e:
-            raise RuntimeError(
-                f"Failed to convert PDF to Markdown from {self.input_path}: {e}"
             ) from e
 
 def create_pymupdf_loader(config: dict[str, Any]) -> DocumentLoader:

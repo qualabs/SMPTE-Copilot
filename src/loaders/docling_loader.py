@@ -1,7 +1,7 @@
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
@@ -11,14 +11,19 @@ from docling.datamodel.pipeline_options import (
     TableFormerMode,
     TableStructureOptions,
 )
-from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption
-from langchain.schema import Document
+from docling.document_converter import (
+    ConversionResult,
+    DocumentConverter,
+    PdfFormatOption,
+    WordFormatOption,
+)
+from langchain_core.documents import Document
 
 from src.constants import DEFAULT_IMAGE_DESCRIPTION_PROMPT, DEFAULT_IMAGE_DESCRIPTION_TIMEOUT
 
 from .protocol import DocumentLoader
 
-PageSpecifier = Union[Sequence[int], range, None]
+PageSpecifier = Sequence[int] | range | None
 
 class DoclingLoader(DocumentLoader):
     def __init__(self, config: dict[str, Any]) -> None:
@@ -87,17 +92,17 @@ class DoclingLoader(DocumentLoader):
             InputFormat.DOCX: WordFormatOption(pipeline_options=docx_pipeline_options),
         })
 
-    def _get_conversion_result(self):
+    def load_documents(self) -> list[Document]:
+        """Load documents with markdown-formatted content in page_content."""
+
+        result: ConversionResult = None
+
         try:
-            return self.converter.convert(str(self.input_path))
+            result = self.converter.convert(str(self.input_path))
         except Exception as e:
             raise RuntimeError(
                 f"Docling conversion failed for {self.input_path}: {e}"
             ) from e
-
-    def load_documents(self) -> list[Document]:
-
-        result = self._get_conversion_result()
         md_text = result.document.export_to_markdown()
 
         metadata = {
@@ -126,11 +131,6 @@ class DoclingLoader(DocumentLoader):
                 metadata=metadata
             )
         ]
-
-    def to_markdown_text(self, pages: PageSpecifier = None) -> str:
-
-        result = self._get_conversion_result()
-        return result.document.export_to_markdown()
 
 
 def create_docling_loader(config: dict[str, Any]) -> DocumentLoader:
