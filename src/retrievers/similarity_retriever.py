@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Similarity search retriever implementation."""
 
-from typing import Any, Optional
+from typing import Any
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from ..constants import DEFAULT_RETRIEVAL_K
 from ..vector_stores.protocol import VectorStore
@@ -36,7 +36,7 @@ class DocumentRetriever:
         self.k = k
         self.metadata_filter: Any = None
 
-    def set_filter(self, filter: Optional[Any]) -> None:
+    def set_filter(self, filter: Any | None) -> None:
         """Set the metadata filter for retrieval.
 
         Parameters

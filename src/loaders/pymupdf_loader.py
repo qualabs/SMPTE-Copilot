@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 import pymupdf4llm
-from langchain.schema import Document
 from langchain_community.document_loaders import PyMuPDFLoader as LangChainPyMuPDFLoader
+from langchain_core.documents import Document
 
 from .protocol import DocumentLoader
 
-PageSpecifier = Union[Sequence[int], range, None]
+PageSpecifier = Sequence[int] | range | None
 
 
 class PyMuPDFLoader(DocumentLoader):

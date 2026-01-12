@@ -2,9 +2,9 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import UnexpectedResponse
@@ -47,9 +47,9 @@ class QdrantVectorStoreWrapper:
     def add_texts(
         self,
         texts: list[str],
-        metadatas: Optional[list[dict[str, Any]]] = None,
-        ids: Optional[list[int]] = None,
-        embeddings: Optional[list[list[float]]] = None,
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[int] | None = None,
+        embeddings: list[list[float]] | None = None,
     ) -> None:
         """Add texts to the vector store with pre-computed embeddings.
 
@@ -72,7 +72,7 @@ class QdrantVectorStoreWrapper:
         if metadatas is None:
             metadatas = [{}] * len(texts)
 
-        for doc_id, text, embedding, metadata in zip(ids, texts, embeddings, metadatas):
+        for doc_id, text, embedding, metadata in zip(ids, texts, embeddings, metadatas, strict=False):
             vector = list(embedding)
 
             payload = {"page_content": text, **(metadata or {})}
@@ -100,7 +100,7 @@ class QdrantVectorStoreWrapper:
         self,
         query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Optional[Any] = None,
+        filter: Any | None = None,
     ) -> list[Document]:
         """Search for similar documents."""
         self._ensure_collection_exists()
@@ -112,7 +112,7 @@ class QdrantVectorStoreWrapper:
         self,
         query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Optional[Any] = None,
+        filter: Any | None = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores."""
         self._ensure_collection_exists()

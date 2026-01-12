@@ -4,11 +4,11 @@ from __future__ import annotations
 import logging
 import tempfile
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from docling.chunking import HybridChunker as DoclingHybridChunker
 from docling.document_converter import DocumentConverter
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from ..constants import DEFAULT_ENCODING
 from .protocol import Chunker
@@ -26,7 +26,7 @@ class HybridChunker:
         self,
         max_tokens: int = 2000,
         merge_peers: bool = False,
-        tokenizer: Optional[Tokenizer] = None,
+        tokenizer: Tokenizer | None = None,
     ):
         """Initialize the hybrid chunker.
 
@@ -107,7 +107,7 @@ class HybridChunker:
 
         return documents
 
-    def chunk_text(self, text: str, metadata: Optional[dict] = None) -> list[Document]:
+    def chunk_text(self, text: str, metadata: dict | None = None) -> list[Document]:
         """Chunk text using hybrid chunking strategy.
 
         Parameters
