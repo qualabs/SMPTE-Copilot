@@ -479,6 +479,16 @@ The `config.yaml` file is the central configuration file that controls which com
 The `config.yaml` file is organized into sections that map to each module:
 
 ```yaml
+input_source:
+  source_type: S3 # S3 or local supported
+  source_config:
+    bucket_name: smpte-copilot-data-bucket 
+    prefix: "documents/" # prefix for documents in S3. If omitted, processes everything at the bucket root
+    aws_access_key_id: AWS_ACCESS_KEY_ID
+    aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+    region_name: us-east-1
+    endpoint_url: "http://custom-s3:9000" # Optional: for S3-compatible services
+
 loader:
   file_type_mapping: # Map file extensions to loader types
     - extensions: [.pdf] # List of extensions that use the same loader
@@ -557,6 +567,7 @@ pipeline:
 
 The configuration values directly map to the Enum types defined in each module:
 
+- **`source_type`** → `InputSourceType` enum (e.g., `"S3"` -> `InputSourceType.S3`)
 - **`loader.file_type_mapping`** → List of loader configurations. Each entry contains `extensions` (list of file extensions like `[.pdf, .docx]`), `loader_name` (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`), and optional `loader_config`. Multiple extensions can share the same loader configuration to avoid repetition.
 - **`preprocessing_name`** → `PreprocessorType` enum (e.g., `"rapidfuzz"` → `PreprocessorType.RAPIDFUZZ`)
 - **`chunker_name`** → `ChunkerType` enum (e.g., `"langchain"` → `ChunkerType.LANGCHAIN`)
@@ -718,10 +729,9 @@ pipeline:
     chunk_enabled: true             
     embedding_enabled: true         
     save_enabled: true
-    # Parallelization settings
-    parallel_enabled: false         # Enable parallel processing of multiple files
+    # Parallelization settings (uses threading)
+    parallel_enabled: false         # Enable parallel processing using threading
     max_workers: null               # Max parallel workers (null = CPU count, 1 = sequential)
-    executor_type: thread           # Executor type: 'thread' (I/O-bound) or 'process' (CPU-bound)
   
   query:
     retrieve_enabled: true          
@@ -757,14 +767,14 @@ The ingestion pipeline consists of four configurable steps:
 
 ### Parallel Ingestion
 
-The ingestion pipeline supports parallel processing of multiple files to improve throughput when ingesting large batches of documents. Parallelization can significantly reduce total ingestion time, especially when processing many files.
+The ingestion pipeline supports parallel processing of multiple files to improve throughput when ingesting large batches of documents. Parallelization uses threading, which is ideal for the I/O-bound nature of document ingestion (file reading, API calls, database operations). This can significantly reduce total ingestion time, especially when processing many files.
 
 **Configuration Parameters:**
 
 1. **`parallel_enabled`** (default: `false`)
-   - Enables parallel processing of files
+   - Enables parallel processing of files using threading
    - When `false`: Files are processed sequentially (one at a time)
-   - When `true`: Multiple files are processed concurrently using thread or process pools
+   - When `true`: Multiple files are processed concurrently using thread pools
 
 2. **`max_workers`** (default: `null`)
    - Maximum number of parallel workers
@@ -772,12 +782,6 @@ The ingestion pipeline supports parallel processing of multiple files to improve
    - `1`: Equivalent to sequential processing (parallel_enabled=false)
    - `> 1`: Specified number of parallel workers
    - Recommended: Start with `null` and adjust based on your system resources
-
-3. **`executor_type`** (default: `"thread"`)
-   - Type of executor for parallel processing
-   - `"thread"`: ThreadPoolExecutor - best for I/O-bound tasks (API calls, file reading)
-   - `"process"`: ProcessPoolExecutor - best for CPU-bound tasks (heavy computation)
-   - Recommended: Use `"thread"` for most cases as ingestion involves API calls and I/O operations
 
 **Example Configuration:**
 
@@ -790,7 +794,6 @@ pipeline:
     save_enabled: true
     parallel_enabled: true          # Enable parallel processing
     max_workers: 4                  # Use 4 parallel workers
-    executor_type: thread           # Use thread-based executor
 ```
 
 **Considerations:**
@@ -888,10 +891,9 @@ pipeline:
     save_enabled: true
     parallel_enabled: true        # Enable parallel processing
     max_workers: null             # Use all available CPU cores
-    executor_type: thread         # Thread-based for I/O operations
 ```
 
-**Result**: Multiple files are processed concurrently, significantly reducing total ingestion time. The executor automatically manages worker threads and provides progress tracking. Failed files are reported at the end without stopping the entire batch.
+**Result**: Multiple files are processed concurrently using threading, significantly reducing total ingestion time. The executor automatically manages worker threads and provides progress tracking. Failed files are reported at the end without stopping the entire batch.
 
 ## How to Add New Components
 

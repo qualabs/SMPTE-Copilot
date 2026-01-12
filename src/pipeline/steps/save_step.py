@@ -52,8 +52,7 @@ class SaveStep:
                 for chunk in context.chunks
             ]
 
-            file_path_str = str(context.file_path.resolve())
-            file_hash_bytes = hashlib.md5(file_path_str.encode()).digest()
+            file_hash_bytes = hashlib.md5(context.source_id.encode()).digest()
             file_hash = int.from_bytes(file_hash_bytes[:8], byteorder='big', signed=False)
             ids = [file_hash + i for i in range(len(context.chunks))]
 
