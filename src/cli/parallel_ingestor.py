@@ -3,25 +3,25 @@
 import logging
 import os
 from collections.abc import Callable
-from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from typing import Any
 
 from src.cli.constants import SEPARATOR_CHAR, SEPARATOR_LENGTH
 from src.cli.models import IngestionResult
-from src.config.pipeline import ExecutorType
 
 
 class ParallelIngestor:
-    """Ingests multiple files in parallel using thread or process pools.
+    """Ingests multiple files in parallel using thread pools.
 
     This ingestor allows processing multiple files concurrently to improve
-    throughput when ingesting large batches of documents.
+    throughput when ingesting large batches of documents. Uses threading
+    which is ideal for I/O-bound workloads like file loading, API calls,
+    and database operations.
     """
 
     def __init__(
         self,
         max_workers: int | None = None,
-        executor_type: ExecutorType = ExecutorType.THREAD,
     ):
         """Initialize the parallel ingestor.
 
@@ -29,11 +29,8 @@ class ParallelIngestor:
         ----------
         max_workers
             Maximum number of parallel workers. If None, uses the number of CPUs.
-        executor_type
-            Type of executor to use (thread or process)
         """
         self.max_workers = max_workers
-        self.executor_type = executor_type if isinstance(executor_type, ExecutorType) else ExecutorType(executor_type)
         self.logger = logging.getLogger(__name__)
 
     def execute(
@@ -62,22 +59,18 @@ class ParallelIngestor:
             self.logger.warning("No files to process")
             return {"successful": [], "failed": []}
 
-        executor_class = ThreadPoolExecutor if self.executor_type == ExecutorType.THREAD else ProcessPoolExecutor
-
         # Determine actual number of workers that will be used
         cpu_count = os.cpu_count() or 1
         actual_workers = self.max_workers if self.max_workers is not None else cpu_count
 
-        self.logger.info(
-            f"Processing {len(files)} files in parallel using {executor_class.__name__}"
-        )
+        self.logger.info(f"Processing {len(files)} files in parallel using threading")
         self.logger.info(f"CPU cores available: {cpu_count}")
         self.logger.info(f"Workers to use: {actual_workers}")
 
         results = {"successful": [], "failed": []}
         futures: dict[Future, str] = {}
 
-        with executor_class(max_workers=self.max_workers) as executor:
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             # Submit all tasks
             for source_id in files:
                 future = executor.submit(task_fn, source_id, **task_args)

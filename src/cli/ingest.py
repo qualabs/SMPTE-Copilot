@@ -198,7 +198,6 @@ def _process_files_parallel(
     pipeline_config = ingestion_config.config.pipeline.ingestion
     parallel_ingestor = ParallelIngestor(
         max_workers=pipeline_config.max_workers,
-        executor_type=pipeline_config.executor_type,
     )
 
     results = parallel_ingestor.execute(
