@@ -7,6 +7,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+import boto3
+
 from .protocol import InputSource
 
 
@@ -28,6 +30,7 @@ class S3InputSource:
             - prefix: str (optional) - S3 key prefix to filter files
             - aws_access_key_id: str (optional) - AWS access key
             - aws_secret_access_key: str (optional) - AWS secret key
+            - aws_session_token: str (optional) - AWS session token (for temporary credentials)
             - region_name: str (optional) - AWS region
             - endpoint_url: str (optional) - Custom S3 endpoint (for S3-compatible services)
         """
@@ -42,46 +45,34 @@ class S3InputSource:
         self.bucket_name = config["bucket_name"]
         self.prefix = config.get("prefix", "")
 
-        # Initialize boto3 client (lazy import)
         self._s3_client = None
 
     @property
     def s3_client(self):
         """Get or create S3 client (lazy initialization)."""
         if self._s3_client is None:
-            try:
-                import boto3
-            except ImportError as e:
-                raise ImportError(
-                    "boto3 is required for S3 input source. "
-                    "Install with: pip install boto3"
-                ) from e
+            boto3_config = {
+                "aws_access_key_id": self.config.get("aws_access_key_id"),
+                "aws_secret_access_key": self.config.get("aws_secret_access_key"),
+                "aws_session_token": self.config.get("aws_session_token"),
+                "region_name": self.config.get("region_name"),
+                "endpoint_url": self.config.get("endpoint_url"),
+            }
 
-            # Build client kwargs
-            client_kwargs = {}
-            if "aws_access_key_id" in self.config:
-                client_kwargs["aws_access_key_id"] = self.config["aws_access_key_id"]
-            if "aws_secret_access_key" in self.config:
-                client_kwargs["aws_secret_access_key"] = self.config[
-                    "aws_secret_access_key"
-                ]
-            if "region_name" in self.config:
-                client_kwargs["region_name"] = self.config["region_name"]
-            if "endpoint_url" in self.config:
-                client_kwargs["endpoint_url"] = self.config["endpoint_url"]
-
-            self._s3_client = boto3.client("s3", **client_kwargs)
+            self._s3_client = boto3.client("s3", **boto3_config)
             self.logger.info(f"Initialized S3 client for bucket: {self.bucket_name}")
 
         return self._s3_client
 
-    def list_files(self, path: str, extensions: list[str] | None = None) -> list[str]:
+    def list_files(self, path: str = "", extensions: list[str] | None = None) -> list[str]:
         """List files in S3 bucket with optional prefix and extension filtering.
 
         Parameters
         ----------
         path
             S3 prefix to list files from (relative to configured prefix).
+            If empty string or not provided, uses the prefix from config.
+            If provided, it will be appended to the configured prefix.
         extensions
             Optional list of file extensions to filter by.
 
@@ -91,7 +82,7 @@ class S3InputSource:
         """
         # Combine configured prefix with path
         full_prefix = self.prefix
-        if path and path != ".":
+        if path and path not in {".", ""}:
             full_prefix = f"{self.prefix.rstrip('/')}/{path.lstrip('/')}"
 
         self.logger.info(f"Listing S3 objects: s3://{self.bucket_name}/{full_prefix}")
@@ -122,7 +113,7 @@ class S3InputSource:
                     files.append(s3_uri)
 
         except Exception as e:
-            self.logger.error(f"Failed to list S3 objects: {e}")
+            self.logger.info(f"Failed to list S3 objects: {e}")
             raise RuntimeError(f"Failed to list S3 objects: {e}") from e
 
         self.logger.info(f"Found {len(files)} file(s) in S3")
@@ -158,11 +149,10 @@ class S3InputSource:
 
         # Create temporary file with same extension
         suffix = Path(key).suffix
-        temp_file = tempfile.NamedTemporaryFile(
+        with tempfile.NamedTemporaryFile(
             delete=False, suffix=suffix, prefix="s3_"
-        )
-        temp_path = Path(temp_file.name)
-        temp_file.close()
+        ) as temp_file:
+            temp_path = Path(temp_file.name)
 
         self.logger.info(f"Downloading {file_id} to {temp_path}")
 
@@ -174,7 +164,7 @@ class S3InputSource:
             # Clean up temp file on error
             if temp_path.exists():
                 temp_path.unlink()
-            self.logger.error(f"Failed to download {file_id}: {e}")
+            self.logger.info(f"Failed to download {file_id}: {e}")
             raise RuntimeError(f"Failed to download {file_id}: {e}") from e
 
     def cleanup(self) -> None:

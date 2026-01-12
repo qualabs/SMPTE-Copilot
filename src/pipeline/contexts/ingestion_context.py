@@ -18,7 +18,8 @@ class IngestionContext(PipelineContext):
     Load -> Chunk -> Embed -> Save
     """
 
-    file_path: Path
+    source_id: str  # Original source identifier (S3 URI or local path)
+    file_path: Path  # Resolved local file path for processing
     raw_text: Optional[str] = None
     markdown_path: Optional[Path] = None
     chunks: list[Document] = Field(default_factory=list)

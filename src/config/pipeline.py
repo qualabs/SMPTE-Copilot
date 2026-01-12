@@ -1,10 +1,16 @@
 """Pipeline configuration for ingestion and query steps."""
 
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from src.cli.models import ExecutorType
+
+class ExecutorType(str, Enum):
+    """Type of executor for parallel processing."""
+
+    THREAD = "thread"
+    PROCESS = "process"
 
 
 class IngestionPipelineConfig(BaseModel):

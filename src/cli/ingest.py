@@ -5,26 +5,23 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 from src import (
     ChunkerFactory,
     Config,
     EmbeddingModelFactory,
-    Embeddings,
     LoaderFactory,
     PreprocessorFactory,
-    VectorStore,
     VectorStoreFactory,
 )
-from src.input_sources import InputSource, InputSourceFactory, InputSourceType
 from src.cli.constants import (
     EXIT_CODE_ERROR,
     SEPARATOR_CHAR,
     SEPARATOR_LENGTH,
 )
-from src.cli.models import IngestionResult
+from src.cli.models import IngestionConfig, IngestionResult
 from src.cli.parallel_ingestor import ParallelIngestor
+from src.input_sources import InputSourceFactory, InputSourceType
 from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
 from src.loaders.helpers import LoaderHelper
 from src.logger import Logger
@@ -40,9 +37,7 @@ from src.pipeline.steps import (
 
 def _build_ingestion_steps(
     file_path: Path,
-    config: Config,
-    embedding_model: Optional[Embeddings],
-    vector_store: Optional[VectorStore],
+    ingestion_config: IngestionConfig,
 ) -> list:
     """Build the list of pipeline steps based on configuration.
 
@@ -50,12 +45,8 @@ def _build_ingestion_steps(
     ----------
     file_path
         Path to the media file to ingest.
-    config
-        Configuration object.
-    embedding_model
-        Embedding model instance (can be None if save step is disabled).
-    vector_store
-        Vector store instance (can be None if save step is disabled).
+    ingestion_config
+        Ingestion configuration object.
 
     Returns
     -------
@@ -64,6 +55,7 @@ def _build_ingestion_steps(
     """
     logger = logging.getLogger(__name__)
     steps = []
+    config = ingestion_config.config
     pipeline_config = config.pipeline.ingestion
 
     logger.info(f"Load step - enabled: {pipeline_config.load_enabled}")
@@ -106,38 +98,27 @@ def _build_ingestion_steps(
         steps.append(ChunkStep(chunker))
 
     logger.info(f"Save step - enabled: {pipeline_config.save_enabled}")
-    if embedding_model and vector_store:
+    if ingestion_config.embedding_model and ingestion_config.vector_store:
         logger.info(f"Embedding chunks (model={config.embedding.embed_name})...")
-        steps.append(EmbeddingGenerationStep(embedding_model, config.embedding.embed_name))
+        steps.append(EmbeddingGenerationStep(ingestion_config.embedding_model, config.embedding.embed_name))
         logger.info("Storing in vector database...")
-        steps.append(SaveStep(vector_store))
+        steps.append(SaveStep(ingestion_config.vector_store))
 
     return steps
 
 
 def ingest_file(
-    file_path: Path,
-    config: Config,
-    embedding_model: Optional[Embeddings],
-    vector_store: Optional[VectorStore],
-    access_tags: Optional[list[str]] = None,
+    source_id: str,
+    ingestion_config: IngestionConfig,
 ) -> IngestionResult:
     """Ingest a media file into the vector database using the pipeline pattern.
 
     Parameters
     ----------
-    file_path
-        Path to the media file to ingest.
-    input_source
-        InputSource instance to resolve file paths
-    config
-        Configuration object.
-    embedding_model
-        Embedding model instance (can be None if save step is disabled).
-    vector_store
-        Vector store instance (can be None if save step is disabled).
-    access_tags
-        Optional list of access control tags for the document.
+    source_id
+        Source identifier (S3 URI or local file path).
+    ingestion_config
+        Ingestion configuration object.
 
     Returns
     -------
@@ -146,76 +127,65 @@ def ingest_file(
     """
     logger = logging.getLogger(__name__)
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"Ingesting: {file_path}")
-    if access_tags:
-        logger.info(f"Access tags: {access_tags}")
+    logger.info(f"Ingesting: {source_id}")
+    if ingestion_config.access_tags:
+        logger.info(f"Access tags: {ingestion_config.access_tags}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
-    context = IngestionContext(file_path=file_path)
+    # Create InputSource instance for this worker
+    input_source = InputSourceFactory.create(ingestion_config.source_type, ingestion_config.source_config)
 
-    # Set tag-based access control if provided
-    if access_tags:
-        context.access_tags = access_tags
+    try:
+        file_path_resolved = input_source.get_file(source_id)
 
-    # Resolve the actual file path from the input source
-    source_type = InputSourceType(config.input_source.source_type)
-    source_config = config.input_source.source_config or {}
-    input_source = InputSourceFactory.create(source_type, source_config)
-    file_path_resolved = input_source.get_file(str(file_path))
-
-    # Build steps list dynamically based on pipeline configuration
-    steps = _build_ingestion_steps(file_path_resolved, config, embedding_model, vector_store)
-
-    executor = PipelineExecutor(steps)
-    context = executor.execute(context)
-
-    if context.status == PipelineStatus.FAILED:
-        return IngestionResult(
-            file_path=file_path,
-            success=False,
-            error=context.error,
+        context = IngestionContext(
+            source_id=source_id,
+            file_path=file_path_resolved,
+            access_tags=ingestion_config.access_tags,
         )
 
-    logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info("Ingestion Complete!")
-    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"✓ File processed: {file_path}")
-    if context.markdown_path:
-        logger.info(f"✓ Markdown file: {context.markdown_path}")
-    logger.info(f"✓ Chunks created: {len(context.chunks)}")
-    logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
+        # Build steps list dynamically based on pipeline configuration
+        steps = _build_ingestion_steps(file_path_resolved, ingestion_config)
 
-    return IngestionResult(
-        file_path=file_path,
-        success=True,
-        chunks_count=len(context.chunks),
-        markdown_path=context.markdown_path,
-    )
+        executor = PipelineExecutor(steps)
+        context = executor.execute(context)
+
+        if context.status == PipelineStatus.FAILED:
+            return IngestionResult(
+                file_path=source_id,
+                success=False,
+                error=context.error,
+            )
+
+        logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info("Ingestion Complete!")
+        logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+        logger.info(f"✓ File processed: {source_id}")
+        if context.markdown_path:
+            logger.info(f"✓ Markdown file: {context.markdown_path}")
+        logger.info(f"✓ Chunks created: {len(context.chunks)}")
+        logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
+
+        return IngestionResult(
+            file_path=source_id,
+            success=True,
+            chunks_count=len(context.chunks),
+            markdown_path=context.markdown_path,
+        )
+    finally:
+        # Clean up temporary files for this worker
+        input_source.cleanup()
 
 
 def _process_files_parallel(
-    media_files: list[Path],
-    config: Config,
-    embedding_model: Optional[Embeddings],
-    vector_store: Optional[VectorStore],
-    access_tags: Optional[list[str]],
+    ingestion_config: IngestionConfig,
 ) -> bool:
     """Process files in parallel.
 
     Parameters
     ----------
-    media_files
-        List of media files to process.
-    input_source
-        InputSource instance to resolve file paths
-    config
-        Configuration object.
-    embedding_model
-        Embedding model instance.
-    vector_store
-        Vector store instance.
-    access_tags
-        Optional access control tags.
+    ingestion_config
+        Ingestion configuration object.
 
     Returns
     -------
@@ -225,20 +195,17 @@ def _process_files_parallel(
     logger = logging.getLogger(__name__)
     logger.info("Parallel processing enabled")
 
-    pipeline_config = config.pipeline.ingestion
+    pipeline_config = ingestion_config.config.pipeline.ingestion
     parallel_ingestor = ParallelIngestor(
         max_workers=pipeline_config.max_workers,
         executor_type=pipeline_config.executor_type,
     )
 
     results = parallel_ingestor.execute(
-        files=media_files,
+        files=ingestion_config.source_ids,
         task_fn=ingest_file,
         task_args={
-            "config": config,
-            "embedding_model": embedding_model,
-            "vector_store": vector_store,
-            "access_tags": access_tags,
+            "ingestion_config": ingestion_config,
         },
     )
 
@@ -253,28 +220,14 @@ def _process_files_parallel(
 
 
 def _process_files_sequential(
-    media_files: list[Path],
-    config: Config,
-    embedding_model: Optional[Embeddings],
-    vector_store: Optional[VectorStore],
-    access_tags: Optional[list[str]],
+    ingestion_config: IngestionConfig,
 ) -> bool:
     """Process files sequentially.
 
     Parameters
     ----------
-    media_files
-        List of media files to process.
-    input_source
-        InputSource instance to resolve file paths
-    config
-        Configuration object.
-    embedding_model
-        Embedding model instance.
-    vector_store
-        Vector store instance.
-    access_tags
-        Optional access control tags.
+    ingestion_config
+        Ingestion configuration object.
 
     Returns
     -------
@@ -286,22 +239,19 @@ def _process_files_sequential(
 
     failed_files = []
 
-    for media_file in media_files:
+    for source_id in ingestion_config.source_ids:
         result = ingest_file(
-            media_file,
-            config,
-            embedding_model,
-            vector_store,
-            access_tags=access_tags if access_tags else None,
+            source_id,
+            ingestion_config,
         )
 
         if not result.success:
-            failed_files.append((media_file, result.error))
+            failed_files.append((source_id, result.error))
 
     if failed_files:
         logger.error("\nFailed files:")
-        for file_path, error in failed_files:
-            logger.error(f"  - {file_path.name}: {error}")
+        for source_id, error in failed_files:
+            logger.error(f"  - {source_id}: {error}")
         logger.error(f"\n✗ {len(failed_files)} file(s) failed to process")
         return False
 
@@ -321,53 +271,22 @@ def main():
     # Get access control settings from config
     access_tags = config.access_control.default_access_tags or None
 
-    # Initialize input source
-    input_source = None
-    try:
-        source_type = InputSourceType(config.input_source.source_type)
-        source_config = config.input_source.source_config or {}
-        input_source = InputSourceFactory.create(source_type, source_config)
-        logger.info(f"Using input source: {source_type.value}")
-    except ValueError as e:
-        logger.error(f"✗ Invalid input source type: {config.input_source.source_type}")
-        logger.error(f"Available types: {[t.value for t in InputSourceType]}")
-        sys.exit(EXIT_CODE_ERROR)
-    except Exception as e:
-        logger.exception(f"✗ Error initializing input source: {e}")
-        sys.exit(EXIT_CODE_ERROR)
+    # Get input source configuration
+    source_type = InputSourceType(config.input_source.source_type)
+    source_config = config.input_source.source_config or {}
 
-    try:
-        # For S3 sources, use empty string or configured prefix instead of local file path
-        # For local sources, use the input_path as-is
-        if source_type == InputSourceType.S3:
-            # For S3, the path is controlled by prefix in source_config
-            # Use empty string to list from the configured prefix
-            search_path = ""
-        else:
-            # For local files, use the input_path
-            search_path = str(input_path)
-        
-        # List files using input source
-        media_files = input_source.list_files(search_path, list(SUPPORTED_FILE_EXTENSIONS))
+    logger.info(f"Using input source: {source_type.value}")
+    logger.info(f"Source config: {source_config}")
 
-    except (FileNotFoundError, ValueError):
-        logger.exception("✗ Error resolving media inputs")
-        logger.exception("\nUsage:")
-        logger.exception("  python ingest.py ./data  # Ingest all supported files in directory")
-        supported_types = ", ".join(SUPPORTED_FILE_EXTENSIONS)
-        logger.exception(f"\nSupported file types: {supported_types}")
-        logger.exception("\nConfiguration:")
-        logger.exception("  - Config file: config.yaml or config.yml")
-        logger.exception("  - Or set RAG_CONFIG_FILE=/path/to/config.yaml")
-        logger.exception("  - Default paths are relative to current working directory")
-        if input_source:
-            input_source.cleanup()
-        sys.exit(EXIT_CODE_ERROR)
+    source_config = {**source_config, "base_path": str(input_path)}
+    input_source = InputSourceFactory.create(source_type, source_config)
+    source_ids = input_source.list_files("", list(SUPPORTED_FILE_EXTENSIONS))
+    input_source.cleanup()
 
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("RAG Media Ingestion Pipeline")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"Inputs: {len(media_files)} file(s)")
+    logger.info(f"Inputs: {len(source_ids)} file(s)")
     logger.info(f"Chunker: {config.chunking.chunker_name}")
     logger.info(f"Embedding model: {config.embedding.embed_name}")
     logger.info(f"Database location: {config.vector_store.store_config.get('persist_directory')}")
@@ -398,30 +317,31 @@ def main():
                 **store_config,
             )
 
+        # Create ingestion configuration
+        ingestion_config = IngestionConfig(
+            source_type=source_type,
+            source_config=source_config,
+            config=config,
+            source_ids=source_ids,
+            embedding_model=embedding_model,
+            vector_store=vector_store,
+            access_tags=access_tags,
+        )
+
         # Process files in parallel if enabled, otherwise sequentially
         start_time = time.time()
         process_fn = _process_files_parallel if pipeline_config.parallel_enabled else _process_files_sequential
-        process_fn(
-            media_files,
-            config,
-            embedding_model,
-            vector_store,
-            access_tags,
-        )
+        process_fn(ingestion_config)
         elapsed_time = time.time() - start_time
 
         logger.info("\n" + SEPARATOR_CHAR * SEPARATOR_LENGTH)
         logger.info("Ingestion complete!")
         logger.info(f"Total time: {elapsed_time:.2f} seconds ({elapsed_time/60:.2f} minutes)")
-        logger.info(f"{len(media_files)} file(s) processed successfully")
+        logger.info(f"{len(source_ids)} file(s) processed successfully")
 
     except Exception as exc:
         logger.error(f"\n✗ Error during ingestion: {exc}", exc_info=True)
         sys.exit(EXIT_CODE_ERROR)
-    finally:
-        # Clean up temporary files (S3 downloads, etc.)
-        if input_source:
-            input_source.cleanup()
 
 
 if __name__ == "__main__":

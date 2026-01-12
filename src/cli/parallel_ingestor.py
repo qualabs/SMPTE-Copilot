@@ -3,11 +3,11 @@
 import logging
 import os
 from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor, as_completed
-from pathlib import Path
 from typing import Any, Callable, Optional
 
 from src.cli.constants import SEPARATOR_CHAR, SEPARATOR_LENGTH
-from src.cli.models import ExecutorType, IngestionResult
+from src.cli.models import IngestionResult
+from src.config.pipeline import ExecutorType
 
 
 class ParallelIngestor:
@@ -37,8 +37,8 @@ class ParallelIngestor:
 
     def execute(
         self,
-        files: list[Path],
-        task_fn: Callable[[Path, Any], IngestionResult],
+        files: list[str],
+        task_fn: Callable[[str, Any], IngestionResult],
         task_args: dict[str, Any],
     ) -> dict[str, list[IngestionResult]]:
         """Execute ingestion tasks in parallel.
@@ -46,9 +46,9 @@ class ParallelIngestor:
         Parameters
         ----------
         files
-            List of file paths to process.
+            List of source identifiers (S3 URIs or local paths) to process.
         task_fn
-            Function to execute for each file. Should accept (file_path, **task_args)
+            Function to execute for each file. Should accept (source_id, **task_args)
             and return an IngestionResult.
         task_args
             Additional arguments to pass to the task function.
@@ -74,37 +74,37 @@ class ParallelIngestor:
         self.logger.info(f"Workers to use: {actual_workers}")
 
         results = {"successful": [], "failed": []}
-        futures: dict[Future, Path] = {}
+        futures: dict[Future, str] = {}
 
         with executor_class(max_workers=self.max_workers) as executor:
             # Submit all tasks
-            for file_path in files:
-                future = executor.submit(task_fn, file_path, **task_args)
-                futures[future] = file_path
+            for source_id in files:
+                future = executor.submit(task_fn, source_id, **task_args)
+                futures[future] = source_id
 
             # Process completed tasks as they finish
             total = len(files)
 
             for completed, future in enumerate(as_completed(futures), start=1):
-                file_path = futures[future]
+                source_id = futures[future]
 
                 try:
                     result = future.result()
                     if result.success:
                         results["successful"].append(result)
                         self.logger.info(
-                            f"[{completed}/{total}] ✓ Successfully processed: {file_path}"
+                            f"[{completed}/{total}] ✓ Successfully processed: {source_id}"
                         )
                     else:
                         results["failed"].append(result)
                         self.logger.error(
-                            f"[{completed}/{total}] ✗ Failed to process: {file_path} - {result.error}"
+                            f"[{completed}/{total}] ✗ Failed to process: {source_id} - {result.error}"
                         )
                 except Exception as e:
-                    self.logger.info(f"[{completed}/{total}] ✗ Exception processing {file_path}")
+                    self.logger.info(f"[{completed}/{total}] ✗ Exception processing {source_id}")
                     results["failed"].append(
                         IngestionResult(
-                            file_path=file_path,
+                            file_path=source_id,
                             success=False,
                             error=str(e),
                         )

@@ -14,13 +14,16 @@ class InputSource(Protocol):
     these methods to be compatible.
     """
 
-    def list_files(self, path: str, extensions: list[str] | None = None) -> list[str]:
+    def list_files(self, path: str = "", extensions: list[str] | None = None) -> list[str]:
         """List files in the given path.
 
         Parameters
         ----------
         path
             Path to list files from (can be directory path or S3 prefix).
+            If empty string or not provided, uses the base path configured for the source:
+            - Local sources: uses base_path from config
+            - S3 sources: uses prefix from config
         extensions
             Optional list of file extensions to filter by (e.g., ['.pdf', '.docx']).
             If None, return all files.
