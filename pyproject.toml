@@ -26,7 +26,8 @@ dependencies = [
   "fastapi>=0.104.0",
   "openai-whisper>=20231117",
   "uvicorn[standard]>=0.24.0",
-  "rapidfuzz>=3.0.0"
+  "rapidfuzz>=3.0.0",
+  "boto3>=1.42.24",
 ]
 
 [project.optional-dependencies]

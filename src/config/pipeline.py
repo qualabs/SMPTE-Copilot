@@ -3,8 +3,6 @@
 
 from pydantic import BaseModel, Field
 
-from src.cli.models import ExecutorType
-
 
 class IngestionPipelineConfig(BaseModel):
     """Configuration for ingestion pipeline steps.
@@ -30,15 +28,11 @@ class IngestionPipelineConfig(BaseModel):
     )
     parallel_enabled: bool = Field(
         default=False,
-        description="Enable/disable parallel processing of multiple files",
+        description="Enable/disable parallel processing of multiple files using threading",
     )
     max_workers: int | None = Field(
         default=None,
         description="Maximum number of parallel workers (None = CPU count, 1 = sequential)",
-    )
-    executor_type: ExecutorType = Field(
-        default=ExecutorType.THREAD,
-        description="Type of executor: 'thread' for I/O-bound tasks, 'process' for CPU-bound tasks",
     )
 
 
