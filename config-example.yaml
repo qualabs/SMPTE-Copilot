@@ -74,6 +74,13 @@ retrieval:
   k: 5                          # Number of results to retrieve
   searcher_config: null         # Additional searcher-specific configuration (dict)
 
+reranking:
+  reranker_name: gemini         # Reranker type (currently only gemini supported)
+  reranker_config:              # Reranker-specific configuration
+    model: gemini-2.5-flash     # Gemini model for reranking
+    api_key:                    # Gemini API key (or use ${GOOGLE_API_KEY} environment variable)
+    # max_chars: 2000           # Optional: Maximum characters of document content to send for scoring (default: 2000)
+
 llm:
   llm_name: gemini
   llm_config:
@@ -108,5 +115,6 @@ pipeline:
     executor_type: thread           # Executor type: 'thread' (I/O-bound) or 'process' (CPU-bound)
   
   query:
-    retrieve_enabled: true          
-    generation_enabled: true        
+    retrieve_enabled: true          # Enable document retrieval step
+    rerank_enabled: false           # Enable reranking step (improves precision but adds latency)
+    generation_enabled: true        # Enable LLM answer generation step        

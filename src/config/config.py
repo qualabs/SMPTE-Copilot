@@ -18,6 +18,7 @@ from .logging import LoggingConfig
 from .paths import PathsConfig
 from .pipeline import PipelineConfig
 from .preprocessing import PreprocessingConfig
+from .reranking import RerankingConfig
 from .retrieval import RetrievalConfig
 from .vector_store import VectorStoreConfig
 
@@ -31,6 +32,7 @@ class Config(BaseSettings):
     embedding: EmbeddingConfig = Field(default_factory=EmbeddingConfig)
     vector_store: VectorStoreConfig = Field(default_factory=VectorStoreConfig)
     retrieval: RetrievalConfig = Field(default_factory=RetrievalConfig)
+    reranking: RerankingConfig = Field(default_factory=RerankingConfig)
     llm: LLMConfig = Field(default_factory=LLMConfig)
     paths: PathsConfig = Field(default_factory=PathsConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)

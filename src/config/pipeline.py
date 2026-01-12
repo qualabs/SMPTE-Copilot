@@ -53,6 +53,10 @@ class QueryPipelineConfig(BaseModel):
         default=True,
         description="Enable/disable the retrieval step (includes query embedding)",
     )
+    rerank_enabled: bool = Field(
+        default=False,
+        description="Enable/disable the reranking step (cross-encoder scoring)",
+    )
     generation_enabled: bool = Field(
         default=True,
         description="Enable/disable the LLM generation step",

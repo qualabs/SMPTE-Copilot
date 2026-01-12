@@ -9,13 +9,15 @@ from . import (
     Config,
     EmbeddingModelFactory,
     LLMFactory,
+    RerankerFactory,
     RetrieverFactory,
     VectorStoreFactory,
 )
 from .embeddings.protocol import Embeddings
 from .llms.protocol import LLM
 from .pipeline import PipelineExecutor, QueryContext
-from .pipeline.steps import GenerationStep, QueryEmbeddingStep, RetrieveStep
+from .pipeline.steps import GenerationStep, QueryEmbeddingStep, RerankStep, RetrieveStep
+from .rerankers.protocol import Reranker
 from .retrievers.protocol import Retriever
 from .vector_stores.protocol import VectorStore
 
@@ -26,6 +28,7 @@ class RAGComponents(NamedTuple):
     embedding_model: Optional[Embeddings]
     vector_store: Optional[VectorStore]
     retriever: Optional[Retriever]
+    reranker: Optional[Reranker]
     llm: Optional[LLM]
 
 
@@ -53,9 +56,11 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
     embedding_model = None
     vector_store = None
     retriever = None
+    reranker = None
     llm = None
 
     logger.info(f"Retrieve step - enabled: {pipeline_config.retrieve_enabled}")
+    logger.info(f"Rerank step - enabled: {pipeline_config.rerank_enabled}")
     logger.info(f"Generation step - enabled: {pipeline_config.generation_enabled}")
 
     # Only create embedding, vector_store and retriever if retrieve step is enabled
@@ -85,6 +90,13 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
             **retriever_kwargs,
         )
 
+    # Only create reranker if rerank step is enabled
+    if pipeline_config.rerank_enabled:
+        reranker = RerankerFactory.create(
+            config.reranking.reranker_name,
+            **(config.reranking.reranker_config or {}),
+        )
+
     if pipeline_config.generation_enabled:
         llm = LLMFactory.create(
             config.llm.llm_name,
@@ -97,6 +109,7 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
         embedding_model=embedding_model,
         vector_store=vector_store,
         retriever=retriever,
+        reranker=reranker,
         llm=llm,
     )
 
@@ -146,6 +159,9 @@ def execute_query(
 
     if components.retriever:
         steps.append(RetrieveStep(components.retriever))
+
+    if components.reranker:
+        steps.append(RerankStep(components.reranker))
 
     if components.llm:
         steps.append(GenerationStep(components.llm))
