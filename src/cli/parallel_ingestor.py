@@ -93,12 +93,12 @@ class ParallelIngestor:
                     if result.success:
                         results["successful"].append(result)
                         self.logger.info(
-                            f"[{completed}/{total}] ✓ Successfully processed: {file_path.name}"
+                            f"[{completed}/{total}] ✓ Successfully processed: {file_path}"
                         )
                     else:
                         results["failed"].append(result)
                         self.logger.error(
-                            f"[{completed}/{total}] ✗ Failed to process: {file_path.name} - {result.error}"
+                            f"[{completed}/{total}] ✗ Failed to process: {file_path} - {result.error}"
                         )
                 except Exception as e:
                     self.logger.info(f"[{completed}/{total}] ✗ Exception processing {file_path}")
@@ -138,7 +138,7 @@ class ParallelIngestor:
         if failed:
             self.logger.info("\nFailed files:")
             for result in failed:
-                self.logger.info(f"  - {result.file_path.name}: {result.error}")
+                self.logger.info(f"  - {result.file_path}: {result.error}")
 
         self.logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH + "\n")
 
