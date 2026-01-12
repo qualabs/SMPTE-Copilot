@@ -479,6 +479,16 @@ The `config.yaml` file is the central configuration file that controls which com
 The `config.yaml` file is organized into sections that map to each module:
 
 ```yaml
+input_source:
+  source_type: S3 # S3 or local supported
+  source_config:
+    bucket_name: smpte-copilot-data-bucket 
+    prefix: "documents/" # prefix for documents in S3. If omitted, processes everything at the bucket root
+    aws_access_key_id: AWS_ACCESS_KEY_ID
+    aws_secret_access_key: AWS_SECRET_ACCESS_KEY
+    region_name: us-east-1
+    endpoint_url: "http://custom-s3:9000" # Optional: for S3-compatible services
+
 loader:
   file_type_mapping: # Map file extensions to loader types
     - extensions: [.pdf] # List of extensions that use the same loader
@@ -557,6 +567,7 @@ pipeline:
 
 The configuration values directly map to the Enum types defined in each module:
 
+- **`source_type`** → `InputSourceType` enum (e.g., `"S3"` -> `InputSourceType.S3`)
 - **`loader.file_type_mapping`** → List of loader configurations. Each entry contains `extensions` (list of file extensions like `[.pdf, .docx]`), `loader_name` (e.g., `"pymupdf"` → `LoaderType.PYMUPDF`), and optional `loader_config`. Multiple extensions can share the same loader configuration to avoid repetition.
 - **`preprocessing_name`** → `PreprocessorType` enum (e.g., `"rapidfuzz"` → `PreprocessorType.RAPIDFUZZ`)
 - **`chunker_name`** → `ChunkerType` enum (e.g., `"langchain"` → `ChunkerType.LANGCHAIN`)
