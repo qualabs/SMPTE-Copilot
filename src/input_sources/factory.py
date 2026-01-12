@@ -2,9 +2,12 @@ from __future__ import annotations
 
 """Input source factory with dynamic registration."""
 
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
+from .local_source import create_local_source
 from .protocol import InputSource
+from .s3_source import create_s3_source
 from .types import InputSourceType
 
 
@@ -71,11 +74,6 @@ class InputSourceFactory:
 
         creator = cls._registry[source_type]
         return creator(config)
-
-
-# Import implementations to trigger registration
-from .local_source import create_local_source
-from .s3_source import create_s3_source
 
 # Register implementations
 InputSourceFactory.register(InputSourceType.LOCAL)(create_local_source)
