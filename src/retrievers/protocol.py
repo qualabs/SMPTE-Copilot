@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Protocol for retriever implementations."""
 
-from typing import Any, Optional, Protocol
+from typing import Any, Protocol
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 
 class Retriever(Protocol):
@@ -22,7 +22,7 @@ class Retriever(Protocol):
         """Retrieve documents with similarity scores."""
         ...
 
-    def set_filter(self, filter: Optional[Any]) -> None:
+    def set_filter(self, filter: Any | None) -> None:
         """Set the metadata filter for retrieval.
 
         Parameters

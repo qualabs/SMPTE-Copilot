@@ -3,10 +3,10 @@ from __future__ import annotations
 """ChromaDB vector store implementation."""
 
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from langchain.schema import Document
 from langchain_community.vectorstores import Chroma
+from langchain_core.documents import Document
 
 from ..constants import DEFAULT_RETRIEVAL_K
 from ..embeddings.protocol import Embeddings
@@ -30,9 +30,9 @@ class ChromaDBWrapper:
     def add_texts(
         self,
         texts: list[str],
-        metadatas: Optional[list[dict[str, Any]]] = None,
-        ids: Optional[list[int]] = None,
-        embeddings: Optional[list[list[float]]] = None,
+        metadatas: list[dict[str, Any]] | None = None,
+        ids: list[int] | None = None,
+        embeddings: list[list[float]] | None = None,
     ) -> None:
         """Add texts to the vector store with pre-computed embeddings.
 
@@ -61,7 +61,7 @@ class ChromaDBWrapper:
         self,
         query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Optional[Any] = None,
+        filter: Any | None = None,
     ) -> list[Document]:
         """Search for similar documents.
 
@@ -74,7 +74,7 @@ class ChromaDBWrapper:
         self,
         query: str,
         k: int = DEFAULT_RETRIEVAL_K,
-        filter: Optional[Any] = None,
+        filter: Any | None = None,
     ) -> list[tuple[Document, float]]:
         """Search for similar documents with similarity scores.
 

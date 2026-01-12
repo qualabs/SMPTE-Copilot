@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from ...llms.protocol import LLM
 from ..contexts.query_context import QueryContext

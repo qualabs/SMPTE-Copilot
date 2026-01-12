@@ -1,7 +1,7 @@
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import (
@@ -17,13 +17,13 @@ from docling.document_converter import (
     PdfFormatOption,
     WordFormatOption,
 )
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 from src.constants import DEFAULT_IMAGE_DESCRIPTION_PROMPT, DEFAULT_IMAGE_DESCRIPTION_TIMEOUT
 
 from .protocol import DocumentLoader
 
-PageSpecifier = Union[Sequence[int], range, None]
+PageSpecifier = Sequence[int] | range | None
 
 class DoclingLoader(DocumentLoader):
     def __init__(self, config: dict[str, Any]) -> None:
