@@ -54,7 +54,7 @@ class DoclingLoader(DocumentLoader):
             enable_remote_services=True,
             do_table_structure=True,
             allow_external_plugins=True,
-            do_ocr=not can_do_picture_description,
+            do_ocr=False,
             do_picture_description=can_do_picture_description,
             table_structure_options=TableStructureOptions(
                 do_cell_matching=True,
@@ -66,7 +66,7 @@ class DoclingLoader(DocumentLoader):
             allow_external_plugins=True,
             enable_remote_services=True,
             do_picture_description=can_do_picture_description,
-            do_ocr=not can_do_picture_description,
+            do_ocr=False,
         )
 
         # Only configure picture description if credentials are available
