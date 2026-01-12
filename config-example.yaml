@@ -3,7 +3,7 @@
 
 input_source:
   source_type: local           # Options: local, s3
-  source_config: {}            # Source-specific configuration (empty for local)
+  source_config: null          # For local sources, uses paths.input_path (see below)
   # For S3, use:
   # source_type: s3
   # source_config:
@@ -11,6 +11,7 @@ input_source:
   #   prefix: "documents/"                # Optional: S3 key prefix to filter files
   #   aws_access_key_id: "YOUR_ACCESS_KEY"      # Optional: AWS credentials (or use IAM role/env vars)
   #   aws_secret_access_key: "YOUR_SECRET_KEY"  # Optional: AWS credentials
+  #   aws_session_token: "YOUR_SESSION_TOKEN"   # Optional: AWS session token (required for temporary credentials)
   #   region_name: "us-east-1"                  # Optional: AWS region
   #   # endpoint_url: "http://custom-s3:9000"   # Optional: For S3-compatible services (MinIO, etc.)
 
@@ -94,8 +95,8 @@ llm:
     api_key: 
 
 paths:
-  input_path: ./data         # Default path for input media files (relative to current working directory)
-  markdown_dir: ./data/markdown  # Directory for markdown output (relative to current working directory)
+  input_path: ./data                 # Base directory for local input sources
+  markdown_dir: ./data/markdown      # Directory for markdown output
 
 logging:
   level: INFO                    # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -115,10 +116,9 @@ pipeline:
     preprocess_enabled: true        
     chunk_enabled: true             
     save_enabled: true
-    # Parallelization settings for processing multiple files
-    parallel_enabled: false         # Enable parallel processing (default: false)
+    # Parallelization settings for processing multiple files (uses threading)
+    parallel_enabled: false         # Enable parallel processing using threading (default: false)
     max_workers: null               # Max parallel workers (null = CPU count, 1 = sequential)
-    executor_type: thread           # Executor type: 'thread' (I/O-bound) or 'process' (CPU-bound)
   
   query:
     retrieve_enabled: true          
