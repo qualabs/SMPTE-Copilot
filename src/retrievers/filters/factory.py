@@ -1,7 +1,8 @@
 """Factory for creating filter builders."""
 from __future__ import annotations
 
-from typing import Callable, ClassVar
+from collections.abc import Callable
+from typing import ClassVar
 
 from ...vector_stores.types import VectorStoreType
 from .protocol import FilterBuilder

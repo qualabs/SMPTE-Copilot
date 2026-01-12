@@ -2,7 +2,8 @@ from __future__ import annotations
 
 """Retriever factory for creating retriever implementations."""
 
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from .protocol import Retriever
 from .similarity_retriever import create_similarity_retriever

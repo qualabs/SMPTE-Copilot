@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from qdrant_client.models import FieldCondition, Filter, MatchAny
 
@@ -16,9 +16,9 @@ class QdrantFilterBuilder:
 
     def build(
         self,
-        user_role: Optional[str] = None,
-        role_mapping: Optional[dict[str, list[str]]] = None,
-    ) -> Optional[Any]:
+        user_role: str | None = None,
+        role_mapping: dict[str, list[str]] | None = None,
+    ) -> Any | None:
         """Build Qdrant metadata filter for tag-based access control.
 
         Roles are automatically converted to tags using role_mapping.

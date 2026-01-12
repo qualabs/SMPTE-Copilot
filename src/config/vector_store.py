@@ -1,6 +1,5 @@
 """Vector store configuration."""
 
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -15,7 +14,7 @@ class VectorStoreConfig(BaseSettings):
         default=VectorStoreType.CHROMADB,
         description="Vector store type",
     )
-    store_config: Optional[dict] = Field(
+    store_config: dict | None = Field(
         default=None,
         description=(
             "Store-specific configuration dictionary. "

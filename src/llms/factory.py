@@ -2,7 +2,8 @@ from __future__ import annotations
 
 """Factory for creating LLM backends."""
 
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from src.llms.gemini import create_gemini_llm
 

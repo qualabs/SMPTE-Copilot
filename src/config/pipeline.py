@@ -1,6 +1,5 @@
 """Pipeline configuration for ingestion and query steps."""
 
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -33,7 +32,7 @@ class IngestionPipelineConfig(BaseModel):
         default=False,
         description="Enable/disable parallel processing of multiple files",
     )
-    max_workers: Optional[int] = Field(
+    max_workers: int | None = Field(
         default=None,
         description="Maximum number of parallel workers (None = CPU count, 1 = sequential)",
     )
@@ -66,11 +65,11 @@ class QueryPipelineConfig(BaseModel):
 class PipelineConfig(BaseModel):
     """Configuration for both ingestion and query pipelines."""
 
-    ingestion: Optional[IngestionPipelineConfig] = Field(
+    ingestion: IngestionPipelineConfig | None = Field(
         default_factory=IngestionPipelineConfig,
         description="Ingestion pipeline configuration",
     )
-    query: Optional[QueryPipelineConfig] = Field(
+    query: QueryPipelineConfig | None = Field(
         default_factory=QueryPipelineConfig,
         description="Query pipeline configuration",
     )

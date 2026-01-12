@@ -2,7 +2,6 @@
 
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 
 class ExecutorType(str, Enum):
@@ -19,9 +18,9 @@ class IngestionResult:
         self,
         file_path: Path,
         success: bool,
-        error: Optional[str] = None,
+        error: str | None = None,
         chunks_count: int = 0,
-        markdown_path: Optional[Path] = None,
+        markdown_path: Path | None = None,
     ):
         """Initialize the ingestion result.
 

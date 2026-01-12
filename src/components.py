@@ -3,7 +3,7 @@ from __future__ import annotations
 """Utility module for initializing RAG pipeline components from configuration."""
 
 import logging
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from . import (
     Config,
@@ -25,14 +25,14 @@ from .vector_stores.protocol import VectorStore
 class RAGComponents(NamedTuple):
     """Container for initialized RAG pipeline components."""
 
-    embedding_model: Optional[Embeddings]
-    vector_store: Optional[VectorStore]
-    retriever: Optional[Retriever]
-    reranker: Optional[Reranker]
-    llm: Optional[LLM]
+    embedding_model: Embeddings | None
+    vector_store: VectorStore | None
+    retriever: Retriever | None
+    reranker: Reranker | None
+    llm: LLM | None
 
 
-def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
+def initialize_rag_components(config: Config | None = None) -> RAGComponents:
     """Initialize all RAG pipeline components from configuration.
 
     Parameters
@@ -117,8 +117,8 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
 def execute_query(
     components: RAGComponents,
     query: str,
-    user_role: Optional[str] = None,
-    role_mapping: Optional[dict[str, list[str]]] = None,
+    user_role: str | None = None,
+    role_mapping: dict[str, list[str]] | None = None,
 ) -> QueryContext:
     """Execute a RAG query using the provided components
 

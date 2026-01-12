@@ -2,9 +2,10 @@
 
 import logging
 import os
+from collections.abc import Callable
 from concurrent.futures import Future, ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
 
 from src.cli.constants import SEPARATOR_CHAR, SEPARATOR_LENGTH
 from src.cli.models import ExecutorType, IngestionResult
@@ -19,7 +20,7 @@ class ParallelIngestor:
 
     def __init__(
         self,
-        max_workers: Optional[int] = None,
+        max_workers: int | None = None,
         executor_type: ExecutorType = ExecutorType.THREAD,
     ):
         """Initialize the parallel ingestor.

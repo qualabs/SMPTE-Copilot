@@ -1,6 +1,5 @@
 """Reranking configuration."""
 
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -15,7 +14,7 @@ class RerankingConfig(BaseSettings):
         default=RerankerType.GEMINI,
         description="Reranker backend type",
     )
-    reranker_config: Optional[dict] = Field(
+    reranker_config: dict | None = Field(
         default=None,
         description="Additional reranker-specific keyword arguments",
     )

@@ -5,7 +5,6 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Optional
 
 from src import (
     ChunkerFactory,
@@ -40,8 +39,8 @@ from src.pipeline.steps import (
 def _build_ingestion_steps(
     file_path: Path,
     config: Config,
-    embedding_model: Optional[Embeddings],
-    vector_store: Optional[VectorStore],
+    embedding_model: Embeddings | None,
+    vector_store: VectorStore | None,
 ) -> list:
     """Build the list of pipeline steps based on configuration.
 
@@ -117,9 +116,9 @@ def _build_ingestion_steps(
 def ingest_file(
     file_path: Path,
     config: Config,
-    embedding_model: Optional[Embeddings],
-    vector_store: Optional[VectorStore],
-    access_tags: Optional[list[str]] = None,
+    embedding_model: Embeddings | None,
+    vector_store: VectorStore | None,
+    access_tags: list[str] | None = None,
 ) -> IngestionResult:
     """Ingest a media file into the vector database using the pipeline pattern.
 
@@ -187,9 +186,9 @@ def ingest_file(
 def _process_files_parallel(
     media_files: list[Path],
     config: Config,
-    embedding_model: Optional[Embeddings],
-    vector_store: Optional[VectorStore],
-    access_tags: Optional[list[str]],
+    embedding_model: Embeddings | None,
+    vector_store: VectorStore | None,
+    access_tags: list[str] | None,
 ) -> bool:
     """Process files in parallel.
 
@@ -244,9 +243,9 @@ def _process_files_parallel(
 def _process_files_sequential(
     media_files: list[Path],
     config: Config,
-    embedding_model: Optional[Embeddings],
-    vector_store: Optional[VectorStore],
-    access_tags: Optional[list[str]],
+    embedding_model: Embeddings | None,
+    vector_store: VectorStore | None,
+    access_tags: list[str] | None,
 ) -> bool:
     """Process files sequentially.
 

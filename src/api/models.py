@@ -1,6 +1,5 @@
 """Pydantic models for OpenAI-compatible API."""
 
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -17,10 +16,10 @@ class ChatCompletionRequest(BaseModel):
 
     model: str = Field(default="smpte-copilot", description="Model identifier")
     messages: list[Message] = Field(..., description="List of messages in the conversation")
-    temperature: Optional[float] = Field(default=0.7, ge=0, le=2, description="Sampling temperature")
-    max_tokens: Optional[int] = Field(default=None, description="Maximum tokens to generate")
-    stream: Optional[bool] = Field(default=False, description="Whether to stream responses")
-    top_p: Optional[float] = Field(default=1.0, ge=0, le=1, description="Nucleus sampling parameter")
+    temperature: float | None = Field(default=0.7, ge=0, le=2, description="Sampling temperature")
+    max_tokens: int | None = Field(default=None, description="Maximum tokens to generate")
+    stream: bool | None = Field(default=False, description="Whether to stream responses")
+    top_p: float | None = Field(default=1.0, ge=0, le=1, description="Nucleus sampling parameter")
 
 
 class ChatCompletionChoice(BaseModel):

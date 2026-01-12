@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from google import genai
 
@@ -10,7 +10,7 @@ from .protocol import LLM
 class GeminiLLM(LLM):
     """LLM backed by Gemini API (Google GenAI SDK)."""
 
-    def __init__(self, model: str = "gemini-2.5-flash", api_key: Optional[str] = None):
+    def __init__(self, model: str = "gemini-2.5-flash", api_key: str | None = None):
         self.client = genai.Client(api_key=api_key) if api_key else genai.Client()
         self.model = model
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from collections import defaultdict
-from typing import Any, Optional
+from typing import Any
 
 from rapidfuzz import fuzz
 
@@ -146,7 +146,7 @@ class RapidFuzzPreprocessor:
 
         return indices_to_remove
 
-    def _group_numeric_lines(self, normalized_lines: list[Optional[str]]) -> set[int]:
+    def _group_numeric_lines(self, normalized_lines: list[str | None]) -> set[int]:
         """Group lines that contain only numbers.
 
         This handles cases like page numbers "1", "2", "3" that should be
@@ -172,7 +172,7 @@ class RapidFuzzPreprocessor:
             return set(numeric_indices)
         return set()
 
-    def _group_by_characteristics(self, normalized_lines: list[Optional[str]]) -> dict[tuple, list[int]]:
+    def _group_by_characteristics(self, normalized_lines: list[str | None]) -> dict[tuple, list[int]]:
         """Group lines by characteristics to reduce fuzzy matching comparisons.
 
         Groups lines by (length_category, prefix) where:

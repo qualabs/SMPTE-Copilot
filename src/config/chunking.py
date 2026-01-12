@@ -1,6 +1,6 @@
 """Chunking configuration."""
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -15,7 +15,7 @@ class ChunkingConfig(BaseSettings):
         default=ChunkerType.LANGCHAIN,
         description="Chunker type",
     )
-    chunker_config: Optional[dict[str, Any]] = Field(
+    chunker_config: dict[str, Any] | None = Field(
         default=None,
         description="Chunker-specific configuration dictionary. "
         "For langchain: chunk_size, chunk_overlap, method. "

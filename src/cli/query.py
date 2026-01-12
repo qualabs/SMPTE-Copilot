@@ -6,7 +6,6 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Optional
 
 from src import Config
 from src.cli.constants import (
@@ -56,7 +55,7 @@ def _load_role_mapping(
 
 def _log_query_info(
     query: str,
-    user_role: Optional[str],
+    user_role: str | None,
     role_mapping: dict[str, list[str]],
     logger: logging.Logger
 ) -> None:

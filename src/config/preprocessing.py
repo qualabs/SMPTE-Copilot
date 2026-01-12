@@ -1,6 +1,6 @@
 """Preprocessing configuration."""
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -15,7 +15,7 @@ class PreprocessingConfig(BaseSettings):
         default=PreprocessorType.RAPIDFUZZ,
         description="Preprocessor type",
     )
-    preprocessing_config: Optional[dict[str, Any]] = Field(
+    preprocessing_config: dict[str, Any] | None = Field(
         default=None,
         description="Preprocessor-specific configuration dictionary. "
         "For rapidfuzz: min_repetitions, similarity_threshold.",

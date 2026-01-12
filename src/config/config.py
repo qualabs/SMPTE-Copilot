@@ -2,7 +2,6 @@
 
 import threading
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from pydantic import Field
@@ -82,5 +81,5 @@ class Config(BaseSettings):
         return _config
 
 # Global configuration instance (thread-safe singleton pattern)
-_config: Optional[Config] = None
+_config: Config | None = None
 _config_lock = threading.Lock()

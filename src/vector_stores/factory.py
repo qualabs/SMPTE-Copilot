@@ -18,7 +18,8 @@ Usage:
     >>> store.add_documents(chunks)
 """
 
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from .chromadb import create_chromadb_store
 from .protocol import VectorStore

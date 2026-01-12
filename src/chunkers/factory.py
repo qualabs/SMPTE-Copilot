@@ -2,7 +2,8 @@ from __future__ import annotations
 
 """Factory for creating chunker implementations."""
 
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from .hybrid_chunker import create_hybrid_chunker
 from .langchain_chunker import create_langchain_chunker

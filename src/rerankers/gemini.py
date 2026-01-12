@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Optional
+from typing import Any
 
 from google import genai
 from langchain_core.documents import Document
@@ -17,7 +17,7 @@ class GeminiReranker(Reranker):
     def __init__(
         self,
         model: str = DEFAULT_RERANK_MODEL,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         max_chars: int = DEFAULT_MAX_RERANK_CHARS,
     ):
         """Initialize Gemini reranker.
@@ -37,7 +37,8 @@ class GeminiReranker(Reranker):
         self.logger = logging.getLogger(__name__)
 
     def rerank(
-        self, query: str, documents: list[tuple[Document, float]]
+        self, query: str,
+        documents: list[tuple[Document, float]]
     ) -> list[tuple[Document, float]]:
         """Rerank documents using Gemini to score relevance.
 
