@@ -84,7 +84,7 @@ def _display_results(
             cid = c.get("id")
             source = c.get("source")
             score = c.get("score")
-            logger.info(f"  [{cid}] {source}  distance={score}")
+            logger.info(f"  [{cid}] {source}  score={score}")
 
 def main():
     """Query the vector database with a question from command line arguments."""
