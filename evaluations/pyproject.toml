@@ -1,0 +1,18 @@
+[project]
+name = "smpte-evaluations"
+version = "0.1.0"
+description = "Evaluation utilities: synthetic testset generation and RAG evaluation."
+requires-python = ">=3.10"
+dependencies = [
+  "ragas>=0.1.11",
+  "langchain-google-genai>=2.1.10",
+  "google-genai>=1.0.0",
+  "pyyaml>=6.0",
+  "pydantic>=2.0.0",
+  "pydantic-settings>=2.0.0",
+  "rapidfuzz>=3.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
