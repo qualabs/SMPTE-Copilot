@@ -107,7 +107,7 @@ access_control:
   
   # Query settings (applied to all queries)
   default_user_role: "Public"   # Default user role for query access control (e.g., "Finance_Manager")
-  role_mapping_file: "./role_mapping.json"  # Path to JSON file containing role-to-tags mapping
+  access_mapping_file: "./access_mapping.json"  # Path to unified folder-to-tags and role-to-tags mapping
 
 pipeline:
   # Configure which steps are enabled in the ingestion and query pipelines

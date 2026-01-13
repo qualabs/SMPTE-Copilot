@@ -548,7 +548,7 @@ access_control:
   
   # Query settings (applied to all queries)
   default_user_role: "Public"            # Default user role for query access control
-  role_mapping_file: "./role_mapping.json"  # Path to JSON file containing role-to-tags mapping
+  access_mapping_file: "./access_mapping.json"  # Path to unified folder-to-tags and role-to-tags mapping
 
 pipeline:
   # Configure which steps are enabled in the ingestion and query pipelines
@@ -663,22 +663,34 @@ The access control system uses a **role-to-tags mapping** approach:
 
 - **Documents** are tagged with `access_tags` during ingestion (e.g., `["Finance", "Public"]`)
 - **Users** are assigned roles (e.g., `"Finance_Manager"`, `"Public"`)
-- **Roles** are mapped to authorized tags via `role_mapping.json` (e.g., `"Finance_Manager"` → `["Finance", "Public"]`)
+- **Roles** are mapped to authorized tags via `access_mapping.json` (e.g., `"Finance_Manager"` → `["Finance", "Public"]`)
 - **Queries** automatically filter results to only include documents where at least one of the document's `access_tags` matches one of the user's authorized tags
 
-### Role Mapping File
+### Access Mapping File
 
-The `role_mapping.json` file maps user roles to lists of authorized tags. Users can access documents that have at least one tag matching their authorized tags.
+The `access_mapping.json` file contains two mappings:
+- **folders**: Maps folder names to access tags (used during ingestion)
+- **roles**: Maps user roles to authorized tags (used during queries)
 
-**Example `role_mapping.json`:**
+Users can access documents that have at least one tag matching their authorized tags.
+
+**Example `access_mapping.json`:**
 
 ```json
 {
-  "Public": ["Public"],
-  "Finance_Manager": ["Finance", "Public"],
-  "HR_Manager": ["HR", "Public"],
-  "Admin": ["Finance", "HR", "Public", "Admin"],
-  "Protected": ["Protected"]
+  "folders": {
+    "Finance": ["Finance", "Public"],
+    "HR": ["HR", "Public"],
+    "Admin": ["Finance", "HR", "Public", "Admin"],
+    "Protected": ["Protected"]
+  },
+  "roles": {
+    "Public": ["Public"],
+    "Finance_Manager": ["Finance", "Public"],
+    "HR_Manager": ["HR", "Public"],
+    "Admin": ["Finance", "HR", "Public", "Admin"],
+    "Protected": ["Protected"]
+  }
 }
 ```
 
@@ -702,7 +714,7 @@ Documents receive `default_access_tags` from the configuration only if they don'
 
 When querying, the system automatically:
 1. Loads the user's role from `default_user_role` (or can be specified programmatically)
-2. Loads the role mapping from `role_mapping_file`
+2. Loads the role mapping from `access_mapping_file`
 3. Expands the user's role to authorized tags
 4. Filters query results to only include documents with matching tags
 

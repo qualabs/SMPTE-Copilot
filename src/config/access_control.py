@@ -22,20 +22,77 @@ class AccessControlConfig(BaseSettings):
         default=None,
         description="Default required role for strict access control on ingested documents",
     )
-    folder_tags_mapping_file: Path | None = Field(
-        default=None,
-        description="Path to the folder-to-tags mapping JSON file",
-    )
 
     # Query settings
     default_user_role: str | None = Field(
         default=None,
         description="Default user role for query access control (expanded to tags via role_mapping)",
     )
-    role_mapping_file: Path | None = Field(
+
+    # Unified access mapping file
+    access_mapping_file: Path | None = Field(
         default=None,
-        description="Path to JSON file containing role-to-tags mapping",
+        description="Path to JSON file containing unified folder-to-tags and role-to-tags mapping",
     )
+
+    # Internal cached mappings (not part of config)
+    _folder_mapping: dict[str, list[str]] | None = None
+    _role_mapping: dict[str, list[str]] | None = None
+
+    def _load_access_mapping(self) -> None:
+        """Load the unified access mapping file containing folders and roles.
+
+        This method loads the file once and caches both mappings internally.
+        """
+        if self._folder_mapping is not None and self._role_mapping is not None:
+            return  # Already loaded
+
+        if self.access_mapping_file is None:
+            logger.info("No access_mapping_file configured")
+            self._folder_mapping = {}
+            self._role_mapping = {}
+            return
+
+        try:
+            mapping_path = self.access_mapping_file.expanduser().resolve()
+            logger.info(f"Loading access mapping from: {mapping_path}")
+
+            if not mapping_path.exists():
+                logger.warning(f"Access mapping file not found: {mapping_path}")
+                self._folder_mapping = {}
+                self._role_mapping = {}
+                return
+
+            with mapping_path.open() as f:
+                data = json.load(f)
+
+            # Validate structure
+            if not isinstance(data, dict):
+                logger.error(f"Invalid access mapping format: expected dict, got {type(data)}")
+                self._folder_mapping = {}
+                self._role_mapping = {}
+                return
+
+            self._folder_mapping = data.get("folders", {})
+            self._role_mapping = data.get("roles", {})
+
+            logger.info(f"Loaded {len(self._folder_mapping)} folder mappings and {len(self._role_mapping)} role mappings")
+
+        except Exception as e:
+            logger.info(f"Could not load access mapping: {e}")
+            self._folder_mapping = {}
+            self._role_mapping = {}
+
+    def get_role_mapping(self) -> dict[str, list[str]]:
+        """Get the role-to-tags mapping.
+
+        Returns
+        -------
+        dict[str, list[str]]
+            Role-to-tags mapping. Empty dict if file doesn't exist or can't be loaded.
+        """
+        self._load_access_mapping()
+        return self._role_mapping or {}
 
     def get_tags_from_file(self, file_path: Path) -> list[str]:
         """Get access tags for a file based on its parent folder name.
@@ -63,19 +120,9 @@ class AccessControlConfig(BaseSettings):
         if not parent_folder:
             return self.default_access_tags
 
-        # Load mapping from file
-        folder_mapping = {}
-        if self.folder_tags_mapping_file is not None:
-            try:
-                mapping_path = self.folder_tags_mapping_file.expanduser().resolve()
-                logger.info(f"Mapping path: {mapping_path}")
-                if mapping_path.exists():
-                    with mapping_path.open() as f:
-                        folder_mapping = json.load(f)
-                else:
-                    logger.warning(f"Folder tags mapping file not found: {mapping_path}")
-            except Exception as e:
-                logger.warning(f"Could not load folder tags mapping: {e}")
+        # Load mapping (cached after first call)
+        self._load_access_mapping()
+        folder_mapping = self._folder_mapping or {}
 
         # Look up the folder in the mapping
         if parent_folder in folder_mapping:
