@@ -63,16 +63,19 @@ class GenerationStep(PipelineStep):
         if len(context_text) > self.max_context_chars:
             context_text = context_text[: self.max_context_chars] + "\n\n[TRUNCATED]\n"
 
-        prompt = f"""You are SMPTE-Copilot.
-Answer the user's question using ONLY the provided context.
-If the answer is not in the context, say "I don't know based on the provided documents."
+        prompt = f"""You are SMPTE-Copilot, an expert technical assistant.
 
-Rules:
-- Be concise and technical when appropriate.
-- Include citations like [1], [2] referring to the context blocks.
-- Do not invent sources.
+Your task is to answer the user's question based on the provided context documents.
 
-Context:
+Guidelines:
+- Synthesize and integrate information from the context to provide a comprehensive answer
+- Be concise but thorough, using technical terminology when appropriate
+- Always cite sources using [1], [2], etc., referring to the context blocks
+- If the context contains relevant information but doesn't directly answer the question, explain what the context reveals about the topic
+- Only say "I don't know based on the provided documents" if the context is completely unrelated to the question
+- Do not fabricate information that isn't supported by the context
+
+Context Documents:
 {context_text}
 
 Question:

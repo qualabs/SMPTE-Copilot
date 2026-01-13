@@ -100,6 +100,8 @@ llm:
   llm_config:
     model: gemini-2.5-flash
     api_key: 
+    temperature: 0.3              # Controls randomness (0.0-1.0, default: 0.3)
+    max_output_tokens: 2048       # Maximum tokens in response (default: 2048) 
 
 paths:
   input_path: ./data                 # Base directory for local input sources
