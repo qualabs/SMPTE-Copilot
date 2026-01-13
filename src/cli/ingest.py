@@ -273,9 +273,9 @@ def _create_input_source_from_config(config: Config) -> InputSource:
     InputSource
         Configured input source instance.
     """
-    source_type = InputSourceType(config.input_source.get('source_type'))
-    source_config = config.input_source.get('source_config') or {}
-    input_path = config.paths.get('input_path')
+    source_type = InputSourceType(config.input_source.source_type)
+    source_config = config.input_source.source_config or {}
+    input_path = config.paths.input_path
 
     source_config = {**source_config, "base_path": str(input_path)}
     return InputSourceFactory.create(source_type, source_config)
@@ -295,14 +295,14 @@ def main():
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("RAG Media Ingestion Pipeline")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
-    logger.info(f"Using input source: {config.input_source.get('source_type')}")
-    logger.info(f"Source config: {config.input_source.get('source_config')}")
+    logger.info(f"Using input source: {config.input_source.source_type}")
+    logger.info(f"Source config: {config.input_source.source_config}")
     logger.info(f"Inputs: {len(source_ids)} file(s)")
     logger.info(f"Chunker: {config.chunking.chunker_name}")
     logger.info(f"Embedding model: {config.embedding.embed_name}")
     logger.info(f"Database location: {config.vector_store.store_config.get('persist_directory')}")
     logger.info(f"Collection: {config.vector_store.store_config.get('collection_name')}")
-    logger.info(f"Access tags: {config.access_control.get('default_access_tags')}")
+    logger.info(f"Access tags: {config.access_control.default_access_tags}")
 
     try:
         pipeline_config = config.pipeline.ingestion
