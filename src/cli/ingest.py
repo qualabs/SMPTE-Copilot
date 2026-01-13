@@ -138,7 +138,8 @@ def ingest_file(
         file_path_resolved = input_source.get_file(source_id)
 
         # Get access tags for this file based on folder mapping or default
-        access_tags = config.access_control.get_tags_from_file(file_path_resolved)
+        # Use source_id (original path) instead of file_path_resolved (temp path) to preserve folder structure
+        access_tags = config.access_control.get_tags_from_file(source_id)
         logger.info(f"Access tags for file: {access_tags}")
 
         context = IngestionContext(

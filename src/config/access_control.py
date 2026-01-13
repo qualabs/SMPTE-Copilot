@@ -94,7 +94,7 @@ class AccessControlConfig(BaseSettings):
         self._load_access_mapping()
         return self._role_mapping or {}
 
-    def get_tags_from_file(self, file_path: Path) -> list[str]:
+    def get_tags_from_file(self, file_path: Path | str) -> list[str]:
         """Get access tags for a file based on its parent folder name.
 
         Extracts the immediate parent folder name, looks up tags in the mapping,
@@ -102,8 +102,9 @@ class AccessControlConfig(BaseSettings):
 
         Parameters
         ----------
-        file_path : Path
-            Path to the file (can be absolute or relative).
+        file_path : Path | str
+            Path to the file (can be absolute, relative, or URI).
+            The parent folder is extracted using generic path parsing.
 
         Returns
         -------
@@ -111,9 +112,12 @@ class AccessControlConfig(BaseSettings):
             Access tags for the file. Returns tags from mapping if parent folder
             is found, otherwise returns default_tags.
         """
-        resolved_path = Path(file_path).resolve()
-        logger.info(f"Resolved path: {resolved_path}")
-        parent_folder = resolved_path.parent.name
+        # Use Path for generic path/URI parsing without resolving to filesystem
+        # This works for both local paths and URIs (s3://, http://, etc.)
+        path_obj = Path(str(file_path))
+        parent_folder = path_obj.parent.name
+
+        logger.info(f"File path: {file_path}")
         logger.info(f"Parent folder: {parent_folder}")
 
         # Handle edge case: file in root directory
