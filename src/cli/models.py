@@ -20,7 +20,6 @@ class IngestionConfig:
         source_ids: Optional[list[str]] = None,
         embedding_model: Optional[Embeddings] = None,
         vector_store: Optional[VectorStore] = None,
-        access_tags: Optional[list[str]] = None,
     ):
         """Initialize the ingestion configuration.
 
@@ -38,8 +37,6 @@ class IngestionConfig:
             Embedding model instance (can be None if save step is disabled).
         vector_store
             Vector store instance (can be None if save step is disabled).
-        access_tags
-            Optional list of access control tags for the document.
         """
         self.source_type = source_type
         self.source_config = source_config
@@ -47,7 +44,6 @@ class IngestionConfig:
         self.source_ids = source_ids
         self.embedding_model = embedding_model
         self.vector_store = vector_store
-        self.access_tags = access_tags
 
 
 class IngestionResult:

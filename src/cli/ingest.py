@@ -20,6 +20,7 @@ from src.cli.constants import (
     SEPARATOR_LENGTH,
 )
 from src.cli.models import IngestionConfig, IngestionResult
+from src.config.folder_tags_mapper import FolderTagsMapper
 from src.cli.parallel_ingestor import ParallelIngestor
 from src.input_sources import InputSourceFactory, InputSourceType
 from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
@@ -119,7 +120,6 @@ def ingest_file(
         Source identifier (S3 URI or local file path).
     ingestion_config
         Ingestion configuration object.
-
     Returns
     -------
     IngestionResult
@@ -138,10 +138,18 @@ def ingest_file(
     try:
         file_path_resolved = input_source.get_file(source_id)
 
+        # Get tags from folder mapper if available, otherwise use default tags
+        if ingestion_config.folder_tags_mapper:
+            access_tags_from_folder = ingestion_config.folder_tags_mapper.get_tags_for_file(file_path_resolved)
+            logger.info(f"Access tags from folder: {access_tags_from_folder}")
+        else:
+            access_tags_from_folder = ingestion_config.access_tags or []
+            logger.info(f"Using default access tags: {access_tags_from_folder}")
+
         context = IngestionContext(
             source_id=source_id,
             file_path=file_path_resolved,
-            access_tags=ingestion_config.access_tags,
+            access_tags=access_tags_from_folder,
         )
 
         # Build steps list dynamically based on pipeline configuration
@@ -267,8 +275,15 @@ def main():
 
     input_path = config.paths.input_path
 
+
     # Get access control settings from config
     access_tags = config.access_control.default_access_tags or None
+
+    # Initialize FolderTagsMapper for per-file tag mapping
+    folder_tags_mapper = FolderTagsMapper(
+        mapping_file=config.access_control.folder_tags_mapping_file,
+        default_tags=access_tags or [],
+    )
 
     # Get input source configuration
     source_type = InputSourceType(config.input_source.source_type)
@@ -325,6 +340,7 @@ def main():
             embedding_model=embedding_model,
             vector_store=vector_store,
             access_tags=access_tags,
+            folder_tags_mapper=folder_tags_mapper,
         )
 
         # Process files in parallel if enabled, otherwise sequentially

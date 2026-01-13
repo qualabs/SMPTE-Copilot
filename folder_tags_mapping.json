@@ -1,0 +1,6 @@
+{
+    "Finance": ["Finance", "Public"],
+    "HR": ["HR", "Public"],
+    "Admin": ["Finance", "HR", "Public", "Admin"],
+    "Protected": ["Protected"]
+  }

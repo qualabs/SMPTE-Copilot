@@ -21,6 +21,7 @@ services:
       - vector_db:/app/vector_db
       - ./data:/app/data
       - ./config.yaml:/app/config.yaml:ro
+      - ./folder_tags_mapping.json:/app/folder_tags_mapping.json:ro
     environment:
       - PYTHONUNBUFFERED=1
     command: python src/cli/ingest.py --help
