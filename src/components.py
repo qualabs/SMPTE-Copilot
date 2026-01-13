@@ -138,7 +138,7 @@ def execute_query(
     QueryContext
         Pipeline context containing the query results
     """
-    Config.get_config()
+    config = Config.get_config()
 
     logger = logging.getLogger(__name__)
     logger.info(f"Executing query: {query}")
@@ -164,7 +164,16 @@ def execute_query(
         steps.append(RerankStep(components.reranker))
 
     if components.llm:
-        steps.append(GenerationStep(components.llm))
+        # Get prompt configuration from pipeline config
+        pipeline_config = config.pipeline.query if config.pipeline else None
+        prompt_template = pipeline_config.generation_prompt if pipeline_config else None
+
+        steps.append(
+            GenerationStep(
+                components.llm,
+                prompt_template=prompt_template,
+            )
+        )
 
     executor = PipelineExecutor(steps)
     context = executor.execute(context)

@@ -9,12 +9,18 @@ from langchain_core.documents import Document
 from ...llms.protocol import LLM
 from ..contexts.query_context import QueryContext
 from ..step import PipelineStep
+from .constants import DEFAULT_GENERATION_PROMPT, DEFAULT_MAX_CONTEXT_CHARS
 
 
 class GenerationStep(PipelineStep):
     """Step that generates the final answer from retrieved documents."""
 
-    def __init__(self, llm: LLM,  max_context_chars: int = 12000):
+    def __init__(
+        self,
+        llm: LLM,
+        max_context_chars: int = DEFAULT_MAX_CONTEXT_CHARS,
+        prompt_template: str | None = None,
+    ):
         """Initialize the generation step.
 
         Parameters
@@ -23,9 +29,32 @@ class GenerationStep(PipelineStep):
             LLM instance created by LLMFactory (or wired manually).
         max_context_chars
             Max characters of retrieved context injected into the prompt.
+        prompt_template
+            Custom prompt template (use {context} and {query} placeholders).
+            If None, uses default prompt.
         """
         self.llm = llm
         self.max_context_chars = max_context_chars
+        self.prompt_template = prompt_template or DEFAULT_GENERATION_PROMPT
+
+    def create_prompt(self, context_text: str, query: str) -> str:
+        """Create the generation prompt using template.
+
+        Parameters
+        ----------
+        context_text
+            Formatted context from retrieved documents
+        query
+            User's query
+
+        Returns
+        -------
+        Formatted prompt string for LLM generation
+        """
+        return self.prompt_template.format(
+            context=context_text,
+            query=query
+        ).strip()
 
     def run(self, context: QueryContext) -> None:
         """Generate the final answer.
@@ -63,27 +92,7 @@ class GenerationStep(PipelineStep):
         if len(context_text) > self.max_context_chars:
             context_text = context_text[: self.max_context_chars] + "\n\n[TRUNCATED]\n"
 
-        prompt = f"""You are SMPTE-Copilot, an expert technical assistant.
-
-Your task is to answer the user's question based on the provided context documents.
-
-Guidelines:
-- Synthesize and integrate information from the context to provide a comprehensive answer
-- Be concise but thorough, using technical terminology when appropriate
-- Always cite sources using [1], [2], etc., referring to the context blocks
-- If the context contains relevant information but doesn't directly answer the question, explain what the context reveals about the topic
-- Only say "I don't know based on the provided documents" if the context is completely unrelated to the question
-- Do not fabricate information that isn't supported by the context
-
-Context Documents:
-{context_text}
-
-Question:
-{context.user_query}
-
-Answer:
-""".strip()
-
+        prompt = self.create_prompt(context_text, context.user_query)
         context.prompt = prompt
         context.citations = citations
 

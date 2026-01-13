@@ -54,6 +54,10 @@ class QueryPipelineConfig(BaseModel):
         default=True,
         description="Enable/disable the LLM generation step",
     )
+    generation_prompt: str | None = Field(
+        default=None,
+        description="Prompt template for answer generation (use {context} and {query} placeholders)",
+    )
 
 
 class PipelineConfig(BaseModel):

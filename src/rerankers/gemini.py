@@ -8,7 +8,11 @@ from google import genai
 from google.genai import types
 from langchain_core.documents import Document
 
-from .constants import DEFAULT_MAX_RERANK_CHARS, DEFAULT_RERANK_MODEL
+from .constants import (
+    DEFAULT_MAX_RERANK_CHARS,
+    DEFAULT_RERANK_MODEL,
+    DEFAULT_SCORING_PROMPT,
+)
 from .protocol import Reranker
 
 
@@ -20,6 +24,7 @@ class GeminiReranker(Reranker):
         model: str = DEFAULT_RERANK_MODEL,
         api_key: str | None = None,
         max_chars: int = DEFAULT_MAX_RERANK_CHARS,
+        scoring_prompt: str | None = None,
     ):
         """Initialize Gemini reranker.
 
@@ -31,10 +36,13 @@ class GeminiReranker(Reranker):
             Google API key (if None, uses environment variable)
         max_chars
             Maximum characters of document content to send for scoring
+        scoring_prompt
+            Custom prompt template for scoring (use {query} and {document} placeholders)
         """
         self.client = genai.Client(api_key=api_key) if api_key else genai.Client()
         self.model = model
         self.max_chars = max_chars
+        self.scoring_prompt = scoring_prompt or DEFAULT_SCORING_PROMPT
         self.logger = logging.getLogger(__name__)
 
     def create_scoring_prompt(self, query: str, document_content: str) -> str:
@@ -51,20 +59,7 @@ class GeminiReranker(Reranker):
         -------
         Formatted prompt string for LLM scoring
         """
-        return f"""Rate document relevance from 0-10.
-
-Query: {query}
-
-Document:
-{document_content}
-
-Instructions: Return ONLY a single number from 0 to 10.
-- 10 = Directly answers with details
-- 5 = Partially relevant
-- 0 = Not relevant
-
-Output format: Just the number, nothing else.
-Your answer:"""
+        return self.scoring_prompt.format(query=query, document=document_content)
 
     def rerank(
         self, query: str,
@@ -205,7 +200,7 @@ def create_gemini_reranker(config: dict[str, Any]) -> Reranker:
     Parameters
     ----------
     config
-        Configuration dictionary with optional keys: model, api_key, max_chars
+        Configuration dictionary with optional keys: model, api_key, max_chars, scoring_prompt
 
     Returns
     -------
@@ -215,4 +210,5 @@ def create_gemini_reranker(config: dict[str, Any]) -> Reranker:
         model=config.get("model", DEFAULT_RERANK_MODEL),
         api_key=config.get("api_key"),
         max_chars=config.get("max_chars", DEFAULT_MAX_RERANK_CHARS),
+        scoring_prompt=config.get("scoring_prompt"),
     )

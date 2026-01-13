@@ -94,6 +94,20 @@ reranking:
     model: gemini-2.5-flash     # Gemini model for reranking
     api_key:                    # Gemini API key (or use ${GOOGLE_API_KEY} environment variable)
     # max_chars: 2000           # Optional: Maximum characters of document content to send for scoring (default: 2000)
+    scoring_prompt: |           # Prompt template for document relevance scoring (use {query} and {document} placeholders)
+      Rate document relevance from 0-10.
+
+      Query: {query}
+
+      Document:
+      {document}
+
+      Instructions: Return ONLY a single number from 0 to 10.
+      - 10 = Directly answers with details
+      - 5 = Partially relevant
+      - 0 = Not relevant
+
+      Output format: Just the number, nothing else.
 
 llm:
   llm_name: gemini
@@ -132,4 +146,22 @@ pipeline:
   query:
     retrieve_enabled: true          # Enable document retrieval step
     rerank_enabled: false           # Enable reranking step (improves precision but adds latency)
-    generation_enabled: true        # Enable LLM answer generation step        
+    generation_enabled: true        # Enable LLM answer generation step
+    generation_prompt: |            # Prompt template for answer generation (use {context} and {query} placeholders)
+      You are SMPTE-Copilot, an expert technical assistant.
+
+      Your task is to answer the user's question based on the provided context documents.
+
+      Guidelines:
+      - Synthesize and integrate information from the context to provide a comprehensive answer
+      - Be concise but thorough, using technical terminology when appropriate
+      - Always cite sources using [1], [2], etc., referring to the context blocks
+      - If the context contains relevant information but doesn't directly answer the question, explain what the context reveals about the topic
+      - Only say "I don't know based on the provided documents" if the context is completely unrelated to the question
+      - Do not fabricate information that isn't supported by the context
+
+      Context Documents:
+      {context}
+
+      Question:
+      {query}     
