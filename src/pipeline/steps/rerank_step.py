@@ -42,7 +42,12 @@ class RerankStep(PipelineStep):
             return
 
         initial_count = len(context.retrieved_docs)
-        logger.info(f"Reranking {initial_count} retrieved documents")
+        logger.info(f"Reranking {initial_count} retrieved documents using cross-encoder")
+
+        logger.info("Initial retrieval scores (before reranking):")
+        for i, (doc, score) in enumerate(context.retrieved_docs, 1):
+            source = doc.metadata.get("source", "unknown")
+            logger.info(f"  [{i}] distance_score={score:.4f} source={source}")
 
         reranked_docs = self.reranker.rerank(
             context.user_query,
@@ -51,10 +56,9 @@ class RerankStep(PipelineStep):
 
         context.retrieved_docs = reranked_docs
 
-        logger.info(
-            "Reranking completed. Document order may have changed based on relevance."
-        )
-
-        for i, (doc, score) in enumerate(reranked_docs[:3], 1):
+        # Log top reranked results with scores
+        logger.info("Top reranked results (higher score = more relevant):")
+        for i, (doc, score) in enumerate(reranked_docs[:5], 1):
             source = doc.metadata.get("source", "unknown")
-            logger.debug(f"  [{i}] score={score:.2f} source={source}")
+            content_preview = doc.page_content[:100].replace("\n", " ")
+            logger.info(f"  [{i}] Score: {score:.1f} | {content_preview}...")

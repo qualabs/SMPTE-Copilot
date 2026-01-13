@@ -5,6 +5,7 @@ import re
 from typing import Any
 
 from google import genai
+from google.genai import types
 from langchain_core.documents import Document
 
 from .constants import DEFAULT_MAX_RERANK_CHARS, DEFAULT_RERANK_MODEL
@@ -36,6 +37,35 @@ class GeminiReranker(Reranker):
         self.max_chars = max_chars
         self.logger = logging.getLogger(__name__)
 
+    def create_scoring_prompt(self, query: str, document_content: str) -> str:
+        """Generate the scoring prompt for document relevance evaluation.
+
+        Parameters
+        ----------
+        query
+            User's search query
+        document_content
+            Document text to evaluate (may include metadata)
+
+        Returns
+        -------
+        Formatted prompt string for LLM scoring
+        """
+        return f"""Rate document relevance from 0-10.
+
+Query: {query}
+
+Document:
+{document_content}
+
+Instructions: Return ONLY a single number from 0 to 10.
+- 10 = Directly answers with details
+- 5 = Partially relevant
+- 0 = Not relevant
+
+Output format: Just the number, nothing else.
+Your answer:"""
+
     def rerank(
         self, query: str,
         documents: list[tuple[Document, float]]
@@ -56,23 +86,45 @@ class GeminiReranker(Reranker):
         if not documents:
             return documents
 
-        self.logger.info(f"Reranking {len(documents)} documents with Gemini")
+        self.logger.info(f"🔄 Reranking {len(documents)} documents with Gemini")
 
         reranked = []
-        for doc, _original_score in documents:
-            # Truncate document content if too long
+        successful_scores = 0
+        zero_scores = 0
+
+        for i, (doc, _original_score) in enumerate(documents, 1):
+            self.logger.info(f"--- Document {i}/{len(documents)} ---")
+
             content = doc.page_content[: self.max_chars]
             if len(doc.page_content) > self.max_chars:
                 content += "...[truncated]"
+
+            # Add metadata context if available
+            metadata = doc.metadata or {}
+
+            source = metadata.get("source")
+
+            if source:
+                content = f"[METADATA]\n{source}\n[CONTENT]\n{content}"
+
+            self.logger.info(f"Gemini Content: {content}")
 
             # Score the document relevance
             score = self._score_document(query, content)
             reranked.append((doc, score))
 
+            if score > 0.0:
+                successful_scores += 1
+            else:
+                zero_scores += 1
+
         # Sort by new scores (higher is better)
         reranked.sort(key=lambda x: x[1], reverse=True)
 
-        self.logger.info("Reranking completed")
+        self.logger.info(
+            f"✅ Reranking completed: {successful_scores} docs scored > 0, "
+            f"{zero_scores} docs scored 0"
+        )
         return reranked
 
     def _score_document(self, query: str, document_content: str) -> float:
@@ -89,33 +141,58 @@ class GeminiReranker(Reranker):
         -------
         Relevance score from 0.0 to 10.0 (higher is more relevant)
         """
-        prompt = f"""Rate the relevance of this document to the query on a scale of 0-10, where:
-- 0 = completely irrelevant
-- 5 = somewhat relevant
-- 10 = highly relevant and directly answers the query
+        doc_preview = document_content[:150].replace("\n", " ")
+        self.logger.info(f"📝 Evaluating: {doc_preview}...")
 
-Query: {query}
-
-Document:
-{document_content}
-
-Output ONLY a single number between 0 and 10 (can include decimals like 7.5). Do not include any explanation."""
+        prompt = self.create_scoring_prompt(query, document_content)
 
         try:
+
+            config = types.GenerateContentConfig(
+                temperature=0.0,
+                max_output_tokens=5,
+            )
+
             resp = self.client.models.generate_content(
                 model=self.model,
                 contents=prompt,
+                config=config,
             )
-            score_text = (resp.text or "0").strip()
 
-            match = re.search(r"\d+\.?\d*", score_text)
-            if match:
-                score = float(match.group())
-                # Clamp to valid range
-                return max(0.0, min(10.0, score))
-            else:
-                self.logger.warning(f"Could not parse score from: {score_text}")
+            # Check if response is None or empty
+            if not resp or not resp.text:
+                self.logger.info(
+                    f"LLM returned empty response for model {self.model}. "
+                    "This might be a model availability issue. Returning 0.0"
+                )
                 return 0.0
+
+            score_text = resp.text.strip()
+
+            self.logger.debug(f"LLM prompt: {prompt}")
+            self.logger.debug(f"LLM score: {score_text}")
+
+            # Try to extract a number from the response
+            # First try to parse the whole thing as a float
+            try:
+                score = float(score_text)
+                score = max(0.0, min(10.0, score))
+                self.logger.info(f"Score: {score:.1f}")
+                return score
+            except ValueError:
+                # If that fails, try to find a number with regex
+                match = re.search(r"\d+\.?\d*", score_text)
+                if match:
+                    score = float(match.group())
+                    score = max(0.0, min(10.0, score))
+                    self.logger.info(f"Score: {score:.1f} (extracted from text)")
+                    return score
+                else:
+                    self.logger.info(
+                        f"Could not parse score from LLM response: '{score_text[:100]}'. "
+                        f"Returning 0.0"
+                    )
+                    return 0.0
 
         except Exception as e:
             self.logger.info(f"Error scoring document: {e}")
