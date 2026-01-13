@@ -1,11 +1,9 @@
 """Types and result classes for CLI operations."""
 
 from pathlib import Path
-from typing import Optional
 
 from src.config import Config
 from src.embeddings import Embeddings
-from src.input_sources import InputSourceType
 from src.vector_stores import VectorStore
 
 
@@ -14,23 +12,17 @@ class IngestionConfig:
 
     def __init__(
         self,
-        source_type: InputSourceType,
-        source_config: dict,
         config: Config,
-        source_ids: Optional[list[str]] = None,
-        embedding_model: Optional[Embeddings] = None,
-        vector_store: Optional[VectorStore] = None,
+        source_ids: list[str] | None = None,
+        embedding_model: Embeddings | None = None,
+        vector_store: VectorStore | None = None,
     ):
         """Initialize the ingestion configuration.
 
         Parameters
         ----------
-        source_type
-            Type of input source (LOCAL or S3).
-        source_config
-            Configuration dictionary for the input source.
         config
-            Configuration object.
+            Configuration object containing all settings.
         source_ids
             Optional list of source identifiers (S3 URIs or local paths) to process.
         embedding_model
@@ -38,8 +30,6 @@ class IngestionConfig:
         vector_store
             Vector store instance (can be None if save step is disabled).
         """
-        self.source_type = source_type
-        self.source_config = source_config
         self.config = config
         self.source_ids = source_ids
         self.embedding_model = embedding_model
@@ -53,9 +43,9 @@ class IngestionResult:
         self,
         file_path: Path,
         success: bool,
-        error: Optional[str] = None,
+        error: str | None = None,
         chunks_count: int = 0,
-        markdown_path: Optional[Path] = None,
+        markdown_path: Path | None = None,
     ):
         """Initialize the ingestion result.
 

@@ -20,9 +20,8 @@ from src.cli.constants import (
     SEPARATOR_LENGTH,
 )
 from src.cli.models import IngestionConfig, IngestionResult
-from src.config.folder_tags_mapper import FolderTagsMapper
 from src.cli.parallel_ingestor import ParallelIngestor
-from src.input_sources import InputSourceFactory, InputSourceType
+from src.input_sources import InputSource, InputSourceFactory, InputSourceType
 from src.loaders.constants import SUPPORTED_FILE_EXTENSIONS
 from src.loaders.helpers import LoaderHelper
 from src.logger import Logger
@@ -128,28 +127,24 @@ def ingest_file(
     logger = logging.getLogger(__name__)
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info(f"Ingesting: {source_id}")
-    if ingestion_config.access_tags:
-        logger.info(f"Access tags: {ingestion_config.access_tags}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
+    config = ingestion_config.config
+
     # Create InputSource instance for this worker
-    input_source = InputSourceFactory.create(ingestion_config.source_type, ingestion_config.source_config)
+    input_source = _create_input_source_from_config(config)
 
     try:
         file_path_resolved = input_source.get_file(source_id)
 
-        # Get tags from folder mapper if available, otherwise use default tags
-        if ingestion_config.folder_tags_mapper:
-            access_tags_from_folder = ingestion_config.folder_tags_mapper.get_tags_for_file(file_path_resolved)
-            logger.info(f"Access tags from folder: {access_tags_from_folder}")
-        else:
-            access_tags_from_folder = ingestion_config.access_tags or []
-            logger.info(f"Using default access tags: {access_tags_from_folder}")
+        # Get access tags for this file based on folder mapping or default
+        access_tags = config.access_control.get_tags_from_file(file_path_resolved)
+        logger.info(f"Access tags for file: {access_tags}")
 
         context = IngestionContext(
             source_id=source_id,
             file_path=file_path_resolved,
-            access_tags=access_tags_from_folder,
+            access_tags=access_tags,
         )
 
         # Build steps list dynamically based on pipeline configuration
@@ -265,6 +260,25 @@ def _process_files_sequential(
     logger.info("✓ All files processed successfully.")
     return True
 
+def _create_input_source_from_config(config: Config) -> InputSource:
+    """Create an InputSource instance from configuration.
+
+    Parameters
+    ----------
+    config
+        Configuration object containing input source settings.
+
+    Returns
+    -------
+    InputSource
+        Configured input source instance.
+    """
+    source_type = InputSourceType(config.input_source.get('source_type'))
+    source_config = config.input_source.get('source_config') or {}
+    input_path = config.paths.get('input_path')
+
+    source_config = {**source_config, "base_path": str(input_path)}
+    return InputSourceFactory.create(source_type, source_config)
 
 def main():
     """Run the ingestion pipeline for one or more media files."""
@@ -273,42 +287,22 @@ def main():
     Logger.setup(config)
     logger = logging.getLogger(__name__)
 
-    input_path = config.paths.input_path
-
-
-    # Get access control settings from config
-    access_tags = config.access_control.default_access_tags or None
-
-    # Initialize FolderTagsMapper for per-file tag mapping
-    folder_tags_mapper = FolderTagsMapper(
-        mapping_file=config.access_control.folder_tags_mapping_file,
-        default_tags=access_tags or [],
-    )
-
-    # Get input source configuration
-    source_type = InputSourceType(config.input_source.source_type)
-    source_config = config.input_source.source_config or {}
-
-    logger.info(f"Using input source: {source_type.value}")
-    logger.info(f"Source config: {source_config}")
-
-    source_config = {**source_config, "base_path": str(input_path)}
-    input_source = InputSourceFactory.create(source_type, source_config)
+    # Create input source and list files
+    input_source = _create_input_source_from_config(config)
     source_ids = input_source.list_files("", list(SUPPORTED_FILE_EXTENSIONS))
     input_source.cleanup()
 
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
     logger.info("RAG Media Ingestion Pipeline")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
+    logger.info(f"Using input source: {config.input_source.get('source_type')}")
+    logger.info(f"Source config: {config.input_source.get('source_config')}")
     logger.info(f"Inputs: {len(source_ids)} file(s)")
     logger.info(f"Chunker: {config.chunking.chunker_name}")
     logger.info(f"Embedding model: {config.embedding.embed_name}")
     logger.info(f"Database location: {config.vector_store.store_config.get('persist_directory')}")
     logger.info(f"Collection: {config.vector_store.store_config.get('collection_name')}")
-
-    if access_tags:
-        logger.info(f"Access tags: {access_tags}")
-    logger.info("")
+    logger.info(f"Access tags: {config.access_control.get('default_access_tags')}")
 
     try:
         pipeline_config = config.pipeline.ingestion
@@ -333,14 +327,10 @@ def main():
 
         # Create ingestion configuration
         ingestion_config = IngestionConfig(
-            source_type=source_type,
-            source_config=source_config,
             config=config,
             source_ids=source_ids,
             embedding_model=embedding_model,
             vector_store=vector_store,
-            access_tags=access_tags,
-            folder_tags_mapper=folder_tags_mapper,
         )
 
         # Process files in parallel if enabled, otherwise sequentially

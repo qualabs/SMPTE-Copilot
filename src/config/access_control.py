@@ -3,7 +3,6 @@
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -19,21 +18,21 @@ class AccessControlConfig(BaseSettings):
         default_factory=list,
         description="Default access tags for ingested documents (comma-separated or list)",
     )
-    default_required_role: Optional[str] = Field(
+    default_required_role: str | None = Field(
         default=None,
         description="Default required role for strict access control on ingested documents",
     )
-    folder_tags_mapping_file: Optional[Path] = Field(
+    folder_tags_mapping_file: Path | None = Field(
         default=None,
         description="Path to the folder-to-tags mapping JSON file",
     )
 
     # Query settings
-    default_user_role: Optional[str] = Field(
+    default_user_role: str | None = Field(
         default=None,
         description="Default user role for query access control (expanded to tags via role_mapping)",
     )
-    role_mapping_file: Optional[Path] = Field(
+    role_mapping_file: Path | None = Field(
         default=None,
         description="Path to JSON file containing role-to-tags mapping",
     )
@@ -56,32 +55,34 @@ class AccessControlConfig(BaseSettings):
             is found, otherwise returns default_tags.
         """
         resolved_path = Path(file_path).resolve()
-        print(f"Resolved path: {resolved_path}")
+        logger.info(f"Resolved path: {resolved_path}")
         parent_folder = resolved_path.parent.name
-        print(f"Parent folder: {parent_folder}" )
+        logger.info(f"Parent folder: {parent_folder}")
+
         # Handle edge case: file in root directory
         if not parent_folder:
-            return self.default_tags
+            return self.default_access_tags
 
         # Load mapping from file
         folder_mapping = {}
-        if self.mapping_file is not None:
+        if self.folder_tags_mapping_file is not None:
             try:
-                mapping_path = self.mapping_file.expanduser().resolve()
-                print(f"Mapping path: {mapping_path}")
+                mapping_path = self.folder_tags_mapping_file.expanduser().resolve()
+                logger.info(f"Mapping path: {mapping_path}")
                 if mapping_path.exists():
                     with mapping_path.open() as f:
                         folder_mapping = json.load(f)
                 else:
-                    logger.info(f"Folder tags mapping file not found: {mapping_path}")
+                    logger.warning(f"Folder tags mapping file not found: {mapping_path}")
             except Exception as e:
-                logger.info(f"Could not load folder tags mapping: {e}")
+                logger.warning(f"Could not load folder tags mapping: {e}")
 
         # Look up the folder in the mapping
         if parent_folder in folder_mapping:
+            logger.info(f"Found tags for folder '{parent_folder}': {folder_mapping[parent_folder]}")
             return folder_mapping[parent_folder]
 
         # Folder not found in mapping, use default tags
-        logger.info(f"Folder '{parent_folder}' not found in mapping for file '{resolved_path}'")
-        return self.default_tags
+        logger.info(f"Folder '{parent_folder}' not found in mapping, using default tags")
+        return self.default_access_tags
 
