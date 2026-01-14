@@ -29,6 +29,12 @@ variable "instance_type" {
   default = "t3.xlarge"
 }
 
+variable "gpu_instance_type" {
+  description = "EC2 instance type for GPU-enabled server"
+  type        = string
+  default     = "g6.xlarge"
+}
+
 variable "repo_url" {
   description = "URL of the Git repository to clone"
   type        = string
