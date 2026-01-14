@@ -22,7 +22,6 @@ from .preprocessing import PreprocessingConfig
 from .retrieval import RetrievalConfig
 from .vector_store import VectorStoreConfig
 
-
 class Config(BaseSettings):
     """Main configuration class combining all sub-configurations."""
 

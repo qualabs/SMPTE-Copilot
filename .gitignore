@@ -225,3 +225,5 @@ config.yaml
 *.tfplan
 crash.log
 crash.*.log
+
+backup/*

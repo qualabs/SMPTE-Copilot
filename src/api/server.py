@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """FastAPI server exposing OpenAI-compatible chat completions endpoint"""
 
-import json
 import logging
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -16,36 +14,6 @@ from src.api.models import ChatCompletionRequest, ChatCompletionResponse
 from src.components import RAGComponents, execute_query, initialize_rag_components
 from src.logger import Logger
 from src.pipeline import PipelineStatus
-
-
-def _load_role_mapping(
-    mapping_file: str,
-    logger: logging.Logger,
-) -> dict[str, list[str]]:
-    """Load role-to-tags mapping from JSON file.
-
-    Parameters
-    ----------
-    mapping_file : str
-        Path to the JSON file containing role-to-tags mapping.
-    logger : logging.Logger
-        Logger instance for logging messages.
-
-    Returns
-    -------
-    dict[str, list[str]]
-        Role-to-tags mapping, or empty dict if file doesn't exist.
-    """
-    try:
-        mapping_path = Path(mapping_file)
-        if mapping_path.exists():
-            with mapping_path.open() as f:
-                return json.load(f)
-        else:
-            logger.warning(f"Role mapping file not found: {mapping_file}")
-    except Exception as e:
-        logger.warning(f"Could not load role mapping: {e}")
-    return {}
 
 
 @asynccontextmanager
@@ -64,15 +32,13 @@ async def lifespan(app: FastAPI):
 
         # Load access control configuration
         app.state.user_role = config.access_control.default_user_role
-        app.state.role_mapping = None
+        app.state.role_mapping = config.access_control.get_role_mapping()
 
-        if config.access_control.role_mapping_file:
-            app.state.role_mapping = _load_role_mapping(str(config.access_control.role_mapping_file), app.state.logger)
-            if app.state.user_role:
-                app.state.logger.info(
-                    f"Access control enabled: role='{app.state.user_role}', "
-                    f"mapping loaded with {len(app.state.role_mapping)} roles"
-                )
+        if app.state.user_role and app.state.role_mapping:
+            app.state.logger.info(
+                f"Access control enabled: role='{app.state.user_role}', "
+                f"mapping loaded with {len(app.state.role_mapping)} roles"
+            )
 
         app.state.initialized = True
         app.state.logger.info("Server startup complete")
