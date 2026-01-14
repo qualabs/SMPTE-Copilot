@@ -1,6 +1,6 @@
 """Input source configuration."""
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -14,7 +14,7 @@ class InputSourceConfig(BaseSettings):
         description="Type of input source: 'local' or 's3'",
     )
 
-    source_config: Optional[dict[str, Any]] = Field(
+    source_config: dict[str, Any] | None = Field(
         default_factory=dict,
         description="Source-specific configuration",
     )

@@ -3,19 +3,21 @@ from __future__ import annotations
 """Utility module for initializing RAG pipeline components from configuration."""
 
 import logging
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 
 from . import (
     Config,
     EmbeddingModelFactory,
     LLMFactory,
+    RerankerFactory,
     RetrieverFactory,
     VectorStoreFactory,
 )
 from .embeddings.protocol import Embeddings
 from .llms.protocol import LLM
 from .pipeline import PipelineExecutor, QueryContext
-from .pipeline.steps import GenerationStep, QueryEmbeddingStep, RetrieveStep
+from .pipeline.steps import GenerationStep, QueryEmbeddingStep, RerankStep, RetrieveStep
+from .rerankers.protocol import Reranker
 from .retrievers.protocol import Retriever
 from .vector_stores.protocol import VectorStore
 
@@ -23,13 +25,14 @@ from .vector_stores.protocol import VectorStore
 class RAGComponents(NamedTuple):
     """Container for initialized RAG pipeline components."""
 
-    embedding_model: Optional[Embeddings]
-    vector_store: Optional[VectorStore]
-    retriever: Optional[Retriever]
-    llm: Optional[LLM]
+    embedding_model: Embeddings | None
+    vector_store: VectorStore | None
+    retriever: Retriever | None
+    reranker: Reranker | None
+    llm: LLM | None
 
 
-def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
+def initialize_rag_components(config: Config | None = None) -> RAGComponents:
     """Initialize all RAG pipeline components from configuration.
 
     Parameters
@@ -53,9 +56,11 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
     embedding_model = None
     vector_store = None
     retriever = None
+    reranker = None
     llm = None
 
     logger.info(f"Retrieve step - enabled: {pipeline_config.retrieve_enabled}")
+    logger.info(f"Rerank step - enabled: {pipeline_config.rerank_enabled}")
     logger.info(f"Generation step - enabled: {pipeline_config.generation_enabled}")
 
     # Only create embedding, vector_store and retriever if retrieve step is enabled
@@ -85,6 +90,13 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
             **retriever_kwargs,
         )
 
+    # Only create reranker if rerank step is enabled
+    if pipeline_config.rerank_enabled:
+        reranker = RerankerFactory.create(
+            config.reranking.reranker_name,
+            **(config.reranking.reranker_config or {}),
+        )
+
     if pipeline_config.generation_enabled:
         llm = LLMFactory.create(
             config.llm.llm_name,
@@ -97,6 +109,7 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
         embedding_model=embedding_model,
         vector_store=vector_store,
         retriever=retriever,
+        reranker=reranker,
         llm=llm,
     )
 
@@ -104,8 +117,8 @@ def initialize_rag_components(config: Optional[Config] = None) -> RAGComponents:
 def execute_query(
     components: RAGComponents,
     query: str,
-    user_role: Optional[str] = None,
-    role_mapping: Optional[dict[str, list[str]]] = None,
+    user_role: str | None = None,
+    role_mapping: dict[str, list[str]] | None = None,
 ) -> QueryContext:
     """Execute a RAG query using the provided components
 
@@ -125,7 +138,7 @@ def execute_query(
     QueryContext
         Pipeline context containing the query results
     """
-    Config.get_config()
+    config = Config.get_config()
 
     logger = logging.getLogger(__name__)
     logger.info(f"Executing query: {query}")
@@ -147,8 +160,20 @@ def execute_query(
     if components.retriever:
         steps.append(RetrieveStep(components.retriever))
 
+    if components.reranker:
+        steps.append(RerankStep(components.reranker))
+
     if components.llm:
-        steps.append(GenerationStep(components.llm))
+        # Get prompt configuration from pipeline config
+        pipeline_config = config.pipeline.query if config.pipeline else None
+        prompt_template = pipeline_config.generation_prompt if pipeline_config else None
+
+        steps.append(
+            GenerationStep(
+                components.llm,
+                prompt_template=prompt_template,
+            )
+        )
 
     executor = PipelineExecutor(steps)
     context = executor.execute(context)

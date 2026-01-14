@@ -117,8 +117,30 @@ class QdrantVectorStoreWrapper:
         """Search for similar documents with similarity scores."""
         self._ensure_collection_exists()
         if filter is not None:
-            return self._store.similarity_search_with_score(query, k=k, filter=filter)
-        return self._store.similarity_search_with_score(query, k=k)
+            results = self._store.similarity_search_with_score(query, k=k, filter=filter)
+        else:
+            results = self._store.similarity_search_with_score(query, k=k)
+
+        # Fix metadata mapping - LangChain doesn't map all payload fields to metadata
+        fixed_results = []
+        for doc, score in results:
+            point_id = doc.metadata.get('_id')
+            if point_id:
+                try:
+                    points = self._client.retrieve(
+                        collection_name=self._collection_name,
+                        ids=[point_id],
+                        with_payload=True,
+                    )
+                    if points:
+                        payload = points[0].payload
+                        doc.metadata = {k: v for k, v in payload.items() if k != 'page_content'}
+                except Exception as e:
+                    self._logger.info(f"Could not fix metadata for point {point_id}: {e}")
+
+            fixed_results.append((doc, score))
+
+        return fixed_results
 
     def add_documents(self, documents: list[Document]) -> list[str]:
         """Add documents to the vector store."""

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 """Factory for creating tokenizer implementations."""
 
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from .base_tokenizer import Tokenizer
 from .gemini import create_gemini_tokenizer

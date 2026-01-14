@@ -12,6 +12,7 @@ from .llms import LLMFactory
 from .loaders import LoaderFactory, LoaderHelper
 from .logger import Logger
 from .preprocessing import PreprocessorFactory
+from .rerankers import RerankerFactory
 from .retrievers import RetrieverFactory
 from .vector_stores import VectorStore, VectorStoreFactory
 
@@ -26,6 +27,7 @@ __all__ = [
     "VectorStoreFactory",
     "RetrieverFactory",
     "LLMFactory",
+    "RerankerFactory",
     "PreprocessorFactory",
     # Helpers
     "LoaderHelper",

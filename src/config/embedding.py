@@ -1,6 +1,5 @@
 """Embedding model configuration."""
 
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -15,7 +14,7 @@ class EmbeddingConfig(BaseSettings):
         default=EmbeddingModelType.HUGGINGFACE,
         description="Embedding model type",
     )
-    embed_config: Optional[dict] = Field(
+    embed_config: dict | None = Field(
         default=None,
         description="Additional model-specific keyword arguments",
     )

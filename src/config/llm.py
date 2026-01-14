@@ -1,6 +1,5 @@
 """LLM configuration."""
 
-from typing import Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -15,7 +14,7 @@ class LLMConfig(BaseSettings):
         default=LLMType.GEMINI,
         description="LLM backend type",
     )
-    llm_config: Optional[dict] = Field(
+    llm_config: dict | None = Field(
         default=None,
         description="Additional LLM-specific keyword arguments",
     )

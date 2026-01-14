@@ -2,7 +2,8 @@ from __future__ import annotations
 
 """Factory for creating document loader implementations."""
 
-from typing import Any, Callable, ClassVar
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 from .docling_loader import create_docling_loader
 from .protocol import DocumentLoader
