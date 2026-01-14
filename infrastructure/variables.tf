@@ -25,7 +25,6 @@ variable "vpc_cidr" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  # default     = "g6.xlarge" # GPU Instance (Commented out for now)
   default = "t3.xlarge"
 }
 
