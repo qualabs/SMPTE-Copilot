@@ -2,10 +2,8 @@
 """Simple script to query the vector database with a question."""
 
 import argparse
-import json
 import logging
 import sys
-from pathlib import Path
 
 from src import Config
 from src.cli.constants import (
@@ -16,36 +14,6 @@ from src.cli.constants import (
 from src.components import execute_query, initialize_rag_components
 from src.logger import Logger
 from src.pipeline import PipelineStatus, QueryContext
-
-
-def _load_role_mapping(
-    mapping_file: str,
-    logger: logging.Logger
-) -> dict[str, list[str]]:
-    """Load role-to-tags mapping from JSON file.
-
-    Parameters
-    ----------
-    mapping_file : str
-        Path to the JSON file containing role-to-tags mapping.
-    logger : logging.Logger
-        Logger instance for logging messages.
-
-    Returns
-    -------
-    dict[str, list[str]]
-        Role-to-tags mapping, or empty dict if file doesn't exist.
-    """
-    try:
-        mapping_path = Path(mapping_file)
-        if mapping_path.exists():
-            with mapping_path.open() as f:
-                return json.load(f)
-        else:
-            logger.warning(f"Role mapping file not found: {mapping_file}")
-    except Exception as e:
-        logger.warning(f"Could not load role mapping: {e}")
-    return {}
 
 
 def _log_query_info(
@@ -106,9 +74,7 @@ def main():
     query = " ".join(args.query)
 
     user_role = config.access_control.default_user_role
-    role_mapping = {}
-    if config.access_control.role_mapping_file:
-        role_mapping = _load_role_mapping(str(config.access_control.role_mapping_file), logger)
+    role_mapping = config.access_control.get_role_mapping()
 
     _log_query_info(query, user_role, role_mapping, logger)
 

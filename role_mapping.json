@@ -1,8 +1,0 @@
-{
-  "Public": ["Public"],
-  "Finance_Manager": ["Finance", "Public"],
-  "HR_Manager": ["HR", "Public"],
-  "Admin": ["Finance", "HR", "Public", "Admin"],
-  "Protected": ["Protected"]
-}
-
