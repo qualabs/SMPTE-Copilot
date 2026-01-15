@@ -24,10 +24,10 @@ loader:
       loader_config: 
         picture_description_enabled: false  # Set to true to enable image descriptions (requires llm credentials below)
                                             # llm_api_key, llm_endpoint, llm_model are required if picture_description_enabled is true
-        llm_api_key: 
+        llm_api_key: "YOUR_LLM_API_KEY"
         llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
         llm_model: gemini-2.5-flash # Model for image description
-        image_description_timeout: 60  # Timeout in seconds for image description generation
+        image_description_timeout: 10  # Timeout in seconds for image description generation
         # image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Optional prompt for image description if not present uses default
     - extensions: [.mp4]
       loader_name: whisper

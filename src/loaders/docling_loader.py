@@ -29,10 +29,9 @@ class DoclingLoader(DocumentLoader):
     def __init__(self, config: dict[str, Any]) -> None:
         self._config = config
         self._logger = logging.getLogger(__name__)
-
-        self._input_path = self._resolve_input_path()
-        self._output_dir = self._resolve_output_dir()
         self._converter = self._create_converter()
+        self.input_path = self._resolve_input_path()
+        self.output_dir = self._resolve_output_dir()
 
     def _resolve_input_path(self) -> Path:
         file_path = self._config.get("file_path")
@@ -113,21 +112,21 @@ class DoclingLoader(DocumentLoader):
 
     def _build_metadata(self) -> dict[str, str]:
         return {
-            "source": str(self._input_path),
-            "file_name": self._input_path.name,
+            "source": str(self.input_path),
+            "file_name": self.input_path.name,
             "loader": "DoclingLoader",
-            "file_type": self._input_path.suffix.lower(),
+            "file_type": self.input_path.suffix.lower(),
         }
 
     def load_documents(self) -> list[Document]:
         try:
-            result = self._converter.convert(str(self._input_path))
+            result = self._converter.convert(str(self.input_path))
         except Exception as e:
-            raise RuntimeError(f"Docling conversion failed for {self._input_path}: {e}") from e
+            raise RuntimeError(f"Docling conversion failed for {self.input_path}: {e}") from e
 
         if result.errors:
             error_messages = "; ".join(str(e) for e in result.errors)
-            raise RuntimeError(f"Docling conversion had errors for {self._input_path}: {error_messages}")
+            raise RuntimeError(f"Docling conversion had errors for {self.input_path}: {error_messages}")
 
         return [Document(page_content=result.document.export_to_markdown(), metadata=self._build_metadata())]
 
