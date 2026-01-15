@@ -18,15 +18,29 @@ class SimpleTokenizer(Tokenizer):
 
     model_config = ConfigDict(extra='allow')
 
-    def __init__(self, max_tokens: int = 2048, **kwargs):
+    def __init__(
+        self,
+        max_tokens: int = 2048,
+        chars_per_token_ratio: float | None = None,
+        split_buffer_size: int | None = None,
+        **kwargs
+    ):
         """Initialize the approximation tokenizer.
 
         Parameters
         ----------
         max_tokens
             Maximum number of tokens per chunk (default: 2048).
+        chars_per_token_ratio
+            Ratio of characters to tokens for threshold estimation.
+        split_buffer_size
+            Number of words to buffer before checking limits.
         """
-        super().__init__(**kwargs)
+        super().__init__(
+            chars_per_token_ratio=chars_per_token_ratio,
+            split_buffer_size=split_buffer_size,
+            **kwargs
+        )
         self.max_tokens = max_tokens
 
     def count_tokens(self, text: str) -> int:
@@ -55,11 +69,19 @@ def create_simple_tokenizer(config: dict[str, Any]) -> Tokenizer:
     config
         Configuration dictionary with keys:
         - max_tokens: int (optional) - Maximum tokens per chunk (default: 2048)
+        - chars_per_token_ratio: float (optional) - Char-to-token ratio for threshold (default: 1.5)
+        - split_buffer_size: int (optional) - Words to buffer before checking limits (default: 5)
 
     Returns
     -------
     Tokenizer instance.
     """
     max_tokens = config.get("max_tokens", 2048)
-    return SimpleTokenizer(max_tokens=max_tokens)
+    chars_per_token_ratio = config.get("chars_per_token_ratio")
+    split_buffer_size = config.get("split_buffer_size")
+    return SimpleTokenizer(
+        max_tokens=max_tokens,
+        chars_per_token_ratio=chars_per_token_ratio,
+        split_buffer_size=split_buffer_size,
+    )
 
