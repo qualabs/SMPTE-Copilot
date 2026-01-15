@@ -12,6 +12,20 @@ class Tokenizer(BaseTokenizer, ABC):
     and split text into chunks based on token limits.
     """
 
+    def __call__(self, text: str) -> int:
+        """Make tokenizer callable for semchunk compatibility.
+
+        Parameters
+        ----------
+        text
+            The text to count tokens for.
+
+        Returns
+        -------
+        Number of tokens in the text.
+        """
+        return self.count_tokens(text)
+
     @abstractmethod
     def count_tokens(self, text: str) -> int:
         """Count the number of tokens in the given text.
