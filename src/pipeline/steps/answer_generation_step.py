@@ -3,6 +3,7 @@ from __future__ import annotations
 """Step that generates the final answer from retrieved documents."""
 
 import logging
+from pathlib import Path
 
 from langchain_core.documents import Document
 
@@ -130,19 +131,28 @@ class GenerationStep(PipelineStep):
 
     def _format_access_denial_message(self, restricted_docs: list[dict]) -> str:
         """Format the access denial message for restricted documents."""
+        seen: set[tuple[str, tuple[str, ...]]] = set()
         lines = []
+
         for doc in restricted_docs:
-            source = doc.get("source") or "Unknown source"
-            required_tags = doc.get("required_tags", [])
+            source = doc.get("source")
+            source_name = Path(source).name if source else "Unknown source"
+            required_tags = tuple(sorted(doc.get("required_tags", [])))
+            key = (source_name, required_tags)
+
+            if key in seen:
+                continue
+            seen.add(key)
+
             if required_tags:
                 tags_str = ", ".join(required_tags)
-                lines.append(f"- {source} (requires: {tags_str})")
+                lines.append(f"- {source_name} (requires: {tags_str})")
             else:
-                lines.append(f"- {source}")
+                lines.append(f"- {source_name}")
 
         source_list = "\n".join(lines)
 
         return (
-            f"\n\n---\n**Note:** {len(restricted_docs)} additional document(s) "
+            f"\n\n---\n**Note:** {len(lines)} additional document(s) "
             f"matched your query but you lack permission to access them:\n{source_list}"
         )
