@@ -28,3 +28,7 @@ class QueryContext(PipelineContext):
     user_role: str | None = None
     role_mapping: dict[str, list[str]] | None = None  # Role-to-tags mapping
 
+    # Access control notification fields (used when notify_on_denied_access is enabled)
+    restricted_docs: list[dict] = Field(default_factory=list)
+    has_restricted_content: bool = False
+

@@ -36,6 +36,7 @@ class GenerationStep(PipelineStep):
         self.llm = llm
         self.max_context_chars = max_context_chars
         self.prompt_template = prompt_template or DEFAULT_GENERATION_PROMPT
+        self._logger = logging.getLogger(__name__)
 
     def create_prompt(self, context_text: str, query: str) -> str:
         """Create the generation prompt using template.
@@ -64,42 +65,84 @@ class GenerationStep(PipelineStep):
         context
             Query context with retrieved_docs set.
         """
-        logger = logging.getLogger(__name__)
-
         if not context.retrieved_docs:
-            logger.info("No retrieved docs available. Skipping answer generation.")
+            self._logger.info("No retrieved docs available. Skipping answer generation.")
+            self._append_access_denial_notice(context)
             return
 
-        retrieved: list[tuple[Document, float]] = context.retrieved_docs
+        context_text = self._build_context_and_citations(context)
 
+        prompt = self.create_prompt(context_text, context.user_query)
+        context.prompt = prompt
+
+        if not self._generate_response(context, prompt):
+            return
+
+        self._append_access_denial_notice(context)
+        self._logger.info("Generated final answer successfully")
+
+    def _build_context_and_citations(self, context: QueryContext) -> str:
+        """Build context text and citations from retrieved documents."""
         blocks: list[str] = []
         citations: list[dict] = []
 
-        for i, (doc, score) in enumerate(retrieved, start=1):
-            meta = doc.metadata or {}
-            source = meta.get("source") or meta.get("file_path") or meta.get("filename")
-            page = meta.get("page") or meta.get("page_number")
-
-            citations.append(
-                {"id": i, "source": source, "page": page, "score": score}
-            )
-
+        for i, (doc, score) in enumerate(context.retrieved_docs, start=1):
+            source, page = self._extract_source_and_page(doc)
+            citations.append({"id": i, "source": source, "page": page, "score": score})
             blocks.append(
                 f"[{i}] SOURCE={source} PAGE={page} SCORE={score}\n{doc.page_content}"
             )
+
+        context.citations = citations
 
         context_text = "\n\n---\n\n".join(blocks)
         if len(context_text) > self.max_context_chars:
             context_text = context_text[: self.max_context_chars] + "\n\n[TRUNCATED]\n"
 
-        prompt = self.create_prompt(context_text, context.user_query)
-        context.prompt = prompt
-        context.citations = citations
+        return context_text
 
+    def _extract_source_and_page(self, doc: Document) -> tuple[str | None, int | None]:
+        """Extract source and page from document metadata."""
+        meta = doc.metadata or {}
+        source = meta.get("source") or meta.get("file_path") or meta.get("filename")
+        page = meta.get("page") or meta.get("page_number")
+        return source, page
+
+    def _generate_response(self, context: QueryContext, prompt: str) -> bool:
+        """Generate LLM response. Returns True on success, False on failure."""
         try:
             context.llm_response = self.llm.generate(prompt)
+            return True
         except Exception as e:
             context.mark_failed(f"LLM generation failed: {e}")
+            return False
+
+    def _append_access_denial_notice(self, context: QueryContext) -> None:
+        """Append access denial notice if there are restricted documents."""
+        if not context.has_restricted_content or not context.restricted_docs:
             return
 
-        logger.info("Generated final answer successfully")
+        denial_message = self._format_access_denial_message(context.restricted_docs)
+        context.llm_response = (context.llm_response or "") + denial_message
+        self._logger.info(
+            f"Appended access denial notice for {len(context.restricted_docs)} restricted documents"
+        )
+
+    def _format_access_denial_message(self, restricted_docs: list[dict]) -> str:
+        """Format the access denial message for restricted documents."""
+        lines = []
+        for doc in restricted_docs:
+            source = doc.get("source") or "Unknown source"
+            required_tags = doc.get("required_tags", [])
+            if required_tags:
+                tags_str = ", ".join(required_tags)
+                lines.append(f"- {source} (requires: {tags_str})")
+            else:
+                lines.append(f"- {source}")
+
+        source_list = "\n".join(lines)
+
+        return (
+            f"\n\n---\n**Note:** {len(restricted_docs)} additional document(s) "
+            f"matched your query but you lack permission to access them:\n{source_list}"
+        )

@@ -16,7 +16,13 @@ from . import (
 from .embeddings.protocol import Embeddings
 from .llms.protocol import LLM
 from .pipeline import PipelineExecutor, QueryContext
-from .pipeline.steps import GenerationStep, QueryEmbeddingStep, RerankStep, RetrieveStep
+from .pipeline.steps import (
+    AccessControlStep,
+    GenerationStep,
+    QueryEmbeddingStep,
+    RerankStep,
+    RetrieveStep,
+)
 from .rerankers.protocol import Reranker
 from .retrievers.protocol import Retriever
 from .vector_stores.protocol import VectorStore
@@ -159,6 +165,9 @@ def execute_query(
 
     if components.retriever:
         steps.append(RetrieveStep(components.retriever))
+
+        if config.access_control.notify_on_denied_access:
+            steps.append(AccessControlStep())
 
     if components.reranker:
         steps.append(RerankStep(components.reranker))

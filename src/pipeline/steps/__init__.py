@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Pipeline step implementations that wrap factory products."""
 
+from .access_control_step import AccessControlStep
 from .answer_generation_step import GenerationStep
 from .chunk_step import ChunkStep
 from .embedding_generation_step import EmbeddingGenerationStep
@@ -13,6 +14,7 @@ from .retrieve_step import RetrieveStep
 from .save_step import SaveStep
 
 __all__ = [
+    "AccessControlStep",
     "ChunkStep",
     "EmbeddingGenerationStep",
     "GenerationStep",
