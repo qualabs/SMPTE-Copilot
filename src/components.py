@@ -38,21 +38,15 @@ class RAGComponents(NamedTuple):
     llm: LLM | None
 
 
-def initialize_rag_components(config: Config | None = None) -> RAGComponents:
+def initialize_rag_components() -> RAGComponents:
     """Initialize all RAG pipeline components from configuration.
-
-    Parameters
-    ----------
-    config : Config, optional
-        Configuration object. If None, loads from Config.get_config()
 
     Returns
     -------
     RAGComponents
         Named tuple containing all initialized components
     """
-    if config is None:
-        config = Config.get_config()
+    config = Config.get_config()
 
     logger = logging.getLogger(__name__)
     logger.info("Initializing RAG components...")

@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
         config = Config.get_config()
         Logger.setup(config)
         app.state.logger.info("Initializing RAG components...")
-        app.state.components = initialize_rag_components(config)
+        app.state.components = initialize_rag_components()
 
         # Load access control configuration
         app.state.user_role = config.access_control.default_user_role
