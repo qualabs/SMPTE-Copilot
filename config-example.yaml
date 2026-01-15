@@ -134,8 +134,7 @@ access_control:
   
   # Access denial notification behavior
   notify_on_denied_access: false  # If true, notify users about restricted documents instead of silent filtering
-                                  # When false (default): uses efficient Qdrant filtering (silent, better performance)
-                                  # When true: shows restricted document sources in the response message
+                                  # When false (default): uses efficient Vector Store filtering (silent)
 
 pipeline:
   # Configure which steps are enabled in the ingestion and query pipelines
