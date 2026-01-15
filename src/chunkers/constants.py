@@ -12,7 +12,6 @@ DEFAULT_CHUNK_OVERLAP = 200
 CHUNK_INDEX_METADATA_KEY = "chunk_index"
 TOTAL_CHUNKS_METADATA_KEY = "total_chunks"
 
-# Token-based splitting heuristics
 CHARS_PER_TOKEN_RATIO = 1.5  # Conservative estimate for char-to-token ratio
-SPLIT_BUFFER_SIZE = 5  # Number of words to buffer before checking limits
+SPLIT_BUFFER_SIZE = 20
 
