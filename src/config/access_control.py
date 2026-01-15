@@ -31,7 +31,7 @@ class AccessControlConfig(BaseSettings):
     notify_on_denied_access: bool = Field(
         default=False,
         description="If true, notify users about restricted documents instead of silent filtering. "
-        "When false (default), uses efficient Qdrant filtering. When true, retrieves all documents "
+        "When false (default), uses efficient Vector Store filtering. When true, retrieves all documents "
         "and separates accessible vs restricted, showing restricted document sources in the response.",
     )
 
