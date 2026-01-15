@@ -1,15 +1,12 @@
 {
   "folders": {
-    "Finance": ["Finance", "Public"],
-    "HR": ["HR", "Public"],
-    "Admin": ["Finance", "HR", "Public", "Admin"],
-    "Protected": ["Protected"]
+    "Finance": ["Finance"],
+    "HR": ["HR"],
+    "Admin": ["Admin"]
   },
   "roles": {
     "Public": ["Public"],
-    "Finance_Manager": ["Finance", "Public"],
-    "HR_Manager": ["HR", "Public"],
-    "Admin": ["Finance", "HR", "Public", "Admin"],
-    "Protected": ["Protected"]
+    "Finance": ["Finance", "Public"],
+    "Admin": ["Finance", "HR", "Public", "Admin"]
   }
 }

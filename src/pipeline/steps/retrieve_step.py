@@ -22,6 +22,8 @@ class RetrieveStep:
             Retriever instance created by RetrieverFactory.
         """
         self.retriever = retriever
+        self.config = Config.get_config()
+        self._logger = logging.getLogger(__name__)
 
     def run(self, context: QueryContext) -> None:
         """Retrieve relevant documents for the query.
@@ -31,35 +33,53 @@ class RetrieveStep:
         context
             Query context with user_query set.
         """
-        logger = logging.getLogger(__name__)
 
-        # Build access filter if tag-based access control is enabled
-        # Roles are automatically converted to tags via role_mapping
-        metadata_filter = None
-        if context.user_role and context.role_mapping:
-            logger.info(
-                f"Applying tag-based access control: role='{context.user_role}'"
+        if self._should_apply_db_filter(context):
+            self._logger.info(
+                f"Applying tag-based access control (silent mode): role='{context.user_role}'"
             )
+            self._build_and_set_filter(context)
 
-            # Get vector store type from configuration
-            config = Config.get_config()
-            vector_store_type = config.vector_store.store_name
+        self._retrieve_documents(context)
 
-            try:
-                builder = FilterBuilderFactory.create(vector_store_type)
-                metadata_filter = builder.build(
-                    user_role=context.user_role,
-                    role_mapping=context.role_mapping,
-                )
-                self.retriever.set_filter(metadata_filter)
-                logger.debug("Set metadata filter on retriever")
-            except ValueError as e:
-                logger.warning(f"Could not create filter builder: {e}")
-                metadata_filter = None
+    def _should_apply_db_filter(self, context: QueryContext) -> bool:
+        """Determine if DB-level filtering should be applied.
 
-        logger.info(f"Retrieving documents for query: {context.user_query}")
+        Returns False if:
+        - No access control is configured
+        - notify_on_denied_access is enabled (filtering happens in AccessControlStep)
+        """
+        if not context.user_role or not context.role_mapping:
+            return False
+
+        if self.config.access_control.notify_on_denied_access:
+            self._logger.info(
+                "Skipping DB filter - notify_on_denied_access enabled, AccessControlStep will handle filtering"
+            )
+            return False
+
+        return True
+
+    def _build_and_set_filter(self, context: QueryContext) -> None:
+        """Build and set the metadata filter on the retriever."""
+        vector_store_type = self.config.vector_store.store_name
+
+        try:
+            builder = FilterBuilderFactory.create(vector_store_type)
+            metadata_filter = builder.build(
+                user_role=context.user_role,
+                role_mapping=context.role_mapping,
+            )
+            self.retriever.set_filter(metadata_filter)
+            self._logger.info(f"Set metadata filter on retriever: {metadata_filter}")
+        except ValueError as e:
+            self._logger.warning(f"Could not create filter builder: {e}")
+
+    def _retrieve_documents(self, context: QueryContext) -> None:
+        """Execute the retrieval and store results in context."""
+        self._logger.info(f"Retrieving documents for query: {context.user_query}")
 
         results_with_scores = self.retriever.retrieve_with_scores(context.user_query)
         context.retrieved_docs = results_with_scores
 
-        logger.info(f"Retrieved {len(results_with_scores)} documents")
+        self._logger.info(f"Retrieved {len(results_with_scores)} documents")

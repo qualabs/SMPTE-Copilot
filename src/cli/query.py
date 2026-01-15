@@ -79,7 +79,7 @@ def main():
     _log_query_info(query, user_role, role_mapping, logger)
 
     try:
-        components = initialize_rag_components(config)
+        components = initialize_rag_components()
 
         context = execute_query(
             components,

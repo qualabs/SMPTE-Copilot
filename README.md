@@ -319,7 +319,7 @@ context = executor.execute(context)
 The query pipeline (`query.py`) processes user queries through sequential steps. Each step can be enabled or disabled via configuration (see [Configurable Pipelines](#configurable-pipelines)):
 
 ```
-QueryEmbedding → Retrieve → Generate
+QueryEmbedding → Retrieve → [Rerank] → [AccessControl] → Generate
 ```
 
 **Pipeline Flow:**
@@ -329,19 +329,38 @@ QueryEmbedding → Retrieve → Generate
    - Output: Sets `query_vector` in context
 
 2. **RetrieveStep**: Retrieves relevant documents from the vector store
-
    - Input: `user_query` (uses query directly, not the vector)
    - Output: Sets `retrieved_docs` (list of tuples with Document and score) in context
+   - When `notify_on_denied_access: false`: Applies database-level access control filtering
+   - When `notify_on_denied_access: true`: Retrieves all matching documents without filtering
 
-3. **GenerateStep**: Generates a response using an LLM based on the retrieved documents
+3. **RerankStep** (optional): Reranks retrieved documents using a cross-encoder
+   - Only active when `rerank_enabled: true`
    - Input: `retrieved_docs` from RetrieveStep
-   - Output: Sets `response` and `citations` in context
+   - Output: Updates `retrieved_docs` with reordered documents based on cross-encoder relevance scores
+   - Improves precision by using more sophisticated relevance assessment
+
+4. **AccessControlStep** (optional): Separates accessible and restricted documents
+   - Only active when `notify_on_denied_access: true`
+   - Input: `retrieved_docs` from RetrieveStep/RerankStep
+   - Output: Updates `retrieved_docs` with only accessible documents, sets `restricted_docs` and `has_restricted_content`
+
+5. **GenerateStep**: Generates a response using an LLM based on the retrieved documents
+   - Input: `retrieved_docs` from previous steps
+   - Output: Sets `llm_response` and `citations` in context
+   - When `has_restricted_content: true`: Appends access denial notification to response
 
 **Implementation Example:**
 
 ```python
 from src.pipeline import QueryContext, PipelineExecutor
-from src.pipeline.steps import QueryEmbeddingStep, RetrieveStep, GenerationStep
+from src.pipeline.steps import (
+    QueryEmbeddingStep,
+    RetrieveStep,
+    RerankStep,
+    AccessControlStep,
+    GenerationStep,
+)
 
 context = QueryContext(user_query=query)
 
@@ -351,6 +370,10 @@ steps = []
 if config.pipeline.query.retrieve_enabled:
     steps.append(QueryEmbeddingStep(embedding_model))
     steps.append(RetrieveStep(retriever))
+if config.pipeline.query.rerank_enabled:
+    steps.append(RerankStep(reranker))
+if config.access_control.notify_on_denied_access:
+    steps.append(AccessControlStep())
 if config.pipeline.query.generation_enabled:
     steps.append(GenerationStep(llm))
 
@@ -374,8 +397,12 @@ Each pipeline uses a context object that extends `PipelineContext`:
   - `user_query`: Original user query string
   - `query_vector`: Embedding vector for the query
   - `retrieved_docs`: Retrieved documents with similarity scores
-  - `response`: Generated response from LLM
+  - `llm_response`: Generated response from LLM
   - `citations`: List of citations for the response
+  - `user_role`: User's role for access control
+  - `role_mapping`: Role-to-tags mapping dictionary
+  - `restricted_docs`: List of restricted document metadata (when `notify_on_denied_access: true`)
+  - `has_restricted_content`: Flag indicating if restricted content was found
   - `status`: Pipeline execution status
   - `error`: Error message if pipeline failed
 
@@ -416,10 +443,12 @@ Add to `src/pipeline/steps/__init__.py`:
 
 ```python
 from .rerank_step import RerankStep
+from .access_control_step import AccessControlStep
 
 __all__ = [
     # ... existing steps
     "RerankStep",
+    "AccessControlStep",
 ]
 ```
 
@@ -476,92 +505,22 @@ The `config.yaml` file is the central configuration file that controls which com
 
 ### Configuration Structure
 
-The `config.yaml` file is organized into sections that map to each module:
+The `config.yaml` file is organized into sections that map to each module. See [`config-example.yaml`](./config-example.yaml) for a complete example with all available options and detailed comments.
 
-```yaml
-input_source:
-  source_type: S3 # S3 or local supported
-  source_config:
-    bucket_name: smpte-copilot-data-bucket 
-    prefix: "documents/" # prefix for documents in S3. If omitted, processes everything at the bucket root
-    aws_access_key_id: AWS_ACCESS_KEY_ID
-    aws_secret_access_key: AWS_SECRET_ACCESS_KEY
-    region_name: us-east-1
-    endpoint_url: "http://custom-s3:9000" # Optional: for S3-compatible services
-
-loader:
-  file_type_mapping: # Map file extensions to loader types
-    - extensions: [.pdf] # List of extensions that use the same loader
-      loader_name: pymupdf # PDF files use pymupdf loader
-      loader_config: null # Optional loader-specific configuration
-
-preprocessing:
-  preprocessing_name: rapidfuzz # Preprocessor type (rapidfuzz)
-  preprocessing_config: # Preprocessor-specific configuration
-    min_repetitions: 3 # Minimum number of times a line must appear (or be similar) to be considered repeated (default: 3)
-    similarity_threshold: 0.85 # Minimum similarity ratio for fuzzy matching (0.0 to 1.0, default: 0.85)
-
-chunking:
-  chunker_name: langchain # Maps to ChunkerType.LANGCHAIN
-  chunker_config: # Chunker-specific configuration dictionary (recommended)
-    chunk_size: 1000 # Chunk size in characters (for langchain)
-    chunk_overlap: 200 # Overlap between chunks (for langchain)
-    method: recursive # Chunking method (for langchain)
-  # For hybrid chunker:
-  # chunker_name: hybrid
-  # chunker_config:
-  #   max_tokens: 2000 # Maximum tokens per chunk (default: 2000)
-  #   merge_peers: false # Whether to merge peer chunks (default: false)
-
-embedding:
-  embed_name: huggingface # Maps to EmbeddingModelType.HUGGINGFACE
-  embed_config: # Additional model-specific config
-    model_name: "sentence-transformers/all-MiniLM-L6-v2"
-
-llm:
-  llm_name: gemini
-  llm_config:
-    model: gemini-2.5-flash
-    # api_key: "${GEMINI_API_KEY}"
-
-vector_store:
-  store_name: chromadb # Maps to VectorStoreType.CHROMADB
-  persist_directory: ./vector_db
-  collection_name: rag_collection
-  store_config: null
-
-retrieval:
-  searcher_strategy: similarity # Maps to RetrieverType.SIMILARITY
-  k: 5 # Number of results to retrieve
-  searcher_config: null
-
-paths:
-  input_path: ./data # Default path for input media files
-  markdown_dir: ./data/markdown # Directory for markdown output
-
-logging:
-  level: INFO
-
-access_control:
-  # Ingestion settings (applied to all ingested documents)
-  default_access_tags: ["Public"]        # Default access tags for ingested documents
-  
-  # Query settings (applied to all queries)
-  default_user_role: "Public"            # Default user role for query access control
-  access_mapping_file: "./access_mapping.json"  # Path to unified folder-to-tags and role-to-tags mapping
-
-pipeline:
-  # Configure which steps are enabled in the ingestion and query pipelines
-  ingestion:
-    load_enabled: true              # Enable/disable the load step (converts files to markdown)
-    preprocess_enabled: true        # Enable/disable the preprocessing step (removes duplicates, etc.)
-    chunk_enabled: true             # Enable/disable the chunking step
-    save_enabled: true              # Enable/disable the save step (includes embedding generation and vector database storage)
-  
-  query:
-    retrieve_enabled: true          # Enable/disable the retrieval step (includes query embedding step)
-    generation_enabled: true        # Enable/disable the LLM generation step
-```
+**Main configuration sections:**
+- `input_source`: Input source type (local or S3) and connection settings
+- `loader`: File type to loader mapping for document processing
+- `preprocessing`: Text preprocessing options (e.g., duplicate removal)
+- `chunking`: Document chunking strategy and parameters
+- `embedding`: Embedding model selection and configuration
+- `llm`: LLM model for answer generation
+- `vector_store`: Vector database selection and connection settings
+- `retrieval`: Retrieval strategy and parameters
+- `reranking`: Cross-encoder reranking configuration
+- `paths`: Input and output directory paths
+- `logging`: Log level configuration
+- `access_control`: Role-based access control settings
+- `pipeline`: Enable/disable individual pipeline steps
 
 ### How Configuration Maps to Components
 
@@ -574,7 +533,9 @@ The configuration values directly map to the Enum types defined in each module:
 - **`embed_name`** → `EmbeddingModelType` enum (e.g., `"huggingface"` → `EmbeddingModelType.HUGGINGFACE`)
 - **`store_name`** → `VectorStoreType` enum (e.g., `"chromadb"` → `VectorStoreType.CHROMADB`, `"qdrant"` → `VectorStoreType.QDRANT`)
 - **`searcher_strategy`** → `RetrieverType` enum (e.g., `"similarity"` → `RetrieverType.SIMILARITY`)
+- **`reranker_name`** → `RerankerType` enum (e.g., `"gemini"` → `RerankerType.GEMINI`)
 - **`access_control`** → Access control configuration (see [Access Control System](#access-control-system) for details)
+  - `notify_on_denied_access`: When `true`, enables notification mode that informs users about restricted documents
 
 The system uses these values to:
 1. Load the configuration from `config.yaml`
@@ -699,6 +660,42 @@ Users can access documents that have at least one tag matching their authorized 
 - A user with role `"Public"` can only access documents tagged with `"Public"`
 - A user with role `"Admin"` can access documents with any of: `"Finance"`, `"HR"`, `"Public"`, or `"Admin"`
 
+### Access Denial Notification Mode
+
+The system supports two modes for handling restricted documents during queries:
+
+#### Silent Mode (Default)
+
+When `notify_on_denied_access: false` (default):
+- Uses efficient database-level filtering (Qdrant/ChromaDB)
+- Restricted documents are never retrieved from the database
+- Users only see documents they have permission to access
+- Best performance, recommended for production
+
+#### Notification Mode
+
+When `notify_on_denied_access: true`:
+- Retrieves all matching documents regardless of access permissions
+- Separates documents into accessible and restricted categories
+- Appends a notification to the response listing restricted documents the user cannot access
+- Users are informed about additional relevant content that requires higher permissions
+
+**Example notification appended to response:**
+```
+---
+**Note:** 2 additional document(s) matched your query but you lack permission to access them:
+- confidential-report.pdf (requires: Finance)
+- internal-memo.pdf (requires: HR, Admin)
+```
+
+**Configuration:**
+```yaml
+access_control:
+  default_user_role: "Public"
+  access_mapping_file: "./access_mapping.json"
+  notify_on_denied_access: true  # Enable notification mode
+```
+
 ### Usage Examples
 
 #### During Ingestion
@@ -716,7 +713,9 @@ When querying, the system automatically:
 1. Loads the user's role from `default_user_role` (or can be specified programmatically)
 2. Loads the role mapping from `access_mapping_file`
 3. Expands the user's role to authorized tags
-4. Filters query results to only include documents with matching tags
+4. Filters query results based on the `notify_on_denied_access` setting:
+   - **Silent mode** (`false`): Filters at database level, only authorized documents are retrieved
+   - **Notification mode** (`true`): Retrieves all documents, then separates accessible vs restricted and notifies user
 
 ## Configurable Pipelines
 
@@ -747,6 +746,7 @@ pipeline:
   
   query:
     retrieve_enabled: true          
+    rerank_enabled: false           # Enable reranking step (improves precision but adds latency)
     generation_enabled: true        
 ```
 
@@ -816,7 +816,7 @@ pipeline:
 
 ### Query Pipeline Steps
 
-The query pipeline consists of two configurable steps:
+The query pipeline consists of the following configurable steps:
 
 1. **`retrieve_enabled`** (Retrieve Step)
    - Generates query embedding and retrieves relevant documents from the vector database
@@ -824,10 +824,20 @@ The query pipeline consists of two configurable steps:
    - Required for: Finding relevant context from your document corpus
    - If disabled: LLM will generate responses without document context
 
-2. **`generation_enabled`** (Generation Step)
+2. **`rerank_enabled`** (Rerank Step)
+   - Reranks retrieved documents using a cross-encoder model for improved relevance
+   - Optional: Improves precision but adds latency due to additional model inference
+   - If disabled: Documents are ranked by vector similarity only
+
+3. **`generation_enabled`** (Generation Step)
    - Uses an LLM to generate a natural language response based on retrieved documents
    - Optional: Can be disabled if you only want document retrieval
    - If disabled: Only retrieved documents are returned (no LLM response)
+
+4. **Access Control Step** (automatic, based on `notify_on_denied_access`)
+   - Separates accessible and restricted documents when `notify_on_denied_access: true`
+   - Not a pipeline toggle - controlled by `access_control.notify_on_denied_access`
+   - When enabled: Notifies users about restricted documents in the response
 
 **Note**: The retrieve step includes query embedding because they are dependent operations - you can't retrieve documents without first embedding the query.
 
@@ -890,7 +900,40 @@ pipeline:
 
 **Result**: LLM generates responses without retrieving documents from the database. Useful for general knowledge questions or when you want the LLM to answer without specific context.
 
-#### Use Case 5: High-Volume Parallel Ingestion
+#### Use Case 5: High-Precision Retrieval with Reranking
+
+Enable reranking to improve the quality of retrieved documents:
+
+```yaml
+pipeline:
+  query:
+    retrieve_enabled: true
+    rerank_enabled: true          # Enable cross-encoder reranking
+    generation_enabled: true
+
+reranking:
+  reranker_name: gemini
+  reranker_config:
+    model: gemini-2.5-flash
+    api_key: ${GOOGLE_API_KEY}
+```
+
+**Result**: Retrieved documents are reranked using a cross-encoder model that better assesses query-document relevance. This improves precision at the cost of additional latency. Recommended for use cases where answer quality is more important than response time.
+
+#### Use Case 6: Access Denial Notification
+
+Notify users about restricted documents they cannot access:
+
+```yaml
+access_control:
+  default_user_role: "Public"
+  access_mapping_file: "./access_mapping.json"
+  notify_on_denied_access: true   # Enable notification mode
+```
+
+**Result**: When users query documents, they receive their normal response plus a notification listing any additional relevant documents they lack permission to access. This helps users understand what information exists and what permissions they might need.
+
+#### Use Case 7: High-Volume Parallel Ingestion
 
 Process large batches of documents quickly using parallel processing:
 

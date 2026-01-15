@@ -23,8 +23,8 @@ class QueryContext(PipelineContext):
     prompt: str | None = None
     llm_response: str | None = None
     citations: list[dict] | None = None
-
-    # Roles are automatically converted to tags via role_mapping
     user_role: str | None = None
     role_mapping: dict[str, list[str]] | None = None  # Role-to-tags mapping
+    restricted_docs: list[dict] = Field(default_factory=list)
+    has_restricted_content: bool = False
 

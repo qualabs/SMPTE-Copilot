@@ -16,7 +16,13 @@ from . import (
 from .embeddings.protocol import Embeddings
 from .llms.protocol import LLM
 from .pipeline import PipelineExecutor, QueryContext
-from .pipeline.steps import GenerationStep, QueryEmbeddingStep, RerankStep, RetrieveStep
+from .pipeline.steps import (
+    AccessControlStep,
+    GenerationStep,
+    QueryEmbeddingStep,
+    RerankStep,
+    RetrieveStep,
+)
 from .rerankers.protocol import Reranker
 from .retrievers.protocol import Retriever
 from .vector_stores.protocol import VectorStore
@@ -32,21 +38,15 @@ class RAGComponents(NamedTuple):
     llm: LLM | None
 
 
-def initialize_rag_components(config: Config | None = None) -> RAGComponents:
+def initialize_rag_components() -> RAGComponents:
     """Initialize all RAG pipeline components from configuration.
-
-    Parameters
-    ----------
-    config : Config, optional
-        Configuration object. If None, loads from Config.get_config()
 
     Returns
     -------
     RAGComponents
         Named tuple containing all initialized components
     """
-    if config is None:
-        config = Config.get_config()
+    config = Config.get_config()
 
     logger = logging.getLogger(__name__)
     logger.info("Initializing RAG components...")
@@ -159,6 +159,9 @@ def execute_query(
 
     if components.retriever:
         steps.append(RetrieveStep(components.retriever))
+
+        if config.access_control.notify_on_denied_access:
+            steps.append(AccessControlStep())
 
     if components.reranker:
         steps.append(RerankStep(components.reranker))

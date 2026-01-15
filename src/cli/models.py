@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-from src.config import Config
 from src.embeddings import Embeddings
 from src.vector_stores import VectorStore
 
@@ -12,7 +11,6 @@ class IngestionConfig:
 
     def __init__(
         self,
-        config: Config,
         source_ids: list[str] | None = None,
         embedding_model: Embeddings | None = None,
         vector_store: VectorStore | None = None,
@@ -21,8 +19,6 @@ class IngestionConfig:
 
         Parameters
         ----------
-        config
-            Configuration object containing all settings.
         source_ids
             Optional list of source identifiers (S3 URIs or local paths) to process.
         embedding_model
@@ -30,7 +26,6 @@ class IngestionConfig:
         vector_store
             Vector store instance (can be None if save step is disabled).
         """
-        self.config = config
         self.source_ids = source_ids
         self.embedding_model = embedding_model
         self.vector_store = vector_store

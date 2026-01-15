@@ -102,8 +102,6 @@ class GeminiReranker(Reranker):
             if source:
                 content = f"[METADATA]\n{source}\n[CONTENT]\n{content}"
 
-            self.logger.info(f"Gemini Content: {content}")
-
             # Score the document relevance
             score = self._score_document(query, content)
             reranked.append((doc, score))

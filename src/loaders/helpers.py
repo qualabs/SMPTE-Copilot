@@ -15,7 +15,6 @@ class LoaderHelper:
     @staticmethod
     def get_loader_config_for_file(
         file_path: Path,
-        config: Config,
     ) -> tuple[str, dict[str, Any]]:
         """Get the loader name and config for a file based on its extension and configuration.
 
@@ -23,14 +22,13 @@ class LoaderHelper:
         ----------
         file_path
             Path to the file.
-        config
-            Configuration object.
 
         Returns
         -------
         Tuple of (loader_name, loader_config_dict).
 
         """
+        config = Config.get_config()
         if not isinstance(file_path, Path):
             raise TypeError(f"file_path must be a Path object, got {type(file_path)}")
 
@@ -164,7 +162,6 @@ class LoaderHelper:
         file_path: Path,
         loader_name: str,
         loader_config_from_mapping: dict[str, Any],
-        config: Config,
     ) -> dict[str, Any]:
         """Create loader configuration based on file type and loader name.
 
@@ -176,8 +173,6 @@ class LoaderHelper:
             Name of the loader to use (e.g., "pymupdf", "video_loader").
         loader_config_from_mapping
             Loader-specific configuration from file_type_mapping.
-        config
-            Configuration object.
 
         Returns
         -------
@@ -203,6 +198,7 @@ class LoaderHelper:
                 f"loader_config_from_mapping must be a dict, got {type(loader_config_from_mapping)}"
             )
 
+        config = Config.get_config()
         output_dir = LoaderHelper.prepare_output_dir(config.paths.markdown_dir)
 
         result = loader_config_from_mapping.copy()

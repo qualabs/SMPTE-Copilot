@@ -55,13 +55,13 @@ def _build_ingestion_steps(
     """
     logger = logging.getLogger(__name__)
     steps = []
-    config = ingestion_config.config
+    config = Config.get_config()
     pipeline_config = config.pipeline.ingestion
 
     logger.info(f"Load step - enabled: {pipeline_config.load_enabled}")
     if pipeline_config.load_enabled:
         loader_name, loader_config_from_mapping = (
-            LoaderHelper.get_loader_config_for_file(file_path, config)
+            LoaderHelper.get_loader_config_for_file(file_path)
         )
         file_extension = file_path.suffix.lower()
         logger.info(
@@ -72,7 +72,6 @@ def _build_ingestion_steps(
             file_path,
             loader_name,
             loader_config_from_mapping,
-            config,
         )
         loader = LoaderFactory.create(loader_name, **loader_config)
         steps.append(LoadStep(loader))
@@ -129,10 +128,10 @@ def ingest_file(
     logger.info(f"Ingesting: {source_id}")
     logger.info(SEPARATOR_CHAR * SEPARATOR_LENGTH)
 
-    config = ingestion_config.config
+    config = Config.get_config()
 
     # Create InputSource instance for this worker
-    input_source = _create_input_source_from_config(config)
+    input_source = _create_input_source_from_config()
 
     try:
         file_path_resolved = input_source.get_file(source_id)
@@ -199,7 +198,8 @@ def _process_files_parallel(
     logger = logging.getLogger(__name__)
     logger.info("Parallel processing enabled")
 
-    pipeline_config = ingestion_config.config.pipeline.ingestion
+    config = Config.get_config()
+    pipeline_config = config.pipeline.ingestion
     parallel_ingestor = ParallelIngestor(
         max_workers=pipeline_config.max_workers,
     )
@@ -261,19 +261,15 @@ def _process_files_sequential(
     logger.info("✓ All files processed successfully.")
     return True
 
-def _create_input_source_from_config(config: Config) -> InputSource:
+def _create_input_source_from_config() -> InputSource:
     """Create an InputSource instance from configuration.
-
-    Parameters
-    ----------
-    config
-        Configuration object containing input source settings.
 
     Returns
     -------
     InputSource
         Configured input source instance.
     """
+    config = Config.get_config()
     source_type = InputSourceType(config.input_source.source_type)
     source_config = config.input_source.source_config or {}
     input_path = config.paths.input_path
@@ -289,7 +285,7 @@ def main():
     logger = logging.getLogger(__name__)
 
     # Create input source and list files
-    input_source = _create_input_source_from_config(config)
+    input_source = _create_input_source_from_config()
     source_ids = input_source.list_files("", list(SUPPORTED_FILE_EXTENSIONS))
     input_source.cleanup()
 
@@ -328,7 +324,6 @@ def main():
 
         # Create ingestion configuration
         ingestion_config = IngestionConfig(
-            config=config,
             source_ids=source_ids,
             embedding_model=embedding_model,
             vector_store=vector_store,

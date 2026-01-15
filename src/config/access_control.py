@@ -28,6 +28,12 @@ class AccessControlConfig(BaseSettings):
         default=None,
         description="Default user role for query access control (expanded to tags via role_mapping)",
     )
+    notify_on_denied_access: bool = Field(
+        default=False,
+        description="If true, notify users about restricted documents instead of silent filtering. "
+        "When false (default), uses efficient Vector Store filtering. When true, retrieves all documents "
+        "and separates accessible vs restricted, showing restricted document sources in the response.",
+    )
 
     # Unified access mapping file
     access_mapping_file: Path | None = Field(
