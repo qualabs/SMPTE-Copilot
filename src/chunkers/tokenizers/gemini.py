@@ -24,14 +24,14 @@ class GeminiTokenizer(Tokenizer):
         model: str = "gemini-embedding-001",
         max_tokens: int = 2048,
         google_api_key: str | None = None,
+        chars_per_token_ratio: float | None = None,
+        split_buffer_size: int | None = None,
         **kwargs
     ):
         """Initialize the Gemini tokenizer.
 
         Parameters
         ----------
-        client
-            Optional genai.Client instance. If not provided, will be created from API key.
         model
             Gemini model name to use for token counting (default: gemini-embedding-001).
             Note: Some models like "models/embedding-001" don't support countTokens API.
@@ -40,8 +40,16 @@ class GeminiTokenizer(Tokenizer):
         google_api_key
             Optional Google API key. Used only if client is not provided.
             If not provided, uses GOOGLE_API_KEY env var.
+        chars_per_token_ratio
+            Ratio of characters to tokens for threshold estimation.
+        split_buffer_size
+            Number of words to buffer before checking limits.
         """
-        super().__init__(**kwargs)
+        super().__init__(
+            chars_per_token_ratio=chars_per_token_ratio,
+            split_buffer_size=split_buffer_size,
+            **kwargs
+        )
         self.client = genai.Client(api_key=google_api_key)
         self.model = model
         self.max_tokens = max_tokens
@@ -80,6 +88,8 @@ def create_gemini_tokenizer(config: dict[str, Any]) -> Tokenizer:
         - max_tokens: int (optional) - Maximum tokens per chunk (default: 2048)
         - google_api_key: str (optional) - Google API key for token counting
         - model: str (optional) - Gemini model name for token counting (default: gemini-embedding-001)
+        - chars_per_token_ratio: float (optional) - Char-to-token ratio for threshold (default: 1.5)
+        - split_buffer_size: int (optional) - Words to buffer before checking limits (default: 5)
 
     Returns
     -------
@@ -93,10 +103,14 @@ def create_gemini_tokenizer(config: dict[str, Any]) -> Tokenizer:
     max_tokens = config.get("max_tokens", 2048)
     google_api_key = config.get("llm_api_key")
     tokenizer_model = config.get("llm_model", "gemini-embedding-001")
+    chars_per_token_ratio = config.get("chars_per_token_ratio")
+    split_buffer_size = config.get("split_buffer_size")
 
     return GeminiTokenizer(
         model=tokenizer_model,
         max_tokens=max_tokens,
-        google_api_key=google_api_key
+        google_api_key=google_api_key,
+        chars_per_token_ratio=chars_per_token_ratio,
+        split_buffer_size=split_buffer_size,
     )
 

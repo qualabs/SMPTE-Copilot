@@ -146,7 +146,7 @@ class WhisperLoader(DocumentLoader):
                 continue
 
             timestamp_str = f"[{self._format_timestamp(start_time)} - {self._format_timestamp(end_time)}]"
-            markdown_lines.append(f"{timestamp_str}\n{text}")
+            markdown_lines.append(f"{timestamp_str}\n{text}\n")
 
         return "\n".join(markdown_lines)
 

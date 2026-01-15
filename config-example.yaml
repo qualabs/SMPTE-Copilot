@@ -22,11 +22,15 @@ loader:
     - extensions: [.pdf, .docx]  # Multiple extensions can share the same loader config
       loader_name: docling
       loader_config: 
-        llm_api_key: # LLM key for used for image description
+        picture_description_enabled: false  # Set to true to enable image descriptions (requires llm credentials below)
+                                            # llm_api_key, llm_endpoint, llm_model are required if picture_description_enabled is true
+        llm_api_key: "YOUR_LLM_API_KEY"
         llm_endpoint: https://generativelanguage.googleapis.com/v1beta/openai/chat/completions # LLM endpoint for image description
-        llm_model: gemini-2.5-flash # Model for image description
-        image_description_timeout: 60  # Timeout in seconds for image description generation
-        # image_description_prompt: "Analyze the image exhaustively. Do not summarize; extract details." # Optional prompt for image description if not present uses default
+        llm_model: gemini-2.5-flash-lite # Model for image description
+        image_description_prompt: | 
+          Describe the image in 2–4 bullet points focusing only on text, charts, and table headers. 
+          If the image is decorative, output: DECORATIVE. Max 60 words.
+        image_description_timeout: 30  # Timeout in seconds for image description generation
     - extensions: [.mp4]
       loader_name: whisper
       loader_config:
@@ -54,6 +58,9 @@ chunking:
   #   merge_peers: false      # Whether to merge peer chunks (default: false)
   #   tokenizer: simple       # Tokenizer type: simple (default) or gemini
   #   tokenizer_config:       # Tokenizer-specific configuration
+  #     chars_per_token_ratio: 1.5  # Char-to-token ratio for threshold estimation (default: 1.5)
+  #                                 # Lower = more conservative, triggers token check earlier
+  #     split_buffer_size: 5       # Words to buffer before checking limits (default: 5)
   #     # For gemini tokenizer:
   #     # llm_api_key: "${GOOGLE_API_KEY}"  # Google API key for accurate token counting
   #     # llm_model: "gemini-embedding-001"        # Gemini model for token counting
