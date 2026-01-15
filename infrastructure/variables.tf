@@ -39,3 +39,9 @@ variable "repo_url" {
   type        = string
   default     = "https://github.com/qualabs/SMPTE-Copilot"
 }
+
+variable "ssh_public_key" {
+  description = "Public SSH key (OpenSSH format) to install on both instances. Example: ssh-ed25519 AAAA... user@host"
+  type        = string
+  default     = "smpte-copilot.pub"
+}

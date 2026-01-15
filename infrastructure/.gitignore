@@ -1,3 +1,7 @@
+# SSH keys
+smpte-copilot
+smpte-copilot.pub
+
 # Local .terraform directories
 **/.terraform/*
 

@@ -13,6 +13,14 @@ resource "aws_security_group" "app_sg" {
     description     = "SSH from Instance Connect Endpoint"
   }
 
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "SSH access"
+  }
+
 
   # Allow all outbound traffic (Required for SSM and package updates)
   egress {
@@ -27,7 +35,7 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# Standard Ubuntu AMI (Cheap/CPU only)
+# Standard Ubuntu AMI (CPU only)
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # Canonical
@@ -43,32 +51,15 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# GPU Deep Learning AMI (for GPU instance)
-data "aws_ami" "deep_learning" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name = "name"
-    # Deep Learning OSS Nvidia Driver AMI GPU PyTorch (Ubuntu 22.04)
-    values = ["Deep Learning OSS Nvidia Driver AMI GPU PyTorch * (Ubuntu 22.04) *"]
-  }
-
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
-}
-
 # EC2 Instance
 resource "aws_instance" "app_server" {
-  # ami           = data.aws_ami.deep_learning.id # GPU AMI
   ami           = data.aws_ami.ubuntu.id # Standard AMI
   instance_type = var.instance_type
   subnet_id     = aws_subnet.public.id
 
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.app_profile.name
+  key_name                = aws_key_pair.main.key_name
 
   root_block_device {
     volume_size = 100
@@ -85,17 +76,19 @@ resource "aws_instance" "app_server" {
   })
 }
 
-# Separate GPU-enabled EC2 Instance (new)
+
+# GPU-enabled EC2 Instance
 resource "aws_instance" "gpu_server" {
-  ami           = data.aws_ami.deep_learning.id
+  ami           = "ami-0765437123d36eaa8" # Deep Learning OSS Nvidia Driver AMI GPU PyTorch 2.9 (Ubuntu 24.04) 20260103
   instance_type = var.gpu_instance_type
   subnet_id     = aws_subnet.public.id
 
   vpc_security_group_ids = [aws_security_group.app_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.app_profile.name
+  key_name                = aws_key_pair.main.key_name
 
   root_block_device {
-    volume_size = 100
+    volume_size = 200
     volume_type = "gp3"
   }
 
@@ -108,3 +101,5 @@ resource "aws_instance" "gpu_server" {
     repo_url = var.repo_url
   })
 }
+
+ 
