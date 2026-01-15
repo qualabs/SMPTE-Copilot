@@ -29,6 +29,7 @@ class DoclingLoader(DocumentLoader):
     def __init__(self, config: dict[str, Any]) -> None:
         self._config = config
         self._logger = logging.getLogger(__name__)
+        self._picture_description_enabled = self._config.get("picture_description_enabled", False)
         self._converter = self._create_converter()
         self.input_path = self._resolve_input_path()
         self.output_dir = self._resolve_output_dir()
@@ -49,14 +50,13 @@ class DoclingLoader(DocumentLoader):
         return Path(output_dir).expanduser().resolve() if output_dir else None
 
     def _create_converter(self) -> DocumentConverter:
-        picture_description_enabled = self._config.get("picture_description_enabled", False)
-        self._validate_picture_description_config(picture_description_enabled)
-        self._logger.info(f"Picture description: {'enabled' if picture_description_enabled else 'disabled'}")
+        self._validate_picture_description_config(self._picture_description_enabled)
+        self._logger.info(f"Picture description: {'enabled' if self._picture_description_enabled else 'disabled'}")
 
-        pdf_options = self._create_pdf_pipeline_options(picture_description_enabled)
-        docx_options = self._create_docx_pipeline_options(picture_description_enabled)
+        pdf_options = self._create_pdf_pipeline_options(self._picture_description_enabled)
+        docx_options = self._create_docx_pipeline_options(self._picture_description_enabled)
 
-        if picture_description_enabled:
+        if self._picture_description_enabled:
             description_options = self._create_picture_description_options()
             pdf_options.picture_description_options = description_options
             docx_options.picture_description_options = description_options
@@ -118,6 +118,39 @@ class DoclingLoader(DocumentLoader):
             "file_type": self.input_path.suffix.lower(),
         }
 
+    def _has_failed_description(self, picture) -> bool:
+        """Check if a picture has a description annotation but with empty text (API failure)."""
+        if not picture.annotations:
+            return False
+        return any(
+            getattr(ann, "kind", None) == "description" and not getattr(ann, "text", None)
+            for ann in picture.annotations
+        )
+
+    def _check_picture_conversion_success(self, document) -> None:
+        if not self._picture_description_enabled:
+            return
+
+        all_pictures = document.pictures
+        failed_pictures = [p for p in all_pictures if self._has_failed_description(p)]
+
+        if failed_pictures:
+            raise RuntimeError(
+                f"Picture descriptions: {len(failed_pictures)}/{len(all_pictures)} failed "
+                f"(had 'description' annotation but empty text - likely API error)"
+            )
+
+        # Count pictures that were actually processed (have description annotation with text)
+        described = sum(
+            1 for p in all_pictures
+            if any(
+                getattr(ann, "kind", None) == "description" and getattr(ann, "text", None)
+                for ann in (p.annotations or [])
+            )
+        )
+        skipped = len(all_pictures) - described
+        self._logger.info(f"Picture descriptions: {described} described, {skipped} skipped (decorative/small)")
+
     def load_documents(self) -> list[Document]:
         try:
             result = self._converter.convert(str(self.input_path))
@@ -127,6 +160,8 @@ class DoclingLoader(DocumentLoader):
         if result.errors:
             error_messages = "; ".join(str(e) for e in result.errors)
             raise RuntimeError(f"Docling conversion had errors for {self.input_path}: {error_messages}")
+
+        self._check_picture_conversion_success(result.document)
 
         return [Document(page_content=result.document.export_to_markdown(), metadata=self._build_metadata())]
 
