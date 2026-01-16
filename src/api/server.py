@@ -110,6 +110,8 @@ async def chat_completions(
     request: ChatCompletionRequest,
     x_openwebui_user_email: Annotated[str | None, Header(alias="X-OpenWebUI-User-Email")] = None,
     x_openwebui_user_id: Annotated[str | None, Header(alias="X-OpenWebUI-User-Id")] = None,
+    x_openwebui_user_name: Annotated[str | None, Header(alias="X-OpenWebUI-User-Name")] = None,
+    x_openwebui_user_role: Annotated[str | None, Header(alias="X-OpenWebUI-User-Role")] = None,
 ) -> ChatCompletionResponse:
     """OpenAI-compatible chat completions endpoint.
 
@@ -130,6 +132,11 @@ async def chat_completions(
     components: RAGComponents = app.state.components
     logger = app.state.logger
 
+    logger.info(f"x_openwebui_user_email: {x_openwebui_user_email}")
+    logger.info(f"x_openwebui_user_id: {x_openwebui_user_id}")
+    logger.info(f"x_openwebui_user_name: {x_openwebui_user_name}")
+    logger.info(f"x_openwebui_user_role: {x_openwebui_user_role}")
+
     # Resolve user role from headers (OpenWebUI integration)
     if x_openwebui_user_email or x_openwebui_user_id:
         user_role = app.state.user_resolver.resolve_role(
@@ -140,7 +147,7 @@ async def chat_completions(
     else:
         # Fallback to default role when no headers present
         user_role = app.state.default_user_role
-        logger.debug(f"No user headers, using default role: {user_role}")
+        logger.info(f"No user headers, using default role: {user_role}")
 
     # Extract the last user message as the query
     user_messages = [msg for msg in request.messages if msg.role == "user"]

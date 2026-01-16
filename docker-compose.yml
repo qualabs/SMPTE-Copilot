@@ -53,7 +53,7 @@ services:
       - ./user_mapping.json:/app/user_mapping.json:ro
     environment:
       - PYTHONUNBUFFERED=1
-    command: uvicorn src.api.server:app --host 0.0.0.0 --port 8000
+    command: uvicorn src.api.server:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test:
         [
@@ -74,9 +74,8 @@ services:
     ports:
       - "3000:8080"
     environment:
-      # OpenAI-compatible API connection
       - OPENAI_API_BASE_URL=http://api:8000/v1
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-dummy}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       # Forward user info headers to API for role-based access
       - ENABLE_FORWARD_USER_INFO_HEADERS=true
       # Google OAuth only (disable email/password login)
@@ -85,7 +84,7 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - OPENID_PROVIDER_URL=https://accounts.google.com/.well-known/openid-configuration
-      - WEBUI_URL=${CALLBACK_WEBUI_URL:-http://localhost:3000}
+      - WEBUI_URL=${CALLBACK_WEBUI_URL}
     volumes:
       - openwebui-data:/app/backend/data
     depends_on:
