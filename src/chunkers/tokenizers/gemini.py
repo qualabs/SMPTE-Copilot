@@ -78,6 +78,23 @@ class GeminiTokenizer(Tokenizer):
         """
         return self.max_tokens
 
+    def _hash_attributes(self) -> tuple:
+        """Return hashable attributes that uniquely identify this tokenizer.
+
+        Returns
+        -------
+        Tuple containing class type, model name, and configuration attributes.
+        Note: Does not include client or google_api_key as these are implementation
+        details, not part of the tokenizer's identity.
+        """
+        return (
+            type(self),
+            self.model,
+            self.max_tokens,
+            self.chars_per_token_ratio,
+            self.split_buffer_size,
+        )
+
 def create_gemini_tokenizer(config: dict[str, Any]) -> Tokenizer:
     """Create a Gemini tokenizer from configuration.
 

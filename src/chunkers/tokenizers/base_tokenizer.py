@@ -74,6 +74,46 @@ class Tokenizer(BaseTokenizer, ABC):
         """
         ...
 
+    @abstractmethod
+    def _hash_attributes(self) -> tuple:
+        """Return a tuple of hashable attributes that uniquely identify this tokenizer.
+
+        This method must be implemented by subclasses to return a tuple containing
+        all immutable configuration attributes that should be included in the hash
+        and equality comparison. The tuple should not include mutable objects like
+        API clients.
+
+        Returns
+        -------
+        Tuple of hashable attributes.
+        """
+        ...
+
+    def __hash__(self) -> int:
+        """Compute hash from hashable attributes.
+
+        Returns
+        -------
+        Hash value based on _hash_attributes().
+        """
+        return hash(self._hash_attributes())
+
+    def __eq__(self, other: object) -> bool:
+        """Compare tokenizers for equality based on hashable attributes.
+
+        Parameters
+        ----------
+        other
+            Object to compare with.
+
+        Returns
+        -------
+        True if both are Tokenizer instances with same hash attributes, False otherwise.
+        """
+        if not isinstance(other, Tokenizer):
+            return False
+        return self._hash_attributes() == other._hash_attributes()
+
     def get_tokenizer(self):
         """Returns the tokenizer instance (required by BaseTokenizer).
 
