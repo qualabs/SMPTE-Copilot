@@ -88,10 +88,8 @@ services:
       # Branding
       - WEBUI_NAME=${WEBUI_NAME:-SMPTE Copilot}
       - DEFAULT_LOCALE=${DEFAULT_LOCALE:-en}
-      # Model configuration - restrict to SMPTE Copilot model only
-      - DEFAULT_MODELS=smpte-copilot
-      - MODEL_FILTER_ENABLED=true
-      - MODEL_FILTER_LIST=smpte-copilot
+      # Model configuration - Pipe will be the primary model
+      - MODEL_FILTER_ENABLED=false
       # Disable unused features
       - ENABLE_IMAGE_GENERATION=false
       - ENABLE_COMMUNITY_SHARING=false

@@ -89,7 +89,13 @@ class GenerationStep(PipelineStep):
 
         for i, (doc, score) in enumerate(context.retrieved_docs, start=1):
             source, page = self._extract_source_and_page(doc)
-            citations.append({"id": i, "source": source, "page": page, "score": score})
+            citations.append({
+                "id": i,
+                "source": source,
+                "page": page,
+                "score": score,
+                "content": doc.page_content,
+            })
             blocks.append(
                 f"[{i}] SOURCE={source} PAGE={page} SCORE={score}\n{doc.page_content}"
             )

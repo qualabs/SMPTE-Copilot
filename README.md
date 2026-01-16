@@ -54,6 +54,28 @@ To start OpenWebUI with SMPTE-Copilot:
 docker compose up openwebui
 ```
 
+#### Enabling Clickable Citations
+
+By default, the integration uses the standard OpenAI-compatible endpoint. To enable **clickable citations** that show the source chunks when clicked, you need to install the SMPTE Copilot Pipe in OpenWebUI:
+
+1. **Access Admin Settings**: Log into OpenWebUI as an admin and go to **Admin Panel** → **Settings** → **Functions**
+
+2. **Create New Function**: Click the **+** button to create a new function
+
+3. **Copy Pipe Code**: Copy the entire contents of [`src/openwebui/smpte_pipe.py`](src/openwebui/smpte_pipe.py) and paste it into the function editor
+
+4. **Save and Enable**: Save the function and ensure it's enabled
+
+5. **Configure Valves** (if needed): Click the gear icon on the function to configure:
+   - `SMPTE_API_BASE_URL`: The backend URL (default: `http://api:8000`)
+   - `REQUEST_TIMEOUT`: Request timeout in seconds (default: `120`)
+
+6. **Use the Pipe**: In your chat, select the model **"SMPTE Copilot RAG"** instead of the standard "smpte-copilot" model
+
+When using the Pipe, citations like `[1]`, `[2]`, etc. in the response will be clickable, showing a popup with the source document name, page number, and the actual chunk content that was retrieved.
+
+**Note**: The Pipe uses the `/v1/rag/query` endpoint which returns both the response and citation metadata, while the standard OpenAI-compatible endpoint (`/v1/chat/completions`) only returns the response text.
+
 ## Project Structure
 
 The project is organized into modular components that follow a consistent pattern. Each module implements the Factory pattern to enable easy extension and addition of new components.
