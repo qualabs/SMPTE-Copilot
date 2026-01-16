@@ -20,6 +20,7 @@ from .pipeline import PipelineConfig
 from .preprocessing import PreprocessingConfig
 from .reranking import RerankingConfig
 from .retrieval import RetrievalConfig
+from .user_resolver import UserResolverConfig
 from .vector_store import VectorStoreConfig
 
 
@@ -38,6 +39,7 @@ class Config(BaseSettings):
     paths: PathsConfig = Field(default_factory=PathsConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
     access_control: AccessControlConfig = Field(default_factory=AccessControlConfig)
+    user_resolver: UserResolverConfig = Field(default_factory=UserResolverConfig)
     pipeline: PipelineConfig = Field(default_factory=PipelineConfig)
 
     @classmethod
