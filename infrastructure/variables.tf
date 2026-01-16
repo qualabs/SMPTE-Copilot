@@ -25,12 +25,23 @@ variable "vpc_cidr" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  # default     = "g6.xlarge" # GPU Instance (Commented out for now)
   default = "t3.xlarge"
+}
+
+variable "gpu_instance_type" {
+  description = "EC2 instance type for GPU-enabled server"
+  type        = string
+  default     = "g6.xlarge"
 }
 
 variable "repo_url" {
   description = "URL of the Git repository to clone"
   type        = string
   default     = "https://github.com/qualabs/SMPTE-Copilot"
+}
+
+variable "ssh_public_key" {
+  description = "Public SSH key (OpenSSH format) to install on both instances. Example: ssh-ed25519 AAAA... user@host"
+  type        = string
+  default     = "smpte-copilot.pub"
 }
