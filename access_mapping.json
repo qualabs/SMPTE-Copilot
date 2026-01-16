@@ -1,12 +1,17 @@
 {
   "folders": {
-    "Finance": ["Finance"],
-    "HR": ["HR"],
-    "Admin": ["Admin"]
+    "Conference Paper files": ["Conference_Registered"],
+    "Conference Session videos": ["Conference_Registered"],
+    "Journal article files": ["Public"],
+    "Section meeting documents": ["Section_Member"],
+    "Virtual Course documents": ["Purchased_Course"],
+    "Webcast videos": ["Public"]
   },
   "roles": {
-    "Public": ["Public"],
-    "Finance": ["Finance", "Public"],
-    "Admin": ["Finance", "HR", "Public", "Admin"]
+    "Public_User": ["Public"],
+    "SMPTE_Member": ["Public","Section_Member","Journal_Archive"],
+    "Conference_Attendee": ["Public","Conference_Registered"],
+    "Course_Customer": ["Public","Purchased_Course"],
+    "SMPTE_Staff": ["Public","Section_Member","Conference_Registered","Purchased_Course","Staff_Confidential"]
   }
 }
