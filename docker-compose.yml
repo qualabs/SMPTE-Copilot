@@ -85,7 +85,7 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - OPENID_PROVIDER_URL=https://accounts.google.com/.well-known/openid-configuration
-      - WEBUI_URL=${CALLBACK_WEBUI_URL}
+      - WEBUI_URL=${CALLBACK_WEBUI_URL:-http://localhost:3000}
     volumes:
       - openwebui-data:/app/backend/data
     depends_on:
