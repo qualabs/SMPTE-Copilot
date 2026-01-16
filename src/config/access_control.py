@@ -1,11 +1,12 @@
 """Access control configuration."""
 
-import json
 import logging
 from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
+
+from src.utils import load_json_file
 
 logger = logging.getLogger(__name__)
 
@@ -59,35 +60,21 @@ class AccessControlConfig(BaseSettings):
             self._role_mapping = {}
             return
 
-        try:
-            mapping_path = self.access_mapping_file.expanduser().resolve()
-            logger.info(f"Loading access mapping from: {mapping_path}")
+        logger.info(f"Loading access mapping from: {self.access_mapping_file}")
+        data = load_json_file(self.access_mapping_file)
 
-            if not mapping_path.exists():
-                logger.warning(f"Access mapping file not found: {mapping_path}")
-                self._folder_mapping = {}
-                self._role_mapping = {}
-                return
-
-            with mapping_path.open() as f:
-                data = json.load(f)
-
-            # Validate structure
-            if not isinstance(data, dict):
-                logger.error(f"Invalid access mapping format: expected dict, got {type(data)}")
-                self._folder_mapping = {}
-                self._role_mapping = {}
-                return
-
-            self._folder_mapping = data.get("folders", {})
-            self._role_mapping = data.get("roles", {})
-
-            logger.info(f"Loaded {len(self._folder_mapping)} folder mappings and {len(self._role_mapping)} role mappings")
-
-        except Exception as e:
-            logger.info(f"Could not load access mapping: {e}")
+        if data is None:
             self._folder_mapping = {}
             self._role_mapping = {}
+            return
+
+        self._folder_mapping = data.get("folders", {})
+        self._role_mapping = data.get("roles", {})
+
+        logger.info(
+            f"Loaded {len(self._folder_mapping)} folder mappings "
+            f"and {len(self._role_mapping)} role mappings"
+        )
 
     def get_role_mapping(self) -> dict[str, list[str]]:
         """Get the role-to-tags mapping.

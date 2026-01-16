@@ -1,0 +1,8 @@
+{
+  "users": {
+    "finance.user@example.com": "Finance",
+    "hr.manager@example.com": "HR",
+    "admin@example.com": "Admin"
+  },
+  "default_role": "Public"
+}
