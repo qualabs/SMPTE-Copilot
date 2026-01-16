@@ -75,7 +75,7 @@ services:
       - "3000:8080"
     environment:
       - OPENAI_API_BASE_URL=http://api:8000/v1
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-dummy}
       # Forward user info headers to API for role-based access
       - ENABLE_FORWARD_USER_INFO_HEADERS=true
       # Google OAuth only (disable email/password login)
@@ -85,6 +85,19 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - OPENID_PROVIDER_URL=https://accounts.google.com/.well-known/openid-configuration
       - WEBUI_URL=${CALLBACK_WEBUI_URL}
+      # Branding
+      - WEBUI_NAME=${WEBUI_NAME:-SMPTE Copilot}
+      - DEFAULT_LOCALE=${DEFAULT_LOCALE:-en}
+      # Model configuration - restrict to SMPTE Copilot model only
+      - DEFAULT_MODELS=smpte-copilot
+      - MODEL_FILTER_ENABLED=true
+      - MODEL_FILTER_LIST=smpte-copilot
+      # Disable unused features
+      - ENABLE_IMAGE_GENERATION=false
+      - ENABLE_COMMUNITY_SHARING=false
+      # RAG settings (handled by our custom backend, disable built-in)
+      - ENABLE_RAG_WEB_SEARCH=false
+      - ENABLE_RAG_LOCAL_WEB_FETCH=false
     volumes:
       - openwebui-data:/app/backend/data
     depends_on:
