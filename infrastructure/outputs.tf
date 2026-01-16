@@ -1,21 +1,11 @@
 output "export_instance_id" {
   description = "Command to export instance ID as environment variable"
-  value       = "export INSTANCE_ID=${aws_instance.app_server.id}"
+  value       = "export INSTANCE_ID=${aws_instance.server.id}"
 }
 
 output "connection_command" {
   description = "Command to connect to the instance using SSM"
-  value       = "aws ssm start-session --target ${aws_instance.app_server.id} --region ${var.region} --profile ${var.aws_profile}"
-}
-
-output "export_gpu_instance_id" {
-  description = "Command to export GPU instance ID as environment variable"
-  value       = "export GPU_INSTANCE_ID=${aws_instance.gpu_server.id}"
-}
-
-output "gpu_connection_command" {
-  description = "Command to connect to the GPU instance using SSM"
-  value       = "aws ssm start-session --target ${aws_instance.gpu_server.id} --region ${var.region} --profile ${var.aws_profile}"
+  value       = "aws ssm start-session --target ${aws_instance.server.id} --region ${var.region} --profile ${var.aws_profile}"
 }
 
 output "s3_console_url" {

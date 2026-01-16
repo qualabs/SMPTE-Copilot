@@ -30,3 +30,9 @@ provider "aws" {
     }
   }
 }
+
+
+moved {
+  from = aws_instance.gpu_server
+  to = aws_instance.server
+}
