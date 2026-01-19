@@ -61,6 +61,20 @@ class SimpleTokenizer(Tokenizer):
         """Returns the maximum tokens allowed per chunk."""
         return self.max_tokens
 
+    def _hash_attributes(self) -> tuple:
+        """Return hashable attributes that uniquely identify this tokenizer.
+
+        Returns
+        -------
+        Tuple containing class type and configuration attributes.
+        """
+        return (
+            type(self),
+            self.max_tokens,
+            self.chars_per_token_ratio,
+            self.split_buffer_size,
+        )
+
 def create_simple_tokenizer(config: dict[str, Any]) -> Tokenizer:
     """Create a simple approximation tokenizer from configuration.
 
