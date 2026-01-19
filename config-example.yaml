@@ -143,6 +143,14 @@ access_control:
   notify_on_denied_access: false  # If true, notify users about restricted documents instead of silent filtering
                                   # When false (default): uses efficient Vector Store filtering (silent)
 
+user_resolver:
+  # User role resolver configuration
+  # Determines user roles dynamically from identity information (e.g., email from OpenWebUI)
+  # Note: default_role is taken from access_control.default_user_role to avoid duplication
+  resolver_name: json             # Options: json (future: database, ldap)
+  resolver_config:                # Resolver-specific configuration
+    mapping_file: "./user_mapping.json"  # Path to JSON file with user-to-role mappings
+
 pipeline:
   # Configure which steps are enabled in the ingestion and query pipelines
   ingestion:

@@ -54,6 +54,28 @@ To start OpenWebUI with SMPTE-Copilot:
 docker compose up openwebui
 ```
 
+#### Enabling Clickable Citations
+
+By default, the integration uses the standard OpenAI-compatible endpoint. To enable **clickable citations** that show the source chunks when clicked, you need to install the SMPTE Copilot Pipe in OpenWebUI:
+
+1. **Access Admin Settings**: Log into OpenWebUI as an admin and go to **Admin Panel** → **Settings** → **Functions**
+
+2. **Create New Function**: Click the **+** button to create a new function
+
+3. **Copy Pipe Code**: Copy the entire contents of [`src/openwebui/smpte_pipe.py`](src/openwebui/smpte_pipe.py) and paste it into the function editor
+
+4. **Save and Enable**: Save the function and ensure it's enabled
+
+5. **Configure Valves** (if needed): Click the gear icon on the function to configure:
+   - `SMPTE_API_BASE_URL`: The backend URL (default: `http://api:8000`)
+   - `REQUEST_TIMEOUT`: Request timeout in seconds (default: `120`)
+
+6. **Use the Pipe**: In your chat, select the model **"SMPTE Copilot RAG"** instead of the standard "smpte-copilot" model
+
+When using the Pipe, citations like `[1]`, `[2]`, etc. in the response will be clickable, showing a popup with the source document name, page number, and the actual chunk content that was retrieved.
+
+**Note**: The Pipe uses the `/v1/rag/query` endpoint which returns both the response and citation metadata, while the standard OpenAI-compatible endpoint (`/v1/chat/completions`) only returns the response text.
+
 ## Project Structure
 
 The project is organized into modular components that follow a consistent pattern. Each module implements the Factory pattern to enable easy extension and addition of new components.
@@ -660,6 +682,55 @@ Users can access documents that have at least one tag matching their authorized 
 - A user with role `"Public"` can only access documents tagged with `"Public"`
 - A user with role `"Admin"` can access documents with any of: `"Finance"`, `"HR"`, `"Public"`, or `"Admin"`
 
+### User Role Resolver
+
+The **User Role Resolver** determines which role a user has based on their identity (email address). This is essential for integrating with authentication systems like OpenWebUI with Google OAuth.
+
+#### User Mapping File
+
+The `user_mapping.json` file maps user email addresses to their roles:
+
+```json
+{
+  "users": {
+    "admin@company.com": "Admin",
+    "finance.manager@company.com": "Finance_Manager",
+    "hr.manager@company.com": "HR_Manager"
+  },
+  "default_role": "Public"
+}
+```
+
+- **users**: Maps email addresses to role names (must match roles defined in `access_mapping.json`)
+- **default_role**: Role assigned to users not found in the mapping
+
+#### Configuration
+
+Configure the user resolver in `config.yaml`:
+
+```yaml
+user_resolver:
+  resolver_name: json            # User role resolver type (currently only 'json' supported)
+  resolver_config:
+    mapping_file: "./user_mapping.json"  # Path to the user-to-role mapping file
+```
+
+#### How It Works with OpenWebUI
+
+When using the API with OpenWebUI (with `ENABLE_FORWARD_USER_INFO_HEADERS=true`):
+
+1. User authenticates via Google OAuth in OpenWebUI
+2. OpenWebUI forwards the user's email in the `X-OpenWebUI-User-Email` header
+3. The API server uses the user resolver to look up the email in `user_mapping.json`
+4. If found, the mapped role is used; otherwise, `default_role` is applied
+5. The role is then expanded to authorized tags via `access_mapping.json`
+
+**Important:** The user mapping is loaded once at server startup. If you modify `user_mapping.json`, you must restart the API server for changes to take effect:
+
+```bash
+docker compose restart api
+```
+
 ### Access Denial Notification Mode
 
 The system supports two modes for handling restricted documents during queries:
@@ -710,7 +781,7 @@ Documents receive `default_access_tags` from the configuration only if they don'
 #### During Querying
 
 When querying, the system automatically:
-1. Loads the user's role from `default_user_role` (or can be specified programmatically)
+1. **Resolves the user's role** using the user resolver (from `user_mapping.json` based on email) or falls back to `default_user_role`
 2. Loads the role mapping from `access_mapping_file`
 3. Expands the user's role to authorized tags
 4. Filters query results based on the `notify_on_denied_access` setting:

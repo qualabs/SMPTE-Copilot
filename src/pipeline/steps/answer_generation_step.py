@@ -89,7 +89,13 @@ class GenerationStep(PipelineStep):
 
         for i, (doc, score) in enumerate(context.retrieved_docs, start=1):
             source, page = self._extract_source_and_page(doc)
-            citations.append({"id": i, "source": source, "page": page, "score": score})
+            citations.append({
+                "id": i,
+                "source": source,
+                "page": page,
+                "score": score,
+                "content": doc.page_content,
+            })
             blocks.append(
                 f"[{i}] SOURCE={source} PAGE={page} SCORE={score}\n{doc.page_content}"
             )
@@ -107,6 +113,11 @@ class GenerationStep(PipelineStep):
         meta = doc.metadata or {}
         source = meta.get("source") or meta.get("file_path") or meta.get("filename")
         page = meta.get("page") or meta.get("page_number")
+
+        # Extract only filename from path
+        if source:
+            source = Path(source).name
+
         return source, page
 
     def _generate_response(self, context: QueryContext, prompt: str) -> bool:

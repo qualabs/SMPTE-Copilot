@@ -47,3 +47,26 @@ class ChatCompletionResponse(BaseModel):
     model: str
     choices: list[ChatCompletionChoice]
     usage: Usage
+
+
+class RAGQueryRequest(BaseModel):
+    """Request body for RAG query endpoint."""
+
+    query: str = Field(..., description="User's question or query text")
+
+
+class Citation(BaseModel):
+    """A single citation from retrieved documents."""
+
+    id: int = Field(..., description="Citation index (1-based)")
+    source: str | None = Field(default=None, description="Source document name or path")
+    page: int | None = Field(default=None, description="Page number in the source document")
+    score: float = Field(..., description="Relevance score")
+    content: str = Field(..., description="Content of the retrieved chunk")
+
+
+class RAGQueryResponse(BaseModel):
+    """Response body for RAG query endpoint with citations."""
+
+    response: str = Field(..., description="LLM-generated response with citation markers")
+    citations: list[Citation] = Field(default_factory=list, description="List of citations")
