@@ -24,13 +24,13 @@ services:
       - ./access_mapping.json:/app/access_mapping.json:ro
     environment:
       - PYTHONUNBUFFERED=1
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
+    #deploy:
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - driver: nvidia
+    #          count: all
+    #          capabilities: [gpu]
     command: python src/cli/ingest.py --help
 
   # Service for querying documents
