@@ -45,3 +45,15 @@ variable "ssh_public_key" {
   type        = string
   default     = "smpte-copilot.pub"
 }
+
+variable "custom_domain_name" {
+  description = "Custom domain name for CloudFront distribution"
+  type        = string
+  default     = "smpte-copilot.qualabs.com"
+}
+
+variable "enable_custom_domain" {
+  description = "Enable custom domain for CloudFront distribution. Set to false for first deployment, then true after DNS validation"
+  type        = bool
+  default     = false
+}
