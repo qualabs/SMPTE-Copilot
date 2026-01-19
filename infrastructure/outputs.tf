@@ -12,3 +12,13 @@ output "s3_console_url" {
   description = "Console URL for the S3 bucket"
   value       = "https://${var.region}.console.aws.amazon.com/s3/buckets/${aws_s3_bucket.data.id}?region=${var.region}"
 }
+
+output "cloudfront_domain_name" {
+  description = "CloudFront domain name for OpenWebUI (use for Google OAuth settings)"
+  value       = aws_cloudfront_distribution.openwebui.domain_name
+}
+
+output "cloudfront_url" {
+  description = "Full URL to access OpenWebUI via CloudFront"
+  value       = "https://${aws_cloudfront_distribution.openwebui.domain_name}"
+}
