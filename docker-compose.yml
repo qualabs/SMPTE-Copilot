@@ -109,6 +109,39 @@ services:
       api:
         condition: service_healthy
 
+  # Service for generating synthetic test sets
+  testgen:
+    build:
+      context: ./evaluations
+      dockerfile: Dockerfile
+    image: rag-testgen
+    container_name: rag-testgen
+    volumes:
+      - ./data:/app/data
+      - ./evaluations/config.yaml:/app/config.yaml:ro
+      - ./evaluations:/app/evaluations
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python evaluations/synthetic/generate_testset.py --help
+
+  # Service for running RAG evaluations
+  ragscore:
+    build:
+      context: ./evaluations
+      dockerfile: Dockerfile
+    image: rag-testgen
+    container_name: rag-score
+    volumes:
+      - vector_db:/app/vector_db
+      - ./data:/app/data
+      - ./evaluations/config.yaml:/app/config.yaml:ro
+      - ./evaluations:/app/evaluations
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python evaluations/metrics/run_eval.py --help
+    depends_on:
+      - qdrant
+
 volumes:
   vector_db:
   qdrant_storage:
