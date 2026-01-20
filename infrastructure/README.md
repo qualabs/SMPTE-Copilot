@@ -11,6 +11,49 @@ The application is deployed to a EC2 instance on the `/opt/app directory`
 4. **AWS Authentication**: Set up your AWS CLI profile (default: `smpte-copilot`).
 
 
+## Deployment Guide
+
+### Two-Stage Deployment for Custom Domain
+
+This infrastructure supports a custom domain (configured via `custom_domain_name` variable) with a two-stage deployment process:
+
+#### Stage 1: Initial Deployment (Includes Certificate Creation)
+
+1. Ensure `enable_custom_domain = false` in your configuration (this is the default).
+2. Run the initial deployment:
+   ```bash
+   cd infrastructure
+   terraform init
+   terraform apply
+   ```
+3. After the deployment completes, retrieve the DNS validation records:
+   ```bash
+   terraform output acm_certificate_validation_records
+   ```
+4. Add the CNAME record to your DNS provider (e.g., Route53, Cloudflare) to validate the certificate:
+   - Name: (from output)
+   - Type: CNAME
+   - Value: (from output)
+
+5. Wait for DNS propagation and certificate validation (typically 5-30 minutes). You can check the status in the AWS Console under Certificate Manager (us-east-1 region).
+
+#### Stage 2: Enable Custom Domain
+
+1. Once the certificate is validated, update your `terraform.tfvars` or set the variable:
+   ```hcl
+   enable_custom_domain = true
+   ```
+2. Apply the changes:
+   ```bash
+   terraform apply
+   ```
+3. Update your DNS to point your custom domain to CloudFront:
+   - Create a CNAME record for your custom domain (value of `custom_domain_name`) pointing to the CloudFront distribution domain (from `cloudfront_domain_name` output).
+
+4. Access your application at your custom domain URL (see `custom_domain_url` output)
+
+**Note**: If you skip Stage 1 and set `enable_custom_domain = true` immediately, Terraform will wait for certificate validation during apply, which can take 30+ minutes.
+
 ## Deployment (if not already deployed)
 
 1. **Initialize Terraform**:

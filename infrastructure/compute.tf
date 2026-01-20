@@ -21,6 +21,14 @@ resource "aws_security_group" "app_sg" {
     description = "SSH access"
   }
 
+  # Allow OpenWebUI access from CloudFront
+  ingress {
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
+    description     = "OpenWebUI from CloudFront"
+  }
 
   # Allow all outbound traffic (Required for SSM and package updates)
   egress {
