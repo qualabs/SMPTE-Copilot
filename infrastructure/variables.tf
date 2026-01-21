@@ -7,7 +7,6 @@ variable "region" {
 variable "aws_profile" {
   description = "AWS CLI/SDK profile to use for provider and CLI snippets"
   type        = string
-  default     = "smpte-copilot"
 }
 
 variable "project_name" {
@@ -43,17 +42,14 @@ variable "repo_url" {
 variable "ssh_public_key" {
   description = "Public SSH key (OpenSSH format) to install on both instances. Example: ssh-ed25519 AAAA... user@host"
   type        = string
-  default     = "smpte-copilot.pub"
 }
 
 variable "custom_domain_name" {
   description = "Custom domain name for CloudFront distribution"
   type        = string
-  default     = "smpte-copilot.qualabs.com"
 }
 
 variable "enable_custom_domain" {
   description = "Enable custom domain for CloudFront distribution. Set to false for first deployment, then true after DNS validation"
   type        = bool
-  default     = false
 }

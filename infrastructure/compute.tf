@@ -67,4 +67,15 @@ resource "aws_instance" "server" {
   })
 }
 
+# Elastic IP for stable DNS
+resource "aws_eip" "server" {
+  domain   = "vpc"
+  instance = aws_instance.server.id
+
+  tags = {
+    Name = "${var.project_name}-server-eip"
+  }
+}
+
+
  
