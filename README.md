@@ -150,16 +150,6 @@ class EmbeddingModelFactory:
     # Class variable: shared registry across all instances
     _registry: ClassVar[dict[EmbeddingModelType, Callable[[dict[str, Any]], Embeddings]]] = {}
 ```
-
-#### Registration Mechanism
-
-The Factory provides a `register` method that acts as a decorator, allowing implementations to be registered dynamically:
-
-```python
-@classmethod
-def register(cls, model_type: EmbeddingModelType):
-    """Register a new embedding model factory.
-    Parameters
     ----------
     model_type
         Type to register the model under.
@@ -1176,3 +1166,23 @@ python src/cli/query.py your question here
   - Metadata (source file, page numbers, etc.)
 
 **Important**: The embedding model used for querying must match the one used during ingestion to ensure accurate similarity search.
+
+## Evaluation
+
+
+### Synthetic Testset Generation (Ragas)
+
+Generate a synthetic evaluation dataset from the repository's markdown content using the `testgen` service.
+
+```bash
+# Generate a testset (adjust size as needed)
+docker compose run --rm testgen \
+  python evaluations/synthetic/generate_testset.py \
+  --sources /app/data/markdown \
+  --size 10 \
+  --out /app/evaluations/synthetic/output/testset.jsonl
+
+# Output will be written to evaluations/synthetic/output/testset.jsonl
+```
+
+- Note: The `testgen` service uses `evaluations/config.yaml`

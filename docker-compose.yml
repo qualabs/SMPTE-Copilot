@@ -47,6 +47,21 @@ services:
       - PYTHONUNBUFFERED=1
     command: python src/cli/query.py --help
 
+  # Synthetic testset generation (Ragas)
+  testgen:
+    build:
+      context: ./evaluations
+      dockerfile: Dockerfile
+    image: rag-evals
+    container_name: rag-testgen
+    volumes:
+      - ./data:/app/data
+      - ./evaluations/config.yaml:/app/config.yaml:ro
+      - ./evaluations/synthetic/output:/app/evaluations/synthetic/output
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: python evaluations/synthetic/generate_testset.py --help
+
   # API Server - OpenAI-compatible endpoint
   api:
     build: .

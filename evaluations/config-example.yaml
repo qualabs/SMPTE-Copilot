@@ -1,0 +1,18 @@
+# Example evaluation configuration (used by testgen)
+# Copy this file to config.yaml and set your API keys.
+
+embedding:
+  embed_name: gemini
+  embed_config:
+    model_name: text-embedding-004
+    google_api_key: YOUR_GOOGLE_API_KEY
+
+llm:
+  llm_name: gemini
+  llm_config:
+    model: gemini-1.5-pro
+    api_key: YOUR_GOOGLE_API_KEY
+
+paths:
+  input_path: ./data
+  markdown_dir: ./data/markdown
