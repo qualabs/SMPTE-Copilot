@@ -7,14 +7,13 @@ dependencies = [
   "ragas>=0.1.11",
   "langchain-google-genai>=2.1.10",
   "google-genai>=1.0.0",
-  "langchain-community>=0.3.0",
-  "langchain-qdrant>=0.1.0",
-  "qdrant-client>=1.7.0",
   "pandas>=2.2.0",
   "pyyaml>=6.0",
   "pydantic>=2.0.0",
   "pydantic-settings>=2.0.0",
   "rapidfuzz>=3.0.0",
+  "requests>=2.31.0",
+  "jsonref>=1.1.0",
 ]
 
 [build-system]

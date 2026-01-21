@@ -140,7 +140,10 @@ services:
       - PYTHONUNBUFFERED=1
     command: python evaluations/metrics/run_eval.py --help
     depends_on:
-      - qdrant
+      api:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
 
 volumes:
   vector_db:
