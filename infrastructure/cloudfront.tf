@@ -35,6 +35,38 @@ data "aws_ec2_managed_prefix_list" "cloudfront" {
   name = "com.amazonaws.global.cloudfront.origin-facing"
 }
 
+# CloudFront Function to redirect default domain to custom domain
+resource "aws_cloudfront_function" "redirect_to_custom_domain" {
+  count   = var.enable_custom_domain ? 1 : 0
+  name    = "${var.project_name}-redirect-to-custom-domain"
+  runtime = "cloudfront-js-1.0"
+  comment = "Redirect CloudFront default domain to custom domain"
+  publish = true
+  code    = <<-EOT
+    function handler(event) {
+        var request = event.request;
+        var host = request.headers.host.value;
+        
+        // If accessing via CloudFront domain, redirect to custom domain
+        if (host.endsWith('.cloudfront.net')) {
+            var newUrl = 'https://${var.custom_domain_name}' + request.uri;
+            if (request.querystring && request.querystring.value) {
+                newUrl += '?' + request.querystring.value;
+            }
+            return {
+                statusCode: 301,
+                statusDescription: 'Moved Permanently',
+                headers: {
+                    'location': { value: newUrl }
+                }
+            };
+        }
+        
+        return request;
+    }
+  EOT
+}
+
 # CloudFront Distribution for OpenWebUI
 resource "aws_cloudfront_distribution" "openwebui" {
   enabled         = true
@@ -43,7 +75,7 @@ resource "aws_cloudfront_distribution" "openwebui" {
   aliases         = var.enable_custom_domain ? [var.custom_domain_name] : []
 
   origin {
-    domain_name = aws_instance.server.public_dns
+    domain_name = aws_eip.server.public_dns
     origin_id   = "openwebui-ec2-origin"
 
     custom_origin_config {
@@ -62,6 +94,15 @@ resource "aws_cloudfront_distribution" "openwebui" {
 
     cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
     origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+
+    # Redirect CloudFront domain to custom domain when enabled
+    dynamic "function_association" {
+      for_each = var.enable_custom_domain ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = aws_cloudfront_function.redirect_to_custom_domain[0].arn
+      }
+    }
   }
 
   restrictions {
