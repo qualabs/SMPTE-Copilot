@@ -16,6 +16,46 @@ This document describes the architectural patterns and design decisions used in 
   - [Benefits of the Pipeline Pattern](#benefits-of-the-pipeline-pattern)
   - [Pipeline Execution Flow](#pipeline-execution-flow)
 
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+    %% INTAKE PIPELINE
+    subgraph Ingestion_and_Parsing["Ingestion & Parsing"]
+        F[Source Files]
+        FR[File Reader + Metadata Extraction]
+        FP[File Parser]
+        CH[Chunking]
+        F --> FR --> FP --> CH
+    end
+    subgraph Embedding_and_Indexing["Embedding & Indexing"]
+        EM[Embedding Encoder Model]
+        VDBS[VDB Structuring & Insertion]
+        CH --> EM --> VDBS
+    end
+    VDB[(Vector Database)]
+    VDBS --> VDB
+    %% QUERY SIDE
+    subgraph Query_and_Retrieval["Query & Retrieval"]
+        QA[Query API]
+        QP[Query Processor]
+        RT[Retrieval Vector DB Search]
+        RR[Re-ranking]
+        AG["Answer Generation (LLM + Prompt + Chunks)"]
+        QA --> QP --> RT --> RR --> AG
+    end
+    %% AUTH SERVICE
+    AUTH[Auth & Role Service]
+    AUTH <--> QA
+    subgraph Clients["Clients"]
+        C1[Internal UI / Copilot]
+        C2[External API Clients]
+    end
+    C1 --> QA
+    C2 --> QA
+    RT --> VDB
+```
+
 ## Architecture Patterns
 
 The project uses two main architectural patterns that enable modularity and extensibility:
