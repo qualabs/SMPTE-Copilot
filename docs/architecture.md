@@ -4,6 +4,7 @@ This document describes the architectural patterns and design decisions used in 
 
 ## Table of Contents
 
+- [Architecture Diagram](#architecture-diagram)
 - [Architecture Patterns](#architecture-patterns)
   - [Module Architecture](#module-architecture)
   - [Dynamic Factory Pattern with Registry](#dynamic-factory-pattern-with-registry)
