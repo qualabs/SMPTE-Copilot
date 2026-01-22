@@ -1,6 +1,7 @@
 {
-  "Context Precision": 0.46,
-  "Context Recall": 0.84,
-  "Faithfulness": 0.89,
-  "Answer Correctness": 0.67
+  "Context Precision": 0.62,
+  "Context Recall": 0.83,
+  "Faithfulness": 0.94,
+  "Answer Correctness": 0.69,
+  "Answer Relevancy": 0.76
 }

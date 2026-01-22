@@ -18,13 +18,14 @@ from ragas.metrics import (
     AnswerCorrectness,
     LLMContextPrecisionWithReference,
     LLMContextRecall,
+    AnswerRelevancy,
 )
 from ragas.embeddings import LangchainEmbeddingsWrapper
 
 
 # Defaults 
 DEFAULT_CONFIG = "evaluations/config.yaml"
-DEFAULT_TESTSET = "evaluations/synthetic/output/testset_small.jsonl"
+DEFAULT_TESTSET = "evaluations/synthetic/output/testset.jsonl"
 DEFAULT_OUTPUT_DIR = "evaluations/metrics/output"
 
 DEFAULT_API_TIMEOUT_S = 60.0
@@ -36,8 +37,16 @@ METRIC_COLUMNS: Sequence[Tuple[str, str]] = (
     ("context_recall", "Context Recall"),
     ("faithfulness", "Faithfulness"),
     ("answer_correctness", "Answer Correctness"),
+    ("answer_relevancy", "Answer Relevancy"),
 )
-
+"""
+RAGAS METRICS DEFINITIONS:
+- Context Precision: (Signal-to-Noise) Are the retrieved documents actually useful, or is there too much noise?
+- Context Recall:    (Coverage) Did we find *all* the necessary information needed to answer?
+- Faithfulness:      (Anti-Hallucination) Is the answer based *only* on the provided context, without making things up?
+- Answer Correctness:(Accuracy) Does the answer match the expert reference (Ground Truth)?
+- Answer Relevancy:  (User Relevance) Does the answer directly address the user's question without being vague?
+"""
 
 def main() -> int:
     args = parse_args()
@@ -143,6 +152,7 @@ def run_evaluation(*, results: Sequence[Dict[str, Any]], llm, embeddings):
         LLMContextRecall(llm=llm),  # Does context contain all needed info?
         Faithfulness(llm=llm),  # Is answer grounded in context?
         AnswerCorrectness(llm=llm, embeddings=embeddings),  # Does answer match expected?
+        AnswerRelevancy(llm=llm, embeddings=embeddings),  # Is answer relevant to the question?
     ]
 
     print(f"Running {len(metrics)} metrics on {len(results)} samples...")
